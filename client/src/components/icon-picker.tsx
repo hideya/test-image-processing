@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
-import { Tooltip } from "@/components/ui/tooltip";
-import {
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { iconOptions, type IconOption } from "@/lib/icons";
-import { X } from "lucide-react";
 
 interface IconPickerProps {
   selectedIcons: number[];

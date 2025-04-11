@@ -344,7 +344,7 @@ export default function UploadPage() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={`w-full justify-start text-lg text-left font-normal ${!customDate && "text-gray-400"}`}
+                    className={`w-full justify-center text-lg text-left rounded-full font-normal ${!customDate && "text-gray-400"}`}
                   >
                     {customDate
                       ? format(customDate, "yyyy年 M月 d日")
@@ -369,7 +369,7 @@ export default function UploadPage() {
                 </PopoverContent>
               </Popover>
 
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center pt-2">
                 <input
                   type="file"
                   id="file-upload"
@@ -379,7 +379,7 @@ export default function UploadPage() {
                 />
                 <label
                   htmlFor="file-upload"
-                  className="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer inline-flex items-center"
+                  className="py-2 px-4 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer inline-flex items-center"
                 >
                   {selectedFile ? (
                     <span className="text-sm text-gray-500 truncate max-w-xs">
@@ -455,7 +455,7 @@ export default function UploadPage() {
               <button
                 type="submit"
                 disabled={isUploading}
-                className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isUploading ? (
                   <span className="flex items-center justify-center">

@@ -264,11 +264,14 @@ export default function MainPage() {
   }, [measurements]);
 
   // Get today's date in the same format as measurements' date
-  const todayDate = new Date().toISOString().split("T")[0];
+  const today = new Date();
+  today.setHours(12, 0, 0, 0); // FIXME: dealing with timezone
+  const todayDate = today.toISOString().split("T")[0];
   // Find today's measurement
   const todayMeasurement = measurements.find(
     (measurement) => measurement.date === todayDate,
   );
+  console.log('***', todayDate, todayMeasurement)
 
   // Get the most recent measurement for the "Latest Measurement" display
   const latestMeasurement = useMemo(() => {
@@ -758,8 +761,6 @@ export default function MainPage() {
 
       <div className="grid grid-cols-1 gap-8">
         <div className="bg-white p-4 rounded-lg shadow-sm">
-          {/* <div className="py-2" /> */}
-
           {isLoading ? (
             <div className="py-10 flex justify-center">
               <div className="flex flex-col items-center gap-2">
@@ -781,17 +782,17 @@ export default function MainPage() {
           ) : (
             <div className="space-y-4">
               <Link href="/upload">
-                <div className="bg-blue-50 p-4 rounded-md">
-                  <div className="flex items-center">
+                <div className="bg-blue-50 p-4 rounded-full">
+                  <div className="flex items-center justify-center">
                     <div className="flex flex-end">
                       <div className="font-medium text-blue-800 mr-2 mt-2">
-                        {format(new Date(todayMeasurement.date), "yyyy年")}
+                        {format(new Date(today), "yyyy年")}
                       </div>
                       <div className="text-xl font-medium text-blue-800 mr-2 mt-1">
-                        {format(new Date(todayMeasurement.date), "M月 d日")}
+                        {format(new Date(today), "M月 d日")}
                       </div>
                       <div className="font-medium text-blue-800 mt-1.5">
-                        ({formatTableDayPart(todayMeasurement.date)})
+                        ({formatTableDayPart(today)})
                       </div>
                     </div>
                     {todayMeasurement ? (
@@ -820,7 +821,9 @@ export default function MainPage() {
                         </div>
                       </>
                     ) : (
-                      <p className="text-gray-500">Not Yet Done</p>
+                      <div className="text-gray-500 mt-2 ml-4">
+                        未測定
+                      </div>
                     )}
                   </div>
                 </div>
@@ -834,7 +837,8 @@ export default function MainPage() {
                     newDate.setMonth(newDate.getMonth() - 1);
                     setCurrentViewMonth(newDate);
                   }}
-                  className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
+                  className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  // className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
                 >
                   ◀︎
                 </button>
@@ -849,7 +853,7 @@ export default function MainPage() {
                     if (newDate > today) return; // Don't allow future months
                     setCurrentViewMonth(newDate);
                   }}
-                  className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
+                  className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   ▶︎
                 </button>
@@ -882,7 +886,7 @@ export default function MainPage() {
                       <ReferenceArea
                         y1={15}
                         y2={20}
-                        fill="#FFFFC0" /* yellow */
+                        fill="#FFFFE0" /* yellow */
                         fillOpacity={0.75}
                       />
                       {/*  */}
@@ -1190,19 +1194,18 @@ export default function MainPage() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="pl-2 pr-0 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="w-10 pl-2 pr-0 py-1 text-center text-xs font-medium text-gray-500 uppercase">
                           日付
                         </th>
-                        <th className="pl-2 py-1 text-center text-xs font-medium text-blue-600 uppercase tracking-wider">
+                        <th className="pl-2 py-1 text-center text-xs font-medium text-blue-600 uppercase">
                           左
                         </th>
-                        <th className="pl-1 py-1 text-center text-xs font-medium text-emerald-600 uppercase tracking-wider">
+                        <th className="pl-1 py-1 text-center text-xs font-medium text-emerald-600 uppercase">
                           右
                         </th>
                         <th className="px-0 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                           メ モ
                         </th>
-                        <th className="px-0 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -1234,53 +1237,10 @@ export default function MainPage() {
                                   // Deselect row and close expanded image
                                   setSelectedDate(null);
                                   setPulsingDot(null);
-                                  setExpandedThumbnail(null);
                                 } else {
                                   // Set the date as pulsing dot and animation will handle the transitions
                                   setPulsingDot(measurement.date);
                                   setSelectedDate(measurement.date);
-
-                                  // Expand the thumbnail when selecting the row
-                                  setExpandedThumbnail(measurement.hashKey);
-
-                                  // Start loading the image if it hasn't been loaded before
-                                  if (
-                                    !loadedThumbnails[measurement.hashKey]
-                                  ) {
-                                    setLoadingThumbnails((prev) => ({
-                                      ...prev,
-                                      [measurement.hashKey]: true,
-                                    }));
-                                  }
-
-                                  // Preload the medium image if not already in cache
-                                  if (
-                                    !mediumImageCache[measurement.hashKey]
-                                  ) {
-                                    // Create an image element to load the medium image
-                                    const mediumImg = new Image();
-                                    mediumImg.onload = () => {
-                                      // Add to medium image cache when loaded
-                                      setMediumImageCache((prev) => ({
-                                        ...prev,
-                                        [measurement.hashKey]: `/api/images/${measurement.hashKey}/medium`,
-                                      }));
-                                    };
-                                    mediumImg.src = `/api/images/${measurement.hashKey}/medium`;
-                                  }
-
-                                  // Safety timeout to ensure the loading state is cleared
-                                  if (loadingTimeoutRef.current) {
-                                    clearTimeout(loadingTimeoutRef.current);
-                                  }
-                                  loadingTimeoutRef.current =
-                                    window.setTimeout(() => {
-                                      setLoadingThumbnails((prev) => ({
-                                        ...prev,
-                                        [measurement.hashKey]: false,
-                                      }));
-                                      loadingTimeoutRef.current = null;
-                                    }, 3000);
                                 }
                               }}
                             >

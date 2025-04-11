@@ -14,7 +14,7 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -63,20 +63,11 @@ export default function AuthPage() {
     <div className="h-screen flex flex-col md:flex-row overflow-hidden">
       {/* Form Section */}
       <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-md w-full space-y-8">
+        <div className="max-w-md w-full">
           <div className="text-center">
             <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
               {isLogin ? "Sign in to your account" : "Create a new account"}
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                {isLogin ? "Sign up" : "Sign in"}
-              </button>
-            </p>
           </div>
 
           {isLogin ? (
@@ -194,13 +185,24 @@ export default function AuthPage() {
               <div>
                 <button
                   type="submit"
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   Sign up
                 </button>
               </div>
             </form>
           )}
+          <div className="flex justify-center mt-4">
+            <div className="text-sm text-gray-600">
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                {isLogin ? "Sign up" : "Sign in"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

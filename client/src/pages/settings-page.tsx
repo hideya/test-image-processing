@@ -117,7 +117,7 @@ export default function SettingsPage() {
       <div className="mt-6">
         <Button
           variant="destructive"
-          className="w-full"
+          className="w-full rounded-full"
           onClick={() => logoutMutation.mutate()}
         >
           <LogOut className="mr-2 h-4 w-4" />
