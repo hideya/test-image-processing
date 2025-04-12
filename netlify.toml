@@ -4,13 +4,16 @@
   publish = "dist/public"
   functions = "netlify/functions"
 
-# Individual API endpoints redirects
+# API redirects - these must come BEFORE the catch-all redirect
+# This redirects all /api/* requests to their corresponding functions
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  to = "/.netlify/functions/:splat"
   status = 200
+  force = true  # Forces this redirect to always happen even if a file exists
 
-# SPA redirect for React router
+# SPA redirect for React router - must be LAST
+# This is a catch-all for client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
