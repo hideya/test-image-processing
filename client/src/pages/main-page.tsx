@@ -760,6 +760,81 @@ export default function MainPage() {
 
       <div className="grid grid-cols-1 gap-8">
         <div className="bg-white p-4 rounded-lg shadow-sm">
+          <Link href="/upload">
+            <div className="bg-blue-50 p-4 rounded-full">
+              <div className="flex items-center justify-center gap-4">
+                <div className="flex flex-end gap-1">
+                  <div className="text-xl font-medium text-blue-800 mt-1">
+                    {format(new Date(today), "M月 d日")}
+                  </div>
+                  <div className="font-medium text-blue-800 mt-1.5">
+                    ({formatTableDayPart(today)})
+                  </div>
+                </div>
+                {todayMeasurement ? (
+                  <>
+                    <div className="flex gap-2">
+                      <div className="text-sm font-medium text-blue-600 mt-2">
+                        左足
+                      </div>
+                      <div className="text-2xl font-semibold text-blue-800">
+                        {todayMeasurement.angle !== undefined
+                          ? todayMeasurement.angle.toFixed(1)
+                          : "--"}
+                        °
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="text-sm font-medium text-green-600 mt-2">
+                        右足
+                      </div>
+                      <div className="text-2xl font-semibold text-green-700">
+                        {todayMeasurement.angle2 !== undefined
+                          ? todayMeasurement.angle2.toFixed(1)
+                          : "--"}
+                        °
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-gray-500 mt-2 ml-4">
+                    未測定
+                  </div>
+                )}
+              </div>
+            </div>
+          </Link>
+
+          {/* Month Navigation */}
+          <div className="flex items-center justify-center gap-4 py-2">
+            <button
+              onClick={() => {
+                const newDate = new Date(currentViewMonth);
+                newDate.setMonth(newDate.getMonth() - 1);
+                setCurrentViewMonth(newDate);
+              }}
+              className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              // className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
+            >
+              ◀︎
+            </button>
+            <span className="text-lg font-medium">
+              {format(currentViewMonth, "yyyy年 M月")}
+            </span>
+            <button
+              onClick={() => {
+                const newDate = new Date(currentViewMonth);
+                newDate.setMonth(newDate.getMonth() + 1);
+                const today = new Date();
+                if (newDate > today) return; // Don't allow future months
+                setCurrentViewMonth(newDate);
+              }}
+              className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              ▶︎
+            </button>
+          </div>
+        
           {isLoading ? (
             <div className="py-10 flex justify-center">
               <div className="flex flex-col items-center gap-2">
@@ -780,80 +855,6 @@ export default function MainPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <Link href="/upload">
-                <div className="bg-blue-50 p-4 rounded-full">
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="flex flex-end gap-1">
-                      <div className="text-xl font-medium text-blue-800 mt-1">
-                        {format(new Date(today), "M月 d日")}
-                      </div>
-                      <div className="font-medium text-blue-800 mt-1.5">
-                        ({formatTableDayPart(today)})
-                      </div>
-                    </div>
-                    {todayMeasurement ? (
-                      <>
-                        <div className="flex gap-2">
-                          <div className="text-sm font-medium text-blue-600 mt-2">
-                            左足
-                          </div>
-                          <div className="text-2xl font-semibold text-blue-800">
-                            {todayMeasurement.angle !== undefined
-                              ? todayMeasurement.angle.toFixed(1)
-                              : "--"}
-                            °
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="text-sm font-medium text-green-600 mt-2">
-                            右足
-                          </div>
-                          <div className="text-2xl font-semibold text-green-700">
-                            {todayMeasurement.angle2 !== undefined
-                              ? todayMeasurement.angle2.toFixed(1)
-                              : "--"}
-                            °
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-gray-500 mt-2 ml-4">
-                        未測定
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Link>
-
-              {/* Month Navigation */}
-              <div className="flex items-center justify-center gap-4 py-2">
-                <button
-                  onClick={() => {
-                    const newDate = new Date(currentViewMonth);
-                    newDate.setMonth(newDate.getMonth() - 1);
-                    setCurrentViewMonth(newDate);
-                  }}
-                  className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                  // className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  ◀︎
-                </button>
-                <span className="text-lg font-medium">
-                  {format(currentViewMonth, "yyyy年 M月")}
-                </span>
-                <button
-                  onClick={() => {
-                    const newDate = new Date(currentViewMonth);
-                    newDate.setMonth(newDate.getMonth() + 1);
-                    const today = new Date();
-                    if (newDate > today) return; // Don't allow future months
-                    setCurrentViewMonth(newDate);
-                  }}
-                  className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                  ▶︎
-                </button>
-              </div>
 
               {/* Chart view */}
               <div>
