@@ -46,10 +46,10 @@ class DatabaseStorage {
 
     this.uploadDir = path.join(process.cwd(), 'uploads');
 
-    // Ensure upload directory exists
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-    }
+    // // Ensure upload directory exists
+    // if (!fs.existsSync(this.uploadDir)) {
+    //   fs.mkdirSync(this.uploadDir, { recursive: true });
+    // }
   }
 
   async getUser(id) {
@@ -235,10 +235,10 @@ class DatabaseStorage {
       // Create a path for the medium image
       const mediumsDir = path.join(this.uploadDir, 'mediums');
 
-      // Ensure mediums directory exists
-      if (!fs.existsSync(mediumsDir)) {
-        fs.mkdirSync(mediumsDir, { recursive: true });
-      }
+      // // Ensure mediums directory exists
+      // if (!fs.existsSync(mediumsDir)) {
+      //   fs.mkdirSync(mediumsDir, { recursive: true });
+      // }
 
       // Medium image path
       const mediumImagePath = path.join(mediumsDir, filename);
