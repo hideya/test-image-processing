@@ -1,43 +1,25 @@
 // netlify/functions/api.js
-const express = require('express');
-const serverless = require('serverless-http');
-const { registerRoutes } = require('./routes');
+const { formatResponse } = require("./auth-utils");
+const registerHandler = require("./register").handler;
+const loginHandler = require("./login").handler;
+const logoutHandler = require("./logout").handler;
+const userHandler = require("./user").handler;
 
-// Create Express app
-const app = express();
-app.use(express.json());
-
-// Set up session middleware and other global middleware here
-const session = require('express-session');
-const passport = require('passport');
-
-// Configure session
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key', // Use environment variable
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+exports.handler = async (event, context) => {
+  // Get the endpoint from the path
+  const path = event.path.replace('/.netlify/functions/api/', '');
+  
+  // Route to the appropriate handler based on the path
+  switch (path) {
+    case 'register':
+      return registerHandler(event, context);
+    case 'login':
+      return loginHandler(event, context);
+    case 'logout':
+      return logoutHandler(event, context);
+    case 'user':
+      return userHandler(event, context);
+    default:
+      return formatResponse(404, { message: "Not found" });
   }
-}));
-
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Add CORS middleware if needed
-const cors = require('cors');
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
-
-// Add body parser middleware
-app.use(express.urlencoded({ extended: true }));
-
-// Register all routes
-registerRoutes(app);
-
-// Export the serverless function handler
-module.exports.handler = serverless(app);
+};
