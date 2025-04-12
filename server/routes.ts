@@ -179,7 +179,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(201).json({
           id: image.id,
           hashKey: image.hashKey,
-          thumbnailBase64: image.thumbnailBase64,
           message: "Image uploaded successfully and scheduled for processing",
         });
       } catch (error) {
@@ -343,33 +342,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res
           .status(403)
           .json({ message: "Unauthorized access to thumbnail" });
-      }
-
-      // If we have a stored thumbnail, return it
-      if (image.thumbnailBase64) {
-        return res.json({ thumbnailBase64: image.thumbnailBase64 });
-      }
-
-      // If no stored thumbnail but we have the image file, generate one on the fly
-      if (fs.existsSync(image.imagePath)) {
-        try {
-          const thumbnailBase64 = await storage.generateThumbnail(
-            image.imagePath,
-          );
-
-          // Optionally save the generated thumbnail for future use
-          await db
-            .update(images)
-            .set({ thumbnailBase64 })
-            .where(eq(images.id, image.id));
-
-          return res.json({ thumbnailBase64 });
-        } catch (err) {
-          console.error("Error generating thumbnail:", err);
-          return res
-            .status(500)
-            .json({ message: "Failed to generate thumbnail" });
-        }
       }
 
       return res

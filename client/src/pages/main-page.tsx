@@ -271,7 +271,6 @@ export default function MainPage() {
   const todayMeasurement = measurements.find(
     (measurement) => measurement.date === todayDate,
   );
-  console.log('***', todayDate, todayMeasurement)
 
   // Get the most recent measurement for the "Latest Measurement" display
   const latestMeasurement = useMemo(() => {
@@ -783,12 +782,9 @@ export default function MainPage() {
             <div className="space-y-4">
               <Link href="/upload">
                 <div className="bg-blue-50 p-4 rounded-full">
-                  <div className="flex items-center justify-center">
-                    <div className="flex flex-end">
-                      <div className="font-medium text-blue-800 mr-2 mt-2">
-                        {format(new Date(today), "yyyy年")}
-                      </div>
-                      <div className="text-xl font-medium text-blue-800 mr-2 mt-1">
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="flex flex-end gap-1">
+                      <div className="text-xl font-medium text-blue-800 mt-1">
                         {format(new Date(today), "M月 d日")}
                       </div>
                       <div className="font-medium text-blue-800 mt-1.5">
@@ -797,8 +793,8 @@ export default function MainPage() {
                     </div>
                     {todayMeasurement ? (
                       <>
-                        <div className="flex">
-                          <div className="text-sm font-medium text-blue-600 ml-4 mr-2 mt-2">
+                        <div className="flex gap-2">
+                          <div className="text-sm font-medium text-blue-600 mt-2">
                             左足
                           </div>
                           <div className="text-2xl font-semibold text-blue-800">
@@ -808,8 +804,8 @@ export default function MainPage() {
                             °
                           </div>
                         </div>
-                        <div className="flex">
-                          <div className="text-sm font-medium text-green-600 mx-2 mt-2">
+                        <div className="flex gap-2">
+                          <div className="text-sm font-medium text-green-600 mt-2">
                             右足
                           </div>
                           <div className="text-2xl font-semibold text-green-700">
@@ -843,7 +839,7 @@ export default function MainPage() {
                   ◀︎
                 </button>
                 <span className="text-lg font-medium">
-                  {format(currentViewMonth, "yyyy/M")}
+                  {format(currentViewMonth, "yyyy年 M月")}
                 </span>
                 <button
                   onClick={() => {
@@ -1222,14 +1218,16 @@ export default function MainPage() {
                         <th className="w-10 pl-2 pr-0 py-1 text-center text-xs font-medium text-gray-500 uppercase">
                           日付
                         </th>
-                        <th className="pl-2 py-1 text-center text-xs font-medium text-blue-600 uppercase">
+                        <th className="w-9 pl-2 py-1 text-center text-xs font-medium text-blue-600 uppercase">
                           左
                         </th>
-                        <th className="pl-1 py-1 text-center text-xs font-medium text-emerald-600 uppercase">
+                        <th className="w-9 pl-1 py-1 text-center text-xs font-medium text-emerald-600 uppercase">
                           右
                         </th>
                         <th className="px-0 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                           メ モ
+                        </th>
+                        <th className="w-20 text-center">
                         </th>
                       </tr>
                     </thead>

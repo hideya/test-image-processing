@@ -34,7 +34,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import ColorPicker from '@/components/ColorPicker';
+import ColorPicker from '@/components/ColorPicker.tsx';
 
 // Form schema
 const settingsFormSchema = z.object({

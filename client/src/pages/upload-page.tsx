@@ -396,7 +396,7 @@ export default function UploadPage() {
                     <img
                       src={previewUrl}
                       alt="Preview"
-                      className="h-48 object-contain rounded-md"
+                      className="h-[50vh] object-contain rounded-md"
                       style={{
                         transform: `rotate(${previewRotation}deg)`,
                         transition: "transform 0.3s ease",
@@ -439,13 +439,19 @@ export default function UploadPage() {
 
             {selectedFile && (
               <div className="space-y-2">
-                <textarea
+                <input
+                  type="text"
                   id="memo"
                   value={memo}
                   onChange={(e) => setMemo(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault(); // Prevent form submission
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Memo..."
-                  rows={3}
+                  maxLength={100}
                 />
               </div>
             )}
@@ -482,7 +488,7 @@ export default function UploadPage() {
               <div className="mt-6 border p-4 rounded-lg">
                 <div className="flex flex-col items-center">
                   {processedAngles && <h3>Processed Image</h3>}
-                  <div className="relative h-64 w-64 border rounded-md overflow-hidden">
+                  <div className="relative h-[50vh] rounded-md overflow-hidden">
                     {processingImage === lastUploadedImage && (
                       <div className="absolute top-2 right-2 z-10">
                         <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full flex items-center">
@@ -510,13 +516,13 @@ export default function UploadPage() {
                     />
                   </div>
                   {processedAngles && (
-                    <div className="mt-4 text-sm text-gray-600">
-                      <p>
-                        Primary Angle: {processedAngles.angle.toFixed(2)}°
-                      </p>
-                      <p>
-                        Secondary Angle: {processedAngles.angle2.toFixed(2)}°
-                      </p>
+                    <div className="flex mt-4 text-sm text-gray-600 gap-4">
+                      <div>
+                        左 {processedAngles.angle.toFixed(2)}°
+                      </div>
+                      <div>
+                        右 {processedAngles.angle2.toFixed(2)}°
+                      </div>
                     </div>
                   )}
                 </div>

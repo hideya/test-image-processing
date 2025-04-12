@@ -1,6 +1,6 @@
 import { useTheme } from '@/contexts';
 
-function ColorPicker() {
+function ColorPicker(): JSX.Element {
   const { themeColor, setThemeColor } = useTheme();
   
   return (
