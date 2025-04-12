@@ -104,7 +104,7 @@ export function IconDisplay({
         // <span key={icon.id} className="inline-flex">
         //   <icon.icon size={iconSize} className="text-primary mr-0.5" />
         // </span>
-        <span>{icon.emoji}</span>
+        <span key={icon.id}>{icon.emoji}</span>
       ))}
     </span>
   );

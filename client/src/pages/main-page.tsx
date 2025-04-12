@@ -1002,13 +1002,17 @@ export default function MainPage() {
                         connectNulls={true} // Connect points even when there are null values in between
                         // Use a render function for dots to handle the selected state
                         dot={(props: any) => {
-                          const { cx, cy, payload } = props;
+                          const { cx, cy, payload, index } = props;
+                          const key=`dot-${payload.date}-${index}` // Use combination of date and index
+                          const datakey=`dot-${payload.date}-${index}` // Add this to help Recharts with uniqueness
                           // Don't render anything for data points without angle values
                           if (payload.angle === undefined) {
                             // We need to return a valid SVG element due to TypeScript constraints,
                             // so return an invisible circle instead of null
                             return (
                               <circle
+                                key={key}
+                                data-key={datakey}
                                 cx={cx}
                                 cy={cy}
                                 r={0}
@@ -1025,7 +1029,8 @@ export default function MainPage() {
 
                           return (
                             <circle
-                              key={`dot-${payload.date}`}
+                              key={key}
+                              data-key={datakey}
                               cx={cx}
                               cy={cy}
                               r={isPulsing ? 20 : isSelected ? 6 : 4}
@@ -1057,12 +1062,16 @@ export default function MainPage() {
                         }}
                         activeDot={(props: any) => {
                           // Use a function to customize active dot behavior
-                          const { cx, cy, payload } = props;
+                          const { cx, cy, payload, index } = props;
+                          const key=`active-dot-${payload.date}-${index}`
+                          const datakey=`active-dot-${payload.date}-${index}`
 
                           // For points without data, return an invisible circle
                           if (payload.angle === undefined) {
                             return (
                               <circle
+                                key={key}
+                                data-key={datakey}
                                 cx={cx}
                                 cy={cy}
                                 r={0}
@@ -1074,6 +1083,8 @@ export default function MainPage() {
 
                           return (
                             <circle
+                              key={`active-dot-${payload.date}-${index}`}
+                              data-key={`active-dot-${payload.date}-${index}`}
                               cx={cx}
                               cy={cy}
                               r={6}
@@ -1102,11 +1113,16 @@ export default function MainPage() {
                         isAnimationActive={false} 
                         connectNulls={true}
                         dot={(props: any) => {
-                          const { cx, cy, payload } = props;
+                          const { cx, cy, payload, index } = props;
+                          const key=`active-dot2-${payload.date}-${index}`
+                          const datakey=`active-dot2-${payload.date}-${index}`
+
                           // Don't render anything for data points without angle2 values
                           if (payload.angle2 === undefined) {
                             return (
                               <circle
+                                key={key}
+                                data-key={datakey}
                                 cx={cx}
                                 cy={cy}
                                 r={0}
@@ -1123,7 +1139,8 @@ export default function MainPage() {
 
                           return (
                             <circle
-                              key={`dot2-${payload.date}`}
+                              key={key}
+                              data-key={datakey}
                               cx={cx}
                               cy={cy}
                               r={isPulsing ? 20 : isSelected ? 6 : 4}
@@ -1153,10 +1170,14 @@ export default function MainPage() {
                           );
                         }}
                         activeDot={(props: any) => {
-                          const { cx, cy, payload } = props;
+                          const { cx, cy, payload, index } = props;
+                          const key=`active-dot2-${payload.date}-${index}`
+                          const datakey=`active-dot2-${payload.date}-${index}`
                           if (payload.angle2 === undefined) {
                             return (
                               <circle
+                                key={key}
+                                data-key={datakey}
                                 cx={cx}
                                 cy={cy}
                                 r={0}
@@ -1167,6 +1188,8 @@ export default function MainPage() {
                           }
                           return (
                             <circle
+                              key={key}
+                              data-key={datakey}
                               cx={cx}
                               cy={cy}
                               r={6}
