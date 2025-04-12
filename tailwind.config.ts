@@ -5,6 +5,11 @@ export default {
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
+      colors: {
+        theme: 'var(--theme-color)',
+        'theme-light': 'var(--theme-color-light)',
+        'theme-dark': 'var(--theme-color-dark)',
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

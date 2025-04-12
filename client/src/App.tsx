@@ -12,6 +12,7 @@ import SettingsPage from "./pages/settings-page";
 import NotFound from "./pages/not-found";
 import { Toaster } from "./components/ui/toaster";
 import { BottomNav } from "./components/ui/bottom-nav";
+import { ThemeProvider } from '@/contexts/ThemeProvider.tsx';
 
 export default function App() {
   const [location] = useLocation();
@@ -25,17 +26,19 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SettingsProvider>
-          <div className={containerClass}>
-            <Switch>
-              <Route path="/auth" component={AuthPage} />
-              <ProtectedRoute path="/" component={MainPage} />
-              <ProtectedRoute path="/upload" component={UploadPage} />
-              <ProtectedRoute path="/settings" component={SettingsPage} />
-              <Route component={NotFound} />
-            </Switch>
-            {showBottomNav && <BottomNav />}
-            <Toaster />
-          </div>
+          <ThemeProvider>
+            <div className={containerClass}>
+              <Switch>
+                <Route path="/auth" component={AuthPage} />
+                <ProtectedRoute path="/" component={MainPage} />
+                <ProtectedRoute path="/upload" component={UploadPage} />
+                <ProtectedRoute path="/settings" component={SettingsPage} />
+                <Route component={NotFound} />
+              </Switch>
+              {showBottomNav && <BottomNav />}
+              <Toaster />
+            </div>
+          </ThemeProvider>
         </SettingsProvider>
       </AuthProvider>
     </QueryClientProvider>

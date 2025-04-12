@@ -865,7 +865,7 @@ export default function MainPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={chartData} // Use chart data with actual measurements
-                      margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+                      margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                       {/*  */}
@@ -998,6 +998,7 @@ export default function MainPage() {
                         stroke="#3b82f6"
                         strokeWidth={2}
                         name="Primary Angle"
+                        isAnimationActive={false} 
                         connectNulls={true} // Connect points even when there are null values in between
                         // Use a render function for dots to handle the selected state
                         dot={(props: any) => {
@@ -1098,6 +1099,7 @@ export default function MainPage() {
                         stroke="#10b981"
                         strokeWidth={2}
                         name="Secondary Angle"
+                        isAnimationActive={false} 
                         connectNulls={true}
                         dot={(props: any) => {
                           const { cx, cy, payload } = props;

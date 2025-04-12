@@ -34,6 +34,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import ColorPicker from '@/components/ColorPicker';
 
 // Form schema
 const settingsFormSchema = z.object({
@@ -111,6 +112,17 @@ export default function SettingsPage() {
               <span>April 2025</span>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <div className="text-[var(--theme-color)]">testing...</div>
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Appearance Settings</CardTitle>
+          <CardDescription>Appearance Settings</CardDescription>
+        </CardHeader>
+        <CardContent>
+        <ColorPicker />
         </CardContent>
       </Card>
 
