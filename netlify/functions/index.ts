@@ -1,12 +1,16 @@
 import 'dotenv/config'; // Add this at the top with your other imports
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+// import { setupVite, serveStatic, log } from "./vite";
 import { ensureOpenCVReady } from "./opencv";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+function log(...args) {
+  console.log(...args);
+}
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -59,14 +63,14 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // // importantly only setup vite in development and after
+  // // setting up all the other routes so the catch-all route
+  // // doesn't interfere with the other routes
+  // if (app.get("env") === "development") {
+  //   await setupVite(app, server);
+  // } else {
+  //   serveStatic(app);
+  // }
 
   // Get port from environment variable or use 5000 as default
   // this serves both the API and the client.
