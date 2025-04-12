@@ -1,4 +1,4 @@
-const handler = async (event) => {
+exports.handler = async (event) => {
   try {
     const name = event.queryStringParameters.name ?? 'World'
     return {
@@ -9,5 +9,3 @@ const handler = async (event) => {
     return { statusCode: 500, body: error.toString() }
   }
 }
-
-module.exports = { handler }
