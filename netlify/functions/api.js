@@ -1,7 +1,7 @@
 // netlify/functions/api.js
 const express = require('express');
 const serverless = require('serverless-http');
-const { registerRoutes } = require('./routes'); // Import your routes function
+const { registerRoutes } = require('./routes');
 
 // Create Express app
 const app = express();
