@@ -1,7 +1,7 @@
 // netlify/functions/user.js
 const { getUserFromToken, formatResponse, handleOptions } = require("./auth-utils");
 
-const handler = async (event, context) => {
+exports.handler = async (event, context) => {
   // Handle preflight OPTIONS request
   if (event.httpMethod === "OPTIONS") {
     return handleOptions();
@@ -29,5 +29,3 @@ const handler = async (event, context) => {
     return formatResponse(500, { message: "Internal server error" });
   }
 };
-
-module.exports = { handler };

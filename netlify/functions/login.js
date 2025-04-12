@@ -2,7 +2,7 @@
 const { comparePasswords, formatResponse, handleOptions, generateToken } = require("./auth-utils");
 const { storage } = require("./storage");
 
-const handler = async (event, context) => {
+exports.handler = async (event, context) => {
   // Handle preflight OPTIONS request
   if (event.httpMethod === "OPTIONS") {
     return handleOptions();
@@ -46,5 +46,3 @@ const handler = async (event, context) => {
     return formatResponse(500, { message: "Internal server error" });
   }
 };
-
-module.exports = { handler };
