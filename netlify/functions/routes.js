@@ -7,6 +7,7 @@ const path = require("path");
 const fs = require("fs");
 const { eq, desc } = require("drizzle-orm");
 const { db } = require("./db");
+const { angleMeasurements } = require("./schema");
 
 // Set up multer for file uploads
 const upload = multer({

@@ -6,6 +6,7 @@ const session = require("express-session");
 const connectPg = require("connect-pg-simple");
 const { db, pool } = require("./db");
 const { eq, and, desc, sql } = require("drizzle-orm");
+const { users, images, angleMeasurements } = require("./schema");
 
 // Helper function to process and apply manual rotation
 async function processAndRotateImage(imageBuffer, filePath, manualRotation = 0) {

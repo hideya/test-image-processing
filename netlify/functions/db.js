@@ -1,6 +1,6 @@
 const { drizzle } = require('drizzle-orm/node-postgres');
 const pg = require('pg');
-const schema = require('@shared/schema');
+const schema = require('./schema');
 
 const { Pool } = pg;
 
