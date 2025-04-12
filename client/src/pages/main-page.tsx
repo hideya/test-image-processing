@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "wouter";
 import { useAuth } from "../hooks/use-auth";
+import { queryClient } from "../lib/queryClient";
 import { useSettings, formatDate } from "@/hooks/use-settings";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -52,15 +53,15 @@ export default function MainPage() {
   const { settings } = useSettings();
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewRotation, setPreviewRotation] = useState<number>(0);
-  const [setIsUploading] = useState(false);
-  const [setProcessingImage] = useState<string | null>(null);
-  const [setLastUploadedImage] = useState<string | null>(null);
-  const [setLoadingThumbnails] = useState<{
+  const [isUploading, setIsUploading] = useState(false);
+  const [processingImage, setProcessingImage] = useState<string | null>(null);
+  const [lastUploadedImage, setLastUploadedImage] = useState<string | null>(null);
+  const [loadingThumbnails, setLoadingThumbnails] = useState<{
     [key: string]: boolean;
   }>({});
-  const [setExpandedThumbnail] = useState<string | null>(null);
+  const [expandedThumbnail, setExpandedThumbnail] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   // Track which thumbnails have been loaded at least once
   const [loadedThumbnails, setLoadedThumbnails] = useState<{
@@ -768,7 +769,7 @@ export default function MainPage() {
                     {format(new Date(today), "M月 d日")}
                   </div>
                   <div className="font-medium text-blue-800 mt-1.5">
-                    ({formatTableDayPart(today)})
+                    ({formatTableDayPart(today.toISOString())})
                   </div>
                 </div>
                 {todayMeasurement ? (

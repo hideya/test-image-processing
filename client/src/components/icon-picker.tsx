@@ -41,21 +41,16 @@ export function IconPicker({
             type="button"
             variant={selectedIcons.includes(icon.id) ? "default" : "outline"}
             size="icon"
-            className={`${buttonSize} ${
+            className={`${buttonSize} rounded-full hover:bg-white ${
               selectedIcons.includes(icon.id)
-                ? "bg-primary text-primary-foreground"
-                : "text-foreground"
-            } ${
-              selectedIcons.length === maxSelection &&
-              selectedIcons[0] === icon.id
-                ? "ring-2 ring-amber-300"
-                : ""
+                ? "bg-white text-gray-600 ring-2 ring-blue-300" // White background with lighter text when selected
+                : "bg-gray-200 text-gray-800" // Gray background when not selected
             }`}
             onClick={() => handleIconClick(icon.id)}
           >
-            {/* <icon.icon size={iconSize} /> */}
             <span>{icon.emoji}</span>
           </Button>
+        
         ))}
       </div>
 

@@ -376,22 +376,27 @@ export default function UploadPage() {
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <label
-                  htmlFor="file-upload"
-                  className="py-2 px-4 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer inline-flex items-center"
-                >
-                  {selectedFile ? (
-                    <span className="text-sm text-gray-500 truncate max-w-xs">
+                {selectedFile ? (
+                  <label
+                    htmlFor="file-upload"
+                    className="py-2 w-full justify-center  border rounded-full shadow-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer inline-flex items-center"
+                  >
+                    <span className="truncate">
                       {selectedFile.name}
                     </span>
-                  ) : (
-                    "Select Photo"
-                  )}
-                </label>
+                  </label>
+                ) : (
+                  <label
+                    htmlFor="file-upload"
+                    className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    Select Photo
+                  </label>
+                )}
               </div>
 
               {previewUrl && (
-                <div className="flex items-center justify-center mt-2">
+                <div className="flex items-center justify-center pt-4">
                   <div className="relative">
                     <img
                       src={previewUrl}
