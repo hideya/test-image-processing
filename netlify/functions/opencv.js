@@ -1,18 +1,18 @@
-import path from "path";
-import fs from "fs";
-import sharp from "sharp";
-import cv from "@techstark/opencv-js";
+const path = require("path");
+const fs = require("fs");
+const sharp = require("sharp");
+const cv = require("@techstark/opencv-js");
 
 // Flag to track OpenCV initialization
 let isOpenCVInitialized = false;
 
 // Function to ensure OpenCV is ready
-export async function ensureOpenCVReady(): Promise<void> {
+async function ensureOpenCVReady() {
   if (isOpenCVInitialized) {
     return;
   }
 
-  return new Promise<void>((resolve) => {
+  return new Promise((resolve) => {
     // If cv.Mat is available, OpenCV is ready
     if (cv && cv.Mat) {
       console.log("OpenCV is already initialized and ready.");
@@ -41,16 +41,8 @@ export async function ensureOpenCVReady(): Promise<void> {
   });
 }
 
-export interface ProcessedImage {
-  angle: number;
-  angle2: number;
-  processedImagePath: string;
-}
-
 // Function to process image and calculate angles
-export async function processImage(
-  imagePath: string,
-): Promise<{ angle: number; angle2: number }> {
+async function processImage(imagePath) {
   try {
     console.log(`Processing image: ${imagePath}`);
 
@@ -133,7 +125,7 @@ export async function processImage(
 }
 
 // Function to preprocess image before analysis
-export async function preprocessImage(imagePath: string): Promise<string> {
+async function preprocessImage(imagePath) {
   try {
     const filename = path.basename(imagePath);
     const outputDir = path.dirname(imagePath);
@@ -180,3 +172,5 @@ export async function preprocessImage(imagePath: string): Promise<string> {
     throw error;
   }
 }
+
+module.exports = { ensureOpenCVReady, processImage, preprocessImage };

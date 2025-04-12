@@ -1,8 +1,8 @@
-import 'dotenv/config'; // Add this at the top with your other imports
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+require('dotenv/config'); // Add this at the top with your other imports
+const express = require("express");
+const { registerRoutes } = require("./routes");
 // import { setupVite, serveStatic, log } from "./vite";
-import { ensureOpenCVReady } from "./opencv";
+const { ensureOpenCVReady } = require("./opencv");
 
 const app = express();
 app.use(express.json());
@@ -15,7 +15,7 @@ function log(...args) {
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let capturedJsonResponse = undefined;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
@@ -49,13 +49,13 @@ app.use((req, res, next) => {
     await ensureOpenCVReady();
     log('OpenCV initialized successfully');
   } catch (error) {
-    log('Error initializing OpenCV: ' + (error as Error).message);
+    log('Error initializing OpenCV: ' + error.message);
     // Continue anyway, we have a fallback mechanism
   }
   
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
@@ -85,3 +85,5 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 })();
+
+module.exports = app;

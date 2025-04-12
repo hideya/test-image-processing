@@ -1,35 +1,27 @@
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import { Express, Request } from "express";
-import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
-import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
-
-declare global {
-  namespace Express {
-    interface User extends SelectUser {}
-  }
-}
+const passport = require("passport");
+const { Strategy: LocalStrategy } = require("passport-local");
+const session = require("express-session");
+const { scrypt, randomBytes, timingSafeEqual } = require("crypto");
+const { promisify } = require("util");
+const { storage } = require("./storage");
 
 const scryptAsync = promisify(scrypt);
 
-async function hashPassword(password: string) {
+async function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  const buf = (await scryptAsync(password, salt, 64));
   return `${buf.toString("hex")}.${salt}`;
 }
 
-async function comparePasswords(supplied: string, stored: string) {
+async function comparePasswords(supplied, stored) {
   const [hashed, salt] = stored.split(".");
   const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64));
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-export function setupAuth(app: Express) {
-  const sessionSettings: session.SessionOptions = {
+function setupAuth(app) {
+  const sessionSettings = {
     secret: process.env.SESSION_SECRET || "dev-secret-change-me",
     resave: false,
     saveUninitialized: false,
@@ -61,7 +53,7 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
-  passport.deserializeUser(async (id: number, done) => {
+  passport.deserializeUser(async (id, done) => {
     try {
       const user = await storage.getUser(id);
       done(null, user);
@@ -102,22 +94,22 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string }) => {
+    passport.authenticate("local", (err, user, info) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: "Invalid credentials" });
       
-      req.login(user, (err: Error | null) => {
+      req.login(user, (err) => {
         if (err) return next(err);
         
         // Return user without password
-        const { password, ...userWithoutPassword } = user as SelectUser;
+        const { password, ...userWithoutPassword } = user;
         res.status(200).json(userWithoutPassword);
       });
     })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
-    req.logout((err: Error | null) => {
+    req.logout((err) => {
       if (err) return next(err);
       res.sendStatus(200);
     });
@@ -131,3 +123,5 @@ export function setupAuth(app: Express) {
     res.json(userWithoutPassword);
   });
 }
+
+module.exports = { setupAuth };
