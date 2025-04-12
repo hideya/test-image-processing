@@ -5,7 +5,7 @@ const { formatResponse, handleOptions } = require("./auth-utils");
 // The client should simply remove the token from storage.
 // This endpoint exists for API consistency.
 
-exports.handler = async (event, context) => {
+const handler = async (event, context) => {
   // Handle preflight OPTIONS request
   if (event.httpMethod === "OPTIONS") {
     return handleOptions();
@@ -19,3 +19,5 @@ exports.handler = async (event, context) => {
   // There's no server-side session to invalidate, so we just return success
   return formatResponse(200, { message: "Logged out successfully" });
 };
+
+module.exports = { handler };

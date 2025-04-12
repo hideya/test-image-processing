@@ -5,7 +5,7 @@ const loginHandler = require("./login").handler;
 const logoutHandler = require("./logout").handler;
 const userHandler = require("./user").handler;
 
-exports.handler = async (event, context) => {
+const handler = async (event, context) => {
   // Get the endpoint from the path
   const path = event.path.replace('/.netlify/functions/api/', '');
   
@@ -23,3 +23,5 @@ exports.handler = async (event, context) => {
       return formatResponse(404, { message: "Not found" });
   }
 };
+
+module.exports = { handler };
