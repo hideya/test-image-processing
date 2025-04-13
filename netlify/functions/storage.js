@@ -1,6 +1,4 @@
 const crypto = require("crypto");
-const path = require("path");
-const fs = require("fs");
 const sharp = require("sharp");
 const session = require("express-session");
 const connectPg = require("connect-pg-simple");
@@ -9,22 +7,20 @@ const { eq, and, desc, sql } = require("drizzle-orm");
 const { users, images, angleMeasurements } = require("./schema");
 
 // Helper function to process image and save it
-async function processImage(imageBuffer, filePath) {
+async function processImageBuffer(imageBuffer) {
   try {
-    // Process with sharp - force orientation to 1 to prevent auto rotation
-    // The image is already rotated by the client, so we just preserve it
-    let image = sharp(imageBuffer, {
+    // Process with sharp
+    let processedBuffer = await sharp(imageBuffer, {
       failOnError: false
-    }).withMetadata({ orientation: 1 });
+    })
+    .withMetadata({ orientation: 1 })
+    .toBuffer();
 
-    // Save the image as-is (rotation already applied by client)
-    await image.toFile(filePath);
-
-    console.log(`Saved pre-rotated image to ${filePath}`);
+    return processedBuffer;
   } catch (error) {
     console.error("Error processing image with sharp:", error);
-    // Fallback to direct file write if sharp processing fails
-    await fs.promises.writeFile(filePath, imageBuffer);
+    // Fallback to original buffer
+    return imageBuffer;
   }
 }
 
@@ -46,13 +42,6 @@ class DatabaseStorage {
     } catch (error) {
       console.log('*** Error initializing session store:', error.message);
     }
-
-    this.uploadDir = path.join(process.cwd(), 'uploads');
-
-    // // Ensure upload directory exists
-    // if (!fs.existsSync(this.uploadDir)) {
-    //   fs.mkdirSync(this.uploadDir, { recursive: true });
-    // }
   }
 
   async getUser(id) {
@@ -284,89 +273,34 @@ class DatabaseStorage {
     }));
   }
 
+  // Helper function to generate a unique hash key for images
   generateHashKey() {
     return crypto.randomBytes(16).toString('hex');
   }
 
-  async saveImageFile(imageBuffer, filename) {
-    const filePath = path.join(this.uploadDir, filename);
-    await processImage(imageBuffer, filePath);
-    return filePath;
-  }
-
-  async generateMediumImage(imagePath) {
+  async generateMediumImageBuffer(imageBuffer, maxSize = 800) {
     try {
-      // Get the filename without the directory path
-      const filename = path.basename(imagePath);
-
-      // Create a path for the medium image
-      const mediumsDir = path.join(this.uploadDir, 'mediums');
-
-      // // Ensure mediums directory exists
-      // if (!fs.existsSync(mediumsDir)) {
-      //   fs.mkdirSync(mediumsDir, { recursive: true });
-      // }
-
-      // Medium image path
-      const mediumImagePath = path.join(mediumsDir, filename);
-
-      // Skip if medium image already exists
-      if (fs.existsSync(mediumImagePath)) {
-        return mediumImagePath;
-      }
-
-      // Read the image as a buffer to ensure we don't apply any automatic rotation
-      // This preserves the rotation that was already applied to the original image
-      const imageBuffer = await fs.promises.readFile(imagePath);
-
-      // Create an 800px width/height medium image with 85% JPEG quality
-      // Force orientation to 1 (normal) to prevent automatic rotation based on EXIF data
-      const image = sharp(imageBuffer, {
-        // Disable automatic rotation based on EXIF
+      console.log(`Generating medium image (max size: ${maxSize}px)`);
+      
+      const resizedBuffer = await sharp(imageBuffer, {
         failOnError: false
-      }).withMetadata({ orientation: 1 });
-
-      // Resize to fit within 800x800 while maintaining aspect ratio
-      const resizedImage = image.resize({
-        width: 800,
-        height: 800,
+      })
+      .withMetadata({ orientation: 1 }) // Preserve orientation
+      .resize({
+        width: maxSize,
+        height: maxSize,
         fit: 'inside',
         withoutEnlargement: true
-      });
-
-      // Convert to JPEG with 85% quality
-      await resizedImage
-        .toFormat('jpeg', { quality: 85 })
-        .toFile(mediumImagePath);
-
-      console.log(`Generated medium image at ${mediumImagePath} from ${imagePath}`);
-      return mediumImagePath;
+      })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+      
+      console.log("Successfully generated medium-sized image buffer");
+      return resizedBuffer;
     } catch (error) {
-      console.error('Error generating medium image:', error);
-      return imagePath; // Return original path as fallback
-    }
-  }
-
-  async getMediumImagePath(hashKey) {
-    try {
-      const image = await this.getImageByHashKey(hashKey);
-      if (!image || !image.imagePath) {
-        return null;
-      }
-
-      const filename = path.basename(image.imagePath);
-      const mediumImagePath = path.join(this.uploadDir, 'mediums', filename);
-
-      // If medium image exists, return its path
-      if (fs.existsSync(mediumImagePath)) {
-        return mediumImagePath;
-      }
-
-      // Otherwise generate it
-      return await this.generateMediumImage(image.imagePath);
-    } catch (error) {
-      console.error('Error getting medium image path:', error);
-      return null;
+      console.error("Error generating medium image:", error);
+      // Return original if resize fails
+      return imageBuffer;
     }
   }
 }

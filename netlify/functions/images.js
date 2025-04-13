@@ -1,8 +1,6 @@
 // netlify/functions/images.js
 const { formatResponse, getUserFromToken, handleOptions } = require("./auth-utils");
 const { storage } = require("./storage");
-const path = require("path");
-const fs = require("fs");
 
 exports.handler = async (event, context) => {
   // Handle preflight OPTIONS request
@@ -18,22 +16,11 @@ exports.handler = async (event, context) => {
   try {
     console.log('*** Processing images request:', event.path);
     
-    // Parse the path to extract hashKey and type
+    // Parse the path to extract hashKey
     const pathParts = event.path.split('/');
-    let hashKey, requestType;
+    const hashKey = pathParts[pathParts.length - 1];
     
-    // Check if this is a specific image type request
-    if (pathParts.includes('original')) {
-      // Format: /api/images/{hashKey}/{type}
-      hashKey = pathParts[pathParts.length - 2];
-      requestType = pathParts[pathParts.length - 1];
-    } else {
-      // Format: /api/images/{hashKey}
-      hashKey = pathParts[pathParts.length - 1];
-      requestType = 'default';
-    }
-    
-    console.log(`*** Requested image: ${hashKey}, type: ${requestType}`);
+    console.log(`*** Requested image: ${hashKey}`);
     
     // Get user from token
     const user = await getUserFromToken(event);

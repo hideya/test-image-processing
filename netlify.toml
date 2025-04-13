@@ -25,18 +25,6 @@
   force = true
 
 [[redirects]]
-  from = "/api/images/:hashKey/original"
-  to = "/.netlify/functions/images"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/images/:hashKey/medium"
-  to = "/.netlify/functions/images"
-  status = 200
-  force = true
-
-[[redirects]]
   from = "/api/images/:hashKey"
   to = "/.netlify/functions/images"
   status = 200
