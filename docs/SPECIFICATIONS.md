@@ -21,7 +21,6 @@ CREATE TABLE users (
 CREATE TABLE images (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id),
-  image_path TEXT NOT NULL,
   hash_key TEXT NOT NULL UNIQUE,
   timestamp TIMESTAMP DEFAULT NOW() NOT NULL,
   processed_angle REAL,
@@ -127,10 +126,8 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 
 | Endpoint | Method | Description | Authentication Required | Request Body | Response |
 |----------|--------|-------------|-------------------------|--------------|----------|
-| `/api/images/upload` | POST | Upload an image | Yes | FormData with `image`, `customDate`, `rotation` | Image metadata with processing status |
-| `/api/images/:hashKey` | GET | Get image by hash key | Yes | None | Image file |
-| `/api/images/:hashKey/original` | GET | Get original image | Yes | None | Original image file |
-| `/api/images/:hashKey/medium` | GET | Get medium sized image | Yes | None | Medium sized image file |
+| `/api/images/upload` | POST | Upload and process an image | Yes | FormData with `image`, `customDate`, `rotation` | Processed image data (base64), angle measurements, and metadata |
+| `/api/images/:hashKey` | GET | Get image by hash key | Yes | None | Redirects with message about direct image access |
 
 ### Data Endpoints
 
@@ -141,7 +138,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 
 ## Client-Side Image Upload Flow
 
-The client-side image upload process incorporates both client-side and server-side image processing:
+The client-side image upload process uses a streamlined approach:
 
 1. **Image Selection**:
    - User selects an image file via file input
@@ -165,60 +162,51 @@ The client-side image upload process incorporates both client-side and server-si
      - Rotation angle
    - JWT token is added to the Authorization header
    - Submitted to `/api/images/upload` endpoint
-   - Upload progress is indicated with loading animation
+   - Upload and processing progress is indicated with loading animation
 
 5. **Handling Server Response**:
-   - On success, displays confirmation and begins polling for processing status
-   - Polls `/api/latest-angle` at 2-second intervals to check processing completion
-   - Updates UI with processing state indicators
-   - Auto-refreshes measurements list once processing completes
-   - Preloads medium-sized image for faster display
+   - Server processes the image synchronously and returns in a single response:
+     - Processed image as base64 data
+     - Angle measurements
+     - Image metadata
+   - Client displays the processed image and angles immediately
+   - Updates UI with results
+   - Refreshes measurement list to include the new data
 
 6. **Error Handling**:
    - Client displays appropriate error messages for various failure cases
    - Handles network errors, invalid files, and server processing failures
    - Allows retry on failure
 
-7. **Medium Image Caching**:
-   - Implements client-side caching system for medium-sized images
-   - Uses a combination of state management and browser caching
-   - Improves performance for repeated image views
-
 ## Server-Side Image Processing
 
-The server employs a sophisticated image processing pipeline:
+The server employs a memory-based image processing pipeline:
 
 1. **Upload Handling**:
    - Uses multer middleware for multipart/form-data parsing
    - Validates file type and size constraints
    - Generates a unique hash key for the image
 
-2. **Image Storage**:
-   - Support for both local file storage and Cloudflare R2 cloud storage
-   - Creates appropriate storage structure based on configuration
-   - Uses hash-based filenames to prevent collisions
+2. **In-Memory Processing**:
+   - All image processing is done in memory using buffers
+   - No files are written to the local filesystem
+   - Ideal for serverless environments like Netlify Functions
 
-3. **Medium Image Generation**:
-   - Creates optimized medium-sized images (preserving aspect ratio)
-   - Used for display in the application UI
-   - Applies quality optimization for size reduction
-
-4. **Angle Detection**:
-   - Processes image with OpenCV algorithms to detect lines and angles
-   - Implements edge detection and Hough transform
+3. **Angle Detection**:
+   - Processes image with OpenCV algorithms or Sharp fallback to detect angles
    - Calculates two dominant angles in the image
    - Applies user-specified rotation before processing
 
-5. **Data Storage**:
+4. **Data Storage**:
    - Stores image metadata in the database
    - Creates angle measurement records linked to images and users
    - Supports custom timestamp assignment for historical data
    - Stores optional memo text and icon IDs for better categorization
 
-6. **Cache Management**:
-   - Sets appropriate cache control headers for different image types
-   - Prevents browser caching issues with appropriate headers
-   - Implements etag support for efficient network usage
+5. **Response Generation**:
+   - Returns processed image data as base64-encoded string
+   - Includes angle measurements and metadata in the same response
+   - Eliminates the need for subsequent API calls
 
 ## Netlify Serverless Functions
 
@@ -237,9 +225,10 @@ The application is designed to run both as a traditional Node.js server and as a
    - Functions connect to the same PostgreSQL database as the server
    - Uses the `@neondatabase/serverless` driver for optimized database connections
 
-4. **Image Processing**:
-   - Image processing is available in functions for complete functionality
-   - Uses the same OpenCV bindings for consistent results
+4. **Stateless Image Processing**:
+   - All image processing is done in memory, with no filesystem dependencies
+   - Image data is returned directly in the response as base64-encoded strings
+   - Eliminates the need for temporary file storage
 
 ## Development and Deployment Notes
 
@@ -250,33 +239,36 @@ The application requires the following environment variables:
 - `DATABASE_URL`: PostgreSQL connection string
 - `JWT_SECRET`: Secret key for JWT token signing
 
-For Cloudflare R2 storage (optional):
-- `R2_ACCESS_KEY_ID`: Cloudflare R2 access key ID
-- `R2_SECRET_ACCESS_KEY`: Cloudflare R2 secret access key
-- `R2_ENDPOINT`: Cloudflare R2 endpoint URL
-- `R2_BUCKET_NAME`: Cloudflare R2 bucket name
-
-### File Storage Considerations
-
-- If using local storage, ensure the `uploads` directory and its subdirectories exist and are writable
-- Required subdirectories:
-  - `uploads/originals`: Original uploaded images
-  - `uploads/processed`: Processed images with annotations
-  - `uploads/mediums`: Medium-sized images for display
-
 ### Performance Optimizations
 
 1. **Image Processing**:
-   - Server-side image resize before OpenCV processing
-   - Asynchronous processing with immediate response
-   - Support for cloud storage with Cloudflare R2
+   - In-memory processing with no filesystem I/O
+   - Single API call for upload, processing, and retrieval
+   - Response includes all necessary data without follow-up requests
 
 2. **Response Time**:
    - Client-side image and data caching
-   - Medium image preloading for expanded views
-   - Efficient queries with proper indices
+   - Single-request pattern eliminates polling and multiple API calls
+   - Efficient database queries with proper indices
 
 3. **Data Loading**:
    - Month-based data queries for efficient loading
    - Optimized rendering with React hooks
    - Chart data pre-processing for smooth visualization
+
+### Stateless Architecture Benefits
+
+1. **Simplified Deployment**:
+   - No need to configure or maintain writable file storage
+   - Works well with containerized and serverless environments
+   - Lower infrastructure requirements
+
+2. **Scalability**:
+   - Each request is handled independently
+   - No shared state between requests
+   - Easy horizontal scaling
+
+3. **Reliability**:
+   - No dependencies on shared file systems
+   - Fewer points of failure
+   - More predictable error handling

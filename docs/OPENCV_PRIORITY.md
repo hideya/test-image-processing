@@ -14,6 +14,7 @@ This project requires OpenCV for its image processing capabilities. While there 
 
 - OpenCV-WASM is currently installed but experiencing API compatibility issues
 - Temporary fallbacks to Sharp are in place to keep the application functional
+- All image processing now uses buffer-based operations instead of file-based
 - The immediate priority is to resolve OpenCV integration issues
 
 ## Next Steps
@@ -25,6 +26,7 @@ This project requires OpenCV for its image processing capabilities. While there 
 ## Development Guidelines
 
 - Any code added to this project should prioritize OpenCV compatibility
+- All image processing should use buffer-based methods, not file-based
 - Fallbacks to other libraries should be clearly marked as temporary
 - When implementing new image processing features, always try to use OpenCV first
 

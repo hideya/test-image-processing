@@ -20,7 +20,7 @@ A test web application for image analysis and angle measurements
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: JWT (JSON Web Token) authentication
 - **UI Framework**: ShadCN UI components
-- **Deployment**: Supports both traditional Node.js server and Netlify serverless functions
+- **Deployment**: Optimized for Netlify serverless functions with stateless architecture
 
 ## Prerequisites
 
@@ -29,7 +29,6 @@ Before setting up the application, ensure you have the following installed:
 - Node.js (v18 or later)
 - npm (v8 or later)
 - PostgreSQL (v14 or later)
-- For file storage: local storage or Cloudflare R2 bucket (configured in .env)
 
 ## Installation
 
@@ -40,11 +39,6 @@ Before setting up the application, ensure you have the following installed:
 3. Configure environment variables in a `.env` file:
    - `DATABASE_URL=postgresql://<username>:<password>@<host>:<port>/<database_name>`
    - `JWT_SECRET=<your_secret_key>`
-   - For Cloudflare R2 storage (optional):
-     - `R2_ACCESS_KEY_ID=<your_r2_access_key>`
-     - `R2_SECRET_ACCESS_KEY=<your_r2_secret_key>`
-     - `R2_ENDPOINT=<your_r2_endpoint>`
-     - `R2_BUCKET_NAME=<your_r2_bucket_name>`
 4. Set up the database with `npm run db:push`
 
 ### Running the Application
