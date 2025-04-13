@@ -9,25 +9,19 @@ import { db } from "./db";
 import { pool } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 
-// Helper function to process and apply manual rotation
-async function processAndRotateImage(imageBuffer: Buffer, filePath: string, manualRotation: number = 0): Promise<void> {
+// Helper function to process image and save it
+async function processImage(imageBuffer: Buffer, filePath: string): Promise<void> {
   try {
     // Process with sharp - force orientation to 1 to prevent auto rotation
-    // Add failOnError: false to be consistent with our other functions
+    // The image is already rotated by the client, so we just preserve it
     let image = sharp(imageBuffer, {
       failOnError: false
     }).withMetadata({ orientation: 1 });
 
-    // Apply manual rotation if needed
-    if (manualRotation !== 0) {
-      console.log(`Applying manual rotation of ${manualRotation}° to image ${path.basename(filePath)}`);
-      await image.rotate(manualRotation).toFile(filePath);
-    } else {
-      // No rotation needed, save as is
-      await image.toFile(filePath);
-    }
+    // Save the image as-is (rotation already applied by client)
+    await image.toFile(filePath);
 
-    console.log(`Saved image to ${filePath} with manual rotation: ${manualRotation}`);
+    console.log(`Saved pre-rotated image to ${filePath}`);
   } catch (error) {
     console.error("Error processing image with sharp:", error);
     // Fallback to direct file write if sharp processing fails
@@ -64,7 +58,7 @@ export interface IStorage {
   sessionStore: session.Store;
 
   generateHashKey(): string;
-  saveImageFile(imageBuffer: Buffer, filename: string, rotation?: number): Promise<string>;
+  saveImageFile(imageBuffer: Buffer, filename: string): Promise<string>;
   generateMediumImage(imagePath: string): Promise<string>;
   getMediumImagePath(hashKey: string): Promise<string | null>;
 }
@@ -258,9 +252,9 @@ export class MemStorage implements IStorage {
     return crypto.randomBytes(16).toString('hex');
   }
 
-  async saveImageFile(imageBuffer: Buffer, filename: string, rotation: number = 0): Promise<string> {
+  async saveImageFile(imageBuffer: Buffer, filename: string): Promise<string> {
     const filePath = path.join(this.uploadDir, filename);
-    await processAndRotateImage(imageBuffer, filePath, rotation);
+    await processImage(imageBuffer, filePath);
     return filePath;
   }
 
@@ -583,9 +577,9 @@ export class DatabaseStorage implements IStorage {
     return crypto.randomBytes(16).toString('hex');
   }
 
-  async saveImageFile(imageBuffer: Buffer, filename: string, rotation: number = 0): Promise<string> {
+  async saveImageFile(imageBuffer: Buffer, filename: string): Promise<string> {
     const filePath = path.join(this.uploadDir, filename);
-    await processAndRotateImage(imageBuffer, filePath, rotation);
+    await processImage(imageBuffer, filePath);
     return filePath;
   }
 

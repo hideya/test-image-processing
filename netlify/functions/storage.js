@@ -8,25 +8,19 @@ const { db, pool } = require("./db");
 const { eq, and, desc, sql } = require("drizzle-orm");
 const { users, images, angleMeasurements } = require("./schema");
 
-// Helper function to process and apply manual rotation
-async function processAndRotateImage(imageBuffer, filePath, manualRotation = 0) {
+// Helper function to process image and save it
+async function processImage(imageBuffer, filePath) {
   try {
     // Process with sharp - force orientation to 1 to prevent auto rotation
-    // Add failOnError: false to be consistent with our other functions
+    // The image is already rotated by the client, so we just preserve it
     let image = sharp(imageBuffer, {
       failOnError: false
     }).withMetadata({ orientation: 1 });
 
-    // Apply manual rotation if needed
-    if (manualRotation !== 0) {
-      console.log(`Applying manual rotation of ${manualRotation}° to image ${path.basename(filePath)}`);
-      await image.rotate(manualRotation).toFile(filePath);
-    } else {
-      // No rotation needed, save as is
-      await image.toFile(filePath);
-    }
+    // Save the image as-is (rotation already applied by client)
+    await image.toFile(filePath);
 
-    console.log(`Saved image to ${filePath} with manual rotation: ${manualRotation}`);
+    console.log(`Saved pre-rotated image to ${filePath}`);
   } catch (error) {
     console.error("Error processing image with sharp:", error);
     // Fallback to direct file write if sharp processing fails
@@ -287,9 +281,9 @@ class DatabaseStorage {
     return crypto.randomBytes(16).toString('hex');
   }
 
-  async saveImageFile(imageBuffer, filename, rotation = 0) {
+  async saveImageFile(imageBuffer, filename) {
     const filePath = path.join(this.uploadDir, filename);
-    await processAndRotateImage(imageBuffer, filePath, rotation);
+    await processImage(imageBuffer, filePath);
     return filePath;
   }
 

@@ -91,26 +91,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Get rotation value from request if provided
-        let rotation = 0;
-        if (req.body.rotation) {
-          try {
-            rotation = parseInt(req.body.rotation, 10);
-            // Normalize to 0, 90, 180, or 270 degrees
-            rotation = ((rotation % 360) + 360) % 360;
-            console.log(
-              `Applying rotation of ${rotation} degrees to uploaded image`,
-            );
-          } catch (err) {
-            console.error("Invalid rotation value, defaulting to 0", err);
-          }
+        // Log client rotation value if provided (for debugging only)
+        if (req.body.clientRotation) {
+          console.log(`Client applied rotation of ${req.body.clientRotation} degrees before upload`);
         }
-
-        // Save the original image, applying rotation if specified
+        
+        // Save the original image (rotation is already applied on the client side)
+        console.log("Saving pre-rotated image uploaded from client");
         const imagePath = await storage.saveImageFile(
           req.file.buffer,
-          filename,
-          rotation,
+          filename
         );
 
         // Save image record to storage

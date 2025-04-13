@@ -152,7 +152,7 @@ export async function preprocessImage(imagePath: string): Promise<string> {
     }).withMetadata({ orientation: 1 });
 
     // CRITICAL: We don't apply any rotation since the file has already been rotated
-    // by the initial saveImageFile function
+    // by the client-side preprocessing before upload
 
     // Resize while maintaining aspect ratio
     // Set width to 1024px max as specified in requirements

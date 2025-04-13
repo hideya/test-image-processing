@@ -170,25 +170,16 @@ exports.handler = async (event, context) => {
       });
     }
     
-    // Get rotation value if provided
-    let rotation = 0;
-    if (formData.rotation) {
-      try {
-        rotation = parseInt(formData.rotation, 10);
-        // Normalize to 0, 90, 180, or 270 degrees
-        rotation = ((rotation % 360) + 360) % 360;
-        console.log(`*** Applying rotation of ${rotation} degrees`);
-      } catch (err) {
-        console.log('*** Invalid rotation value, defaulting to 0');
-      }
+    // Log client rotation value if provided (for debugging only)
+    if (formData.clientRotation) {
+      console.log(`*** Client applied rotation of ${formData.clientRotation} degrees before upload`);
     }
     
-    // Save the original image, applying rotation if specified
-    console.log('*** Saving image file');
+    // Save the original image (rotation is already applied on the client side)
+    console.log('*** Saving pre-rotated image uploaded from client');
     const imagePath = await storage.saveImageFile(
       formData.file.buffer,
-      filename,
-      rotation
+      filename
     );
     
     // Save image record to database

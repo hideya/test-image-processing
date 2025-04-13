@@ -124,7 +124,9 @@ export default function UploadPage() {
       const dateForServer = new Date(customDate);
       dateForServer.setHours(12, 0, 0, 0);
       formData.append("customDate", dateForServer.toISOString());
-      formData.append("rotation", previewRotation.toString());
+      // No need to send rotation value since we apply it client-side
+      // Only sending for logging/debugging purposes
+      formData.append("clientRotation", previewRotation.toString());
 
       if (memo) {
         formData.append("memo", memo);
