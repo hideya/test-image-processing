@@ -111,17 +111,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
       
-      // Add a small delay to ensure the query invalidation has time to process
-      console.log('*** Scheduling navigation to home page');
-      setTimeout(() => {
-        console.log('*** Navigating to home page now');
-        setLocation('/');
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-          variant: "success",
-        });
-      }, 100);
+      console.log('*** Navigating to home page');
+      setLocation('/');
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+        variant: "success",
+      });
     },
     onError: (error: Error) => {
       toast({
