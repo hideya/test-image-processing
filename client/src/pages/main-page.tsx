@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "wouter";
 import { useAuth } from "../hooks/use-auth";
-import { queryClient } from "../lib/queryClient";
+import { queryClient, apiRequest } from "../lib/queryClient";
 import { useSettings, formatDate } from "@/hooks/use-settings";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -211,10 +211,11 @@ export default function MainPage() {
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
 
-      const res = await fetch(
-        `/api/angle-data?start=${firstDay.toISOString()}&end=${lastDay.toISOString()}`,
+      // Use apiRequest function to ensure auth token is included
+      const res = await apiRequest(
+        'GET',
+        `/api/angle-data?start=${firstDay.toISOString()}&end=${lastDay.toISOString()}`
       );
-      if (!res.ok) throw new Error("Failed to fetch measurements");
       return res.json();
     },
   });
@@ -396,8 +397,18 @@ export default function MainPage() {
         formData.append("iconIds", selectedIcons.join(","));
       }
 
+      // Use custom fetch with token so a direct fetch without setting headers
+      // We need to create a custom fetch since apiRequest doesn't handle FormData correctly
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch("/api/images/upload", {
         method: "POST",
+        headers,
         body: formData,
       });
 
@@ -481,19 +492,17 @@ export default function MainPage() {
       // Poll for results
       const checkInterval = setInterval(async () => {
         try {
-          const response = await fetch("/api/latest-angle");
-          if (response.ok) {
-            clearInterval(checkInterval);
-            setProcessingImage(null);
+          const response = await apiRequest('GET', "/api/latest-angle");
+          clearInterval(checkInterval);
+          setProcessingImage(null);
 
-            // Get the latest measurement data and update the measurements directly
-            const latestData = await response.json();
-            if (latestData.angle !== null) {
-              // Invalidate the query cache to force a refresh when the user returns to this page
-              queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });
-              // Refresh the measurements data immediately
-              refetch();
-            }
+          // Get the latest measurement data and update the measurements directly
+          const latestData = await response.json();
+          if (latestData.angle !== null) {
+            // Invalidate the query cache to force a refresh when the user returns to this page
+            queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });
+            // Refresh the measurements data immediately
+            refetch();
           }
         } catch (error) {
           console.error("Error checking processing status:", error);
