@@ -66,8 +66,20 @@ The application is configured to run on Netlify using serverless functions:
 netlify deploy --prod
 ```
 
+## Documentation
+
+Detailed documentation can be found in the `docs/` directory (after following the reorganization plan):
+
+- [API Specifications](docs/SPECIFICATIONS.md): Database schema, API endpoints, and workflows
+- [JWT Authentication](docs/JWT_USAGE.md): Guide for using JWT authentication
+- [JWT Migration](docs/JWT_MIGRATION.md): Migration from session-based to JWT auth
+- [Netlify Implementation](docs/NETLIFY_IMPLEMENTATION.md): Serverless architecture implementation
+- [Netlify Deployment](docs/NETLIFY_PRODUCTION_NOTES.md): Production deployment notes
+- [Netlify Troubleshooting](docs/NETLIFY_TROUBLESHOOTING.md): Solutions for common deployment issues
+- [OpenCV Priority](docs/OPENCV_PRIORITY.md): Notes on OpenCV implementation
+
 ## API Security
 
 The application uses JWT (JSON Web Token) authentication. For details on implementation and usage see:
-- [JWT Migration Documentation](JWT_MIGRATION.md)
-- [JWT Usage Guide](JWT_USAGE.md)
+- [JWT Migration Documentation](docs/JWT_MIGRATION.md)
+- [JWT Usage Guide](docs/JWT_USAGE.md)

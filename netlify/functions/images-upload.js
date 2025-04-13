@@ -136,14 +136,27 @@ exports.handler = async (event, context) => {
     let formData;
     
     try {
-      // If the event body is a string, it needs to be parsed
-      if (typeof event.body === 'string' && event.body.startsWith('--')) {
+      // Check content-type header first
+      const contentType = event.headers['content-type'] || '';
+      console.log('*** Content-Type:', contentType);
+      
+      // If the event body is a string and either content-type includes multipart/form-data or body starts with boundary
+      if (typeof event.body === 'string' && 
+          (contentType.includes('multipart/form-data') || event.body.startsWith('--'))) {
+        console.log('*** Detected multipart form data');
         formData = parseMultipartForm(event);
       } else if (typeof event.body === 'string') {
         // Try to parse as JSON if it's not multipart
-        formData = JSON.parse(event.body);
+        try {
+          console.log('*** Attempting to parse as JSON');
+          formData = JSON.parse(event.body);
+        } catch (err) {
+          console.log('*** Cannot parse as JSON, attempting multipart parse as fallback');
+          formData = parseMultipartForm(event);
+        }
       } else {
         // Assume it's already an object
+        console.log('*** Using body directly as object');
         formData = event.body;
       }
       
@@ -161,6 +174,7 @@ exports.handler = async (event, context) => {
     if (!formData || !(formData.file || formData.image)) {
       console.log('*** No file provided in request');
       console.log('*** Available fields:', formData ? Object.keys(formData) : 'none');
+      console.log('*** Dumping first 200 chars of body:', typeof event.body === 'string' ? event.body.substring(0, 200) : 'not a string');
       return formatResponse(400, { message: "No image file provided" });
     }
     
