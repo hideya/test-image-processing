@@ -128,7 +128,7 @@ export class MemStorage implements IStorage {
       processedAngle: null,
       processedAngle2: null,
       isProcessed: false,
-      thumbnailBase64: null
+      // thumbnailBase64 removed - no longer needed
     };
     this.images.set(id, image);
     return image;
@@ -492,7 +492,7 @@ export class DatabaseStorage implements IStorage {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Using SQL directly for this complex query with image information including thumbnails
+    // Using SQL directly for this complex query with image information
     const result = await db.execute<{date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo: string | null, iconIds: string | null}>(sql`
       WITH daily_measurements AS (
         SELECT 
@@ -520,7 +520,7 @@ export class DatabaseStorage implements IStorage {
       ORDER BY date
     `);
 
-    // Process results to handle null thumbnails properly
+    // Process results
     return result.rows.map(row => ({
       date: row.date,
       angle: row.angle,

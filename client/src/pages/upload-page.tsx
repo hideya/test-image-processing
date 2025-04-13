@@ -27,7 +27,7 @@ import {
 interface UploadResponse {
   id: number;
   hashKey: string;
-  thumbnailBase64?: string;
+  // thumbnailBase64 field removed
   angle: number;
   angle2: number;
   message: string;

@@ -34,7 +34,7 @@ interface Measurement {
   angle2: number;
   imageId: number;
   hashKey: string;
-  thumbnailBase64?: string;
+  // thumbnailBase64 field removed
   memo?: string;
   iconIds?: string;
 }
@@ -42,7 +42,7 @@ interface Measurement {
 interface UploadResponse {
   id: number;
   hashKey: string;
-  thumbnailBase64?: string;
+  // thumbnailBase64 field removed
   angle: number;
   angle2: number;
   message: string;
@@ -63,14 +63,8 @@ export default function MainPage() {
   }>({});
   const [expandedThumbnail, setExpandedThumbnail] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  // Track which thumbnails have been loaded at least once
-  const [loadedThumbnails, setLoadedThumbnails] = useState<{
-    [key: string]: boolean;
-  }>({});
-  // Track thumbnail base64 data for each image
-  const [thumbnailCache, setThumbnailCache] = useState<{
-    [key: string]: string;
-  }>({});
+  // Thumbnail tracking removed - no longer needed
+  // Thumbnail caching removed - no longer needed
 
   // Track medium-sized image URLs to avoid redundant fetches
   const [mediumImageCache, setMediumImageCache] = useState<{
@@ -343,31 +337,7 @@ export default function MainPage() {
     };
   }, [measurements]);
 
-  // Store thumbnails in cache when they arrive from the server
-  useEffect(() => {
-    const newThumbnails: { [key: string]: string } = {};
-    let hasNewThumbnails = false;
-
-    measurements.forEach((measurement) => {
-      if (measurement.thumbnailBase64 && !thumbnailCache[measurement.hashKey]) {
-        newThumbnails[measurement.hashKey] = measurement.thumbnailBase64;
-        hasNewThumbnails = true;
-
-        // Also mark thumbnail as loaded
-        setLoadedThumbnails((prev) => ({
-          ...prev,
-          [measurement.hashKey]: true,
-        }));
-      }
-    });
-
-    if (hasNewThumbnails) {
-      setThumbnailCache((prev) => ({
-        ...prev,
-        ...newThumbnails,
-      }));
-    }
-  }, [measurements, thumbnailCache]);
+  // Thumbnail caching effect removed - no longer needed
 
   // No need for a separate sortedMeasurements variable as we have chartData now
 
@@ -439,25 +409,8 @@ export default function MainPage() {
       };
       mediumImg.src = `/api/images/${data.hashKey}/medium`;
 
-      // If we have a thumbnailBase64 from the server, use it directly
-      if (data.thumbnailBase64) {
-        // Store in thumbnail cache
-        setThumbnailCache((prev) => ({
-          ...prev,
-          [data.hashKey]: data.thumbnailBase64!,
-        }));
-        // Mark as loaded and not loading
-        setLoadedThumbnails((prev) => ({
-          ...prev,
-          [data.hashKey]: true,
-        }));
-        setLoadingThumbnails((prev) => ({
-          ...prev,
-          [data.hashKey]: false,
-        }));
-      }
-      // Otherwise download the server-processed image for thumbnail display
-      else if (data.hashKey) {
+      // Preload image if needed
+      if (data.hashKey) {
         // Start loading the server-processed image
         setLoadingThumbnails((prev) => ({
           ...prev,
@@ -467,11 +420,7 @@ export default function MainPage() {
         // Fetch the image from the server
         const img = new Image();
         img.onload = () => {
-          // Mark as loaded and not loading
-          setLoadedThumbnails((prev) => ({
-            ...prev,
-            [data.hashKey]: true,
-          }));
+          // Mark as not loading
           setLoadingThumbnails((prev) => ({
             ...prev,
             [data.hashKey]: false,
@@ -484,9 +433,8 @@ export default function MainPage() {
             [data.hashKey]: false,
           }));
         };
-        // Add timestamp to prevent caching issues
-        const thumbnailUrl = `/api/images/${data.hashKey}`;
-        img.src = thumbnailUrl;
+        // Load the image directly
+        img.src = `/api/images/${data.hashKey}`;
       }
 
       // Poll for results

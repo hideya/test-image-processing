@@ -200,7 +200,7 @@ class DatabaseStorage {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Using SQL directly for this complex query with image information including thumbnails
+    // Using SQL directly for this complex query with image information
     const result = await db.execute(sql`
       WITH daily_measurements AS (
         SELECT 
@@ -228,7 +228,7 @@ class DatabaseStorage {
       ORDER BY date
     `);
 
-    // Process results to handle null thumbnails properly
+    // Process results
     return result.rows.map(row => ({
       date: row.date,
       angle: row.angle,

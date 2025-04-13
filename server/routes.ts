@@ -119,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rotation,
         );
 
-        // Save image record to storage with thumbnail
+        // Save image record to storage
         const image = await storage.createImage({
           userId,
           imagePath,
@@ -175,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error("Error processing image:", err);
           });
 
-        // Return immediate response with image info including thumbnail
+        // Return immediate response with image info
         res.status(201).json({
           id: image.id,
           hashKey: image.hashKey,
@@ -327,31 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get thumbnail by hash key
-  app.get("/api/thumbnails/:hashKey", isAuthenticated, async (req, res) => {
-    try {
-      const { hashKey } = req.params;
-
-      const image = await storage.getImageByHashKey(hashKey);
-      if (!image) {
-        return res.status(404).json({ message: "Image not found" });
-      }
-
-      // Check if the user is authorized to access this thumbnail
-      if (image.userId !== (req.user as Express.User).id) {
-        return res
-          .status(403)
-          .json({ message: "Unauthorized access to thumbnail" });
-      }
-
-      return res
-        .status(404)
-        .json({ message: "Image file not found for thumbnail generation" });
-    } catch (error) {
-      console.error("Error retrieving thumbnail:", error);
-      res.status(500).json({ message: "Failed to retrieve thumbnail" });
-    }
-  });
+  // Thumbnail endpoint removed - no longer needed
 
   // Get the latest calculated angle
   app.get("/api/latest-angle", isAuthenticated, async (req, res) => {
