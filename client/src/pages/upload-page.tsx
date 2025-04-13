@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
-import { queryClient } from "../lib/queryClient";
+import { queryClient, getAuthToken } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, RotateCw, RotateCcw, AlertCircle } from "lucide-react";
 import { IconPicker } from "@/components/icon-picker";
@@ -60,6 +60,55 @@ export default function UploadPage() {
     [key: string]: string;
   }>({});
 
+  // Add a function to fetch images with authentication
+  const fetchImageWithAuth = async (imageKey: string, size = 'medium'): Promise<string | null> => {
+    console.log(`*** Fetching authenticated image: /api/images/${imageKey}/${size}`);
+    try {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log('*** Adding Authorization token to image request');
+      } else {
+        console.log('*** WARNING: No token available for image request');
+        return null;
+      }
+      
+      const response = await fetch(`/api/images/${imageKey}/${size}`, {
+        headers
+      });
+      
+      if (!response.ok) {
+        console.error(`*** Failed to load image: ${response.status} ${response.statusText}`);
+        return null;
+      }
+      
+      console.log(`*** Image fetch successful, creating object URL`);
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.error('*** Error loading image:', error);
+      return null;
+    }
+  };
+
+  // Load the processed image when lastUploadedImage changes
+  useEffect(() => {
+    if (lastUploadedImage) {
+      console.log(`*** Last uploaded image changed to: ${lastUploadedImage}`);
+      fetchImageWithAuth(lastUploadedImage, 'medium').then(url => {
+        if (url) {
+          console.log(`*** Setting medium image in cache for ${lastUploadedImage}`);
+          setMediumImageCache(prev => ({
+            ...prev,
+            [lastUploadedImage]: url
+          }));
+        }
+      });
+    }
+  }, [lastUploadedImage]);
+
   // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -79,8 +128,20 @@ export default function UploadPage() {
         formData.append("iconIds", selectedIcons.join(","));
       }
 
+      // Add authorization header for JWT authentication
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log('*** Adding Authorization token to upload request');
+      } else {
+        console.log('*** WARNING: No token available for upload request');
+      }
+      
       const response = await fetch("/api/images/upload", {
         method: "POST",
+        headers,
         body: formData,
       });
 
@@ -103,19 +164,21 @@ export default function UploadPage() {
       // Initialize angles state to null
       setProcessedAngles(null);
 
-      const mediumImg = new Image();
-      mediumImg.onload = () => {
-        setMediumImageCache((prev) => ({
-          ...prev,
-          [data.hashKey]: `/api/images/${data.hashKey}/medium`,
-        }));
-      };
-      mediumImg.src = `/api/images/${data.hashKey}/medium`;
-
       // Poll for results
       const checkInterval = setInterval(async () => {
         try {
-          const response = await fetch("/api/latest-angle");
+          // Add authorization token to the request
+          const token = getAuthToken();
+          const headers: Record<string, string> = {};
+          
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+            console.log('*** Adding Authorization token to latest-angle request');
+          } else {
+            console.log('*** WARNING: No token available for latest-angle request');
+          }
+          
+          const response = await fetch("/api/latest-angle", { headers });
           if (response.ok) {
             const angleData = await response.json();
             if (angleData.angle !== null) {
@@ -129,7 +192,7 @@ export default function UploadPage() {
             }
           }
         } catch (error) {
-          console.error("Error checking processing status:", error);
+          console.error("*** Error checking processing status:", error);
         }
       }, 2000);
 
@@ -232,22 +295,33 @@ export default function UploadPage() {
   const checkDateConflict = async (dateToCheck: Date): Promise<boolean> => {
     const formattedDate = dateToCheck.toISOString().split("T")[0];
     try {
+      // Add token to the request
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log('*** Adding Authorization token to checkDateConflict request');
+      } else {
+        console.log('*** WARNING: No token available for checkDateConflict request');
+      }
+      
       // Get angle data for checking conflicts
-      const response = await fetch("/api/angle-data");
+      const response = await fetch("/api/angle-data", { headers });
       if (!response.ok) return false;
       const data = await response.json();
 
       // Check if any measurement exists for this date
       const hasConflict = data.some(
-        (measurement: any) => measurement.date === formattedDate,
+        (measurement: any) => measurement.date === formattedDate
       );
 
-      console.log("Checking date conflict for:", formattedDate);
-      console.log("Has conflict:", hasConflict);
+      console.log("*** Checking date conflict for:", formattedDate);
+      console.log("*** Has conflict:", hasConflict);
 
       return hasConflict;
     } catch (error) {
-      console.error("Error checking date conflict:", error);
+      console.error("*** Error checking date conflict:", error);
       return false;
     }
   };
@@ -505,22 +579,18 @@ export default function UploadPage() {
                       </div>
                     )}
 
-                    <img
-                      src={
-                        mediumImageCache[lastUploadedImage] ||
-                        `/api/images/${lastUploadedImage}/medium`
-                      }
-                      alt="Server processed image"
-                      className="object-contain h-full w-full"
-                      onLoad={() => {
-                        if (!mediumImageCache[lastUploadedImage]) {
-                          setMediumImageCache((prev) => ({
-                            ...prev,
-                            [lastUploadedImage]: `/api/images/${lastUploadedImage}/medium`,
-                          }));
-                        }
-                      }}
-                    />
+                    {mediumImageCache[lastUploadedImage] ? (
+                      <img
+                        src={mediumImageCache[lastUploadedImage]}
+                        alt="Server processed image"
+                        className="object-contain h-full w-full"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                        <span className="ml-2 text-gray-600">Loading image...</span>
+                      </div>
+                    )}
                   </div>
                   {processedAngles && (
                     <div className="flex mt-4 text-sm text-gray-600 gap-4">

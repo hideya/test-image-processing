@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "wouter";
 import { useAuth } from "../hooks/use-auth";
-import { queryClient, apiRequest } from "../lib/queryClient";
+import { queryClient, apiRequest, getAuthToken } from "../lib/queryClient";
 import { useSettings, formatDate } from "@/hooks/use-settings";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -367,13 +367,15 @@ export default function MainPage() {
         formData.append("iconIds", selectedIcons.join(","));
       }
 
-      // Use custom fetch with token so a direct fetch without setting headers
-      // We need to create a custom fetch since apiRequest doesn't handle FormData correctly
-      const token = localStorage.getItem('auth_token');
+      // Use token from helper function
+      const token = getAuthToken();
       const headers: Record<string, string> = {};
       
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
+        console.log('*** Adding Authorization token to upload request in main page');
+      } else {
+        console.log('*** WARNING: No token available for upload request in main page');
       }
       
       const response = await fetch("/api/images/upload", {
