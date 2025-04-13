@@ -5,6 +5,8 @@ const schema = require('./schema');
 const { Pool } = pg;
 
 // Create a PostgreSQL connection pool
+console.log("*** DATABASE_URL", process.env.DATABASE_URL);
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
