@@ -56,11 +56,15 @@ export default function UploadPage() {
     today.setHours(12, 0, 0, 0);
     return today;
   });
+  // NOTE: Medium image cache is still used in this component to display processed images
+  // This was intentionally kept when removing medium image usage from main-page.tsx
   const [mediumImageCache, setMediumImageCache] = useState<{
     [key: string]: string;
   }>({});
 
   // Add a function to fetch images with authentication
+  // This function uses medium-sized images by default for the results display
+  // Kept intentionally while removing medium image usage from other components
   const fetchImageWithAuth = async (imageKey: string, size = 'medium'): Promise<string | null> => {
     console.log(`*** Fetching authenticated image: /api/images/${imageKey}/${size}`);
     try {
@@ -93,7 +97,9 @@ export default function UploadPage() {
     }
   };
 
-  // Load the processed image when lastUploadedImage changes
+  // Load the processed medium-sized image when lastUploadedImage changes
+  // This effect is important for displaying processed images in the upload page
+  // and was intentionally preserved when removing medium image usage elsewhere
   useEffect(() => {
     if (lastUploadedImage) {
       console.log(`*** Last uploaded image changed to: ${lastUploadedImage}`);
@@ -579,6 +585,7 @@ export default function UploadPage() {
                       </div>
                     )}
 
+                    {/* Display the medium-sized processed image from cache when available */}
                     {mediumImageCache[lastUploadedImage] ? (
                       <img
                         src={mediumImageCache[lastUploadedImage]}
