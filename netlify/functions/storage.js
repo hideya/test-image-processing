@@ -34,10 +34,10 @@ async function processAndRotateImage(imageBuffer, filePath, manualRotation = 0) 
   }
 }
 
-const PostgresSessionStore = connectPg(session);
-
 class DatabaseStorage {
   constructor() {
+    console.log('*** session', session);
+    const PostgresSessionStore = connectPg(session);
     this.sessionStore = new PostgresSessionStore({
       pool,
       tableName: 'session',
