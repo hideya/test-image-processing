@@ -2,7 +2,6 @@
 const { formatResponse, getUserFromToken, handleOptions } = require("./auth-utils");
 const { storage } = require("./storage");
 const path = require("path");
-const fs = require("fs");
 
 exports.handler = async (event, context) => {
   // Handle preflight OPTIONS request
@@ -81,43 +80,47 @@ exports.handler = async (event, context) => {
         return formatResponse(400, { message: "Invalid image type requested" });
     }
     
-    // Verify the file exists
-    if (!imagePath || !fs.existsSync(imagePath)) {
-      console.log(`*** Image file not found: ${imagePath}`);
+    if (!imagePath) {
+      console.log('*** Image path not found');
       return formatResponse(404, { message: "Image file not found" });
     }
     
-    console.log(`*** Sending image file: ${imagePath}`);
-    
-    // For serverless functions, we can't directly send files
-    // We need to read the file and return it as base64 encoded data
-    const fileData = await fs.promises.readFile(imagePath);
-    const base64Data = fileData.toString('base64');
-    
-    // Determine content type based on file extension
-    const ext = path.extname(imagePath).toLowerCase();
-    let contentType = 'image/jpeg'; // default
-    
-    if (ext === '.png') {
-      contentType = 'image/png';
-    } else if (ext === '.gif') {
-      contentType = 'image/gif';
-    } else if (ext === '.webp') {
-      contentType = 'image/webp';
+    try {
+      // Get the image data from R2
+      console.log(`*** Fetching image data from R2: ${imagePath}`);
+      const fileBuffer = await storage.getImageBuffer(imagePath);
+      
+      // Convert to base64
+      const base64Data = fileBuffer.toString('base64');
+      
+      // Determine content type based on file extension
+      const ext = path.extname(imagePath).toLowerCase();
+      let contentType = 'image/jpeg'; // default
+      
+      if (ext === '.png') {
+        contentType = 'image/png';
+      } else if (ext === '.gif') {
+        contentType = 'image/gif';
+      } else if (ext === '.webp') {
+        contentType = 'image/webp';
+      }
+      
+      // Return the image
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Cache-Control': cacheControl,
+          'Pragma': requestType === 'medium' ? 'cache' : 'no-cache',
+          'Expires': requestType === 'medium' ? '86400' : '0'
+        },
+        body: base64Data,
+        isBase64Encoded: true
+      };
+    } catch (error) {
+      console.error(`*** Error retrieving image from R2: ${imagePath}`, error);
+      return formatResponse(404, { message: "Image file not found" });
     }
-    
-    // Return the image
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': cacheControl,
-        'Pragma': requestType === 'medium' ? 'cache' : 'no-cache',
-        'Expires': requestType === 'medium' ? '86400' : '0'
-      },
-      body: base64Data,
-      isBase64Encoded: true
-    };
     
   } catch (error) {
     console.error('*** Error retrieving image:', error);

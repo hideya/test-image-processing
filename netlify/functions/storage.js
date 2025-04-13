@@ -1,36 +1,40 @@
 const crypto = require("crypto");
 const path = require("path");
-const fs = require("fs");
 const sharp = require("sharp");
 const session = require("express-session");
 const connectPg = require("connect-pg-simple");
 const { db, pool } = require("./db");
 const { eq, and, desc, sql } = require("drizzle-orm");
 const { users, images, angleMeasurements } = require("./schema");
+const { r2Client } = require("./utils/r2-client");
 
 // Helper function to process and apply manual rotation
-async function processAndRotateImage(imageBuffer, filePath, manualRotation = 0) {
+async function processAndRotateImage(imageBuffer, key, manualRotation = 0) {
   try {
     // Process with sharp - force orientation to 1 to prevent auto rotation
-    // Add failOnError: false to be consistent with our other functions
     let image = sharp(imageBuffer, {
       failOnError: false
     }).withMetadata({ orientation: 1 });
 
     // Apply manual rotation if needed
     if (manualRotation !== 0) {
-      console.log(`Applying manual rotation of ${manualRotation}° to image ${path.basename(filePath)}`);
-      await image.rotate(manualRotation).toFile(filePath);
-    } else {
-      // No rotation needed, save as is
-      await image.toFile(filePath);
+      console.log(`Applying manual rotation of ${manualRotation}° to image ${path.basename(key)}`);
+      image = image.rotate(manualRotation);
     }
 
-    console.log(`Saved image to ${filePath} with manual rotation: ${manualRotation}`);
+    // Process the image and get the buffer
+    const processedBuffer = await image.toBuffer();
+    
+    // Upload to R2
+    await r2Client.uploadFile(processedBuffer, key, 'image/jpeg');
+    
+    console.log(`Saved image to R2: ${key} with manual rotation: ${manualRotation}`);
+    return key;
   } catch (error) {
     console.error("Error processing image with sharp:", error);
-    // Fallback to direct file write if sharp processing fails
-    await fs.promises.writeFile(filePath, imageBuffer);
+    // Fallback to direct upload if sharp processing fails
+    await r2Client.uploadFile(imageBuffer, key, 'image/jpeg');
+    return key;
   }
 }
 
@@ -53,12 +57,9 @@ class DatabaseStorage {
       console.log('*** Error initializing session store:', error.message);
     }
 
-    this.uploadDir = path.join(process.cwd(), 'uploads');
-
-    // // Ensure upload directory exists
-    // if (!fs.existsSync(this.uploadDir)) {
-    //   fs.mkdirSync(this.uploadDir, { recursive: true });
-    // }
+    // Define R2 storage folders
+    this.imageFolder = 'images';
+    this.mediumFolder = 'mediums';
   }
 
   async getUser(id) {
@@ -245,36 +246,27 @@ class DatabaseStorage {
   }
 
   async saveImageFile(imageBuffer, filename, rotation = 0) {
-    const filePath = path.join(this.uploadDir, filename);
-    await processAndRotateImage(imageBuffer, filePath, rotation);
-    return filePath;
+    // Create the R2 key for the image
+    const key = `${this.imageFolder}/${filename}`;
+    
+    // Process, rotate if needed, and upload to R2
+    await processAndRotateImage(imageBuffer, key, rotation);
+    
+    // Store the R2 key as the imagePath in database
+    return key;
   }
 
   async generateMediumImage(imagePath) {
     try {
-      // Get the filename without the directory path
+      // Get the filename from the path
       const filename = path.basename(imagePath);
-
-      // Create a path for the medium image
-      const mediumsDir = path.join(this.uploadDir, 'mediums');
-
-      // // Ensure mediums directory exists
-      // if (!fs.existsSync(mediumsDir)) {
-      //   fs.mkdirSync(mediumsDir, { recursive: true });
-      // }
-
-      // Medium image path
-      const mediumImagePath = path.join(mediumsDir, filename);
-
-      // Skip if medium image already exists
-      if (fs.existsSync(mediumImagePath)) {
-        return mediumImagePath;
-      }
-
-      // Read the image as a buffer to ensure we don't apply any automatic rotation
-      // This preserves the rotation that was already applied to the original image
-      const imageBuffer = await fs.promises.readFile(imagePath);
-
+      
+      // Create a key for the medium image
+      const mediumKey = `${this.mediumFolder}/${filename}`;
+      
+      // Get the original image from R2
+      const imageBuffer = await r2Client.getFile(imagePath);
+      
       // Create an 800px width/height medium image with 85% JPEG quality
       // Force orientation to 1 (normal) to prevent automatic rotation based on EXIF data
       const image = sharp(imageBuffer, {
@@ -290,13 +282,16 @@ class DatabaseStorage {
         withoutEnlargement: true
       });
 
-      // Convert to JPEG with 85% quality
-      await resizedImage
+      // Convert to JPEG with 85% quality and get buffer
+      const mediumBuffer = await resizedImage
         .toFormat('jpeg', { quality: 85 })
-        .toFile(mediumImagePath);
+        .toBuffer();
+      
+      // Upload to R2
+      await r2Client.uploadFile(mediumBuffer, mediumKey, 'image/jpeg');
 
-      console.log(`Generated medium image at ${mediumImagePath} from ${imagePath}`);
-      return mediumImagePath;
+      console.log(`Generated medium image at R2: ${mediumKey} from ${imagePath}`);
+      return mediumKey;
     } catch (error) {
       console.error('Error generating medium image:', error);
       return imagePath; // Return original path as fallback
@@ -311,18 +306,29 @@ class DatabaseStorage {
       }
 
       const filename = path.basename(image.imagePath);
-      const mediumImagePath = path.join(this.uploadDir, 'mediums', filename);
-
-      // If medium image exists, return its path
-      if (fs.existsSync(mediumImagePath)) {
-        return mediumImagePath;
+      const mediumKey = `${this.mediumFolder}/${filename}`;
+      
+      try {
+        // Try to get the medium image
+        await r2Client.getFile(mediumKey);
+        return mediumKey;
+      } catch (error) {
+        // Medium doesn't exist, create it
+        return await this.generateMediumImage(image.imagePath);
       }
-
-      // Otherwise generate it
-      return await this.generateMediumImage(image.imagePath);
     } catch (error) {
       console.error('Error getting medium image path:', error);
       return null;
+    }
+  }
+  
+  // New method to get file buffer from R2
+  async getImageBuffer(imagePath) {
+    try {
+      return await r2Client.getFile(imagePath);
+    } catch (error) {
+      console.error('Error getting image buffer:', error);
+      throw error;
     }
   }
 }
