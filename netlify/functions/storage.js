@@ -36,13 +36,22 @@ async function processAndRotateImage(imageBuffer, filePath, manualRotation = 0) 
 
 class DatabaseStorage {
   constructor() {
-    console.log('*** session', session);
-    const PostgresSessionStore = connectPg(session);
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      tableName: 'session',
-      createTableIfMissing: true,
-    });
+    console.log('*** Initializing DatabaseStorage');
+    console.log('*** session module:', session);
+    
+    try {
+      const PostgresSessionStore = connectPg(session);
+      console.log('*** PostgresSessionStore created');
+      
+      this.sessionStore = new PostgresSessionStore({
+        pool,
+        tableName: 'session',
+        createTableIfMissing: true,
+      });
+      console.log('*** Session store initialized successfully');
+    } catch (error) {
+      console.log('*** Error initializing session store:', error.message);
+    }
 
     this.uploadDir = path.join(process.cwd(), 'uploads');
 
@@ -53,13 +62,27 @@ class DatabaseStorage {
   }
 
   async getUser(id) {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    console.log(`*** Getting user with ID: ${id}`);
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      console.log(`*** User retrieval ${user ? 'successful' : 'failed - user not found'}`);
+      return user;
+    } catch (error) {
+      console.log(`*** Error getting user by ID: ${error.message}`);
+      throw error;
+    }
   }
 
   async getUserByUsername(username) {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    console.log(`*** Getting user by username: ${username}`);
+    try {
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      console.log(`*** User retrieval by username ${user ? 'successful' : 'failed - user not found'}`);
+      return user;
+    } catch (error) {
+      console.log(`*** Error getting user by username: ${error.message}`);
+      throw error;
+    }
   }
 
   async getUserByEmail(email) {

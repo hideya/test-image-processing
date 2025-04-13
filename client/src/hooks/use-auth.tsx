@@ -1,8 +1,8 @@
-import React, { createContext, ReactNode, useContext } from "react";
+import React, { createContext, ReactNode, useContext, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, setAuthToken, getAuthToken, clearAuthToken } from "@/lib/queryClient";
 
 // User interface
 interface User {
@@ -36,6 +36,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  // Check if token exists on initialization
+  useEffect(() => {
+    const token = getAuthToken();
+    if (token) {
+      console.log('Found existing auth token, attempting to use it...');
+      // We don't need to do anything here - the token will be used in API requests
+    }
+  }, []);
+
   // Fetch current user
   const { 
     data: user, 
@@ -45,13 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ['/api/user'],
     queryFn: async () => {
       try {
-        const res = await fetch('/api/user');
-        if (!res.ok) {
-          if (res.status === 401) {
-            return null;
-          }
-          throw new Error('Failed to fetch user');
-        }
+        // Use apiRequest which now includes token handling
+        const res = await apiRequest('GET', '/api/user');
         return await res.json();
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -64,7 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useMutation({
     mutationFn: async (credentials: { username: string, password: string }) => {
       const res = await apiRequest('POST', '/api/login', credentials);
-      return await res.json();
+      const data = await res.json();
+      
+      // Save JWT token when login is successful
+      if (data.token) {
+        setAuthToken(data.token);
+      }
+      
+      return data.user || data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
@@ -88,7 +99,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useMutation({
     mutationFn: async (userData: { username: string, email: string, password: string }) => {
       const res = await apiRequest('POST', '/api/register', userData);
-      return await res.json();
+      const data = await res.json();
+      
+      // Save JWT token when registration is successful
+      if (data.token) {
+        setAuthToken(data.token);
+      }
+      
+      return data.user || data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
@@ -112,6 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useMutation({
     mutationFn: async () => {
       await apiRequest('POST', '/api/logout');
+      // Clear JWT token on logout
+      clearAuthToken();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
