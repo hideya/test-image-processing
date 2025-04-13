@@ -1,5 +1,5 @@
 // R2 client for Cloudflare Storage
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
 class R2Client {
   constructor() {
@@ -113,4 +113,4 @@ async function streamToBuffer(stream) {
 // Create a singleton instance
 const r2Client = new R2Client();
 
-export { r2Client };
+module.exports = { r2Client };

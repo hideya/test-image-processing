@@ -1,8 +1,8 @@
 // netlify/functions/auth-utils.js
-const { scrypt, randomBytes, timingSafeEqual } = require("crypto");
-const { promisify } = require("util");
-const { storage } = require("./storage"); // Ensure your storage module is compatible with serverless
-const jwt = require("jsonwebtoken");
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import { storage } from "./storage.js"; // Ensure your storage module is compatible with serverless
+import jwt from "jsonwebtoken";
 
 // Debug all env variables
 console.log('*** Environment variables:', Object.keys(process.env));
@@ -123,7 +123,7 @@ function handleOptions() {
   };
 }
 
-module.exports = {
+export {
   hashPassword,
   comparePasswords,
   generateToken,

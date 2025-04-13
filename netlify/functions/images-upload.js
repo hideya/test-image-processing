@@ -3,9 +3,7 @@ const { formatResponse, getUserFromToken, handleOptions } = require("./auth-util
 const { storage } = require("./storage");
 const { processImage, preprocessImage } = require("./opencv");
 const path = require("path");
-const fs = require("fs");
 const multer = require("multer");
-const util = require("util");
 const { Buffer } = require("buffer");
 
 // Configure multer for in-memory storage

@@ -1,3 +1,4 @@
+// storage.js with R2 integration
 const crypto = require("crypto");
 const path = require("path");
 const sharp = require("sharp");
