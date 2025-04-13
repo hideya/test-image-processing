@@ -24,9 +24,9 @@ CREATE TABLE images (
   image_path TEXT NOT NULL,
   hash_key TEXT NOT NULL UNIQUE,
   timestamp TIMESTAMP DEFAULT NOW() NOT NULL,
-  processed_angle INTEGER,
-  is_processed BOOLEAN DEFAULT FALSE,
-  thumbnail_base64 TEXT
+  processed_angle REAL,
+  processed_angle2 REAL,
+  is_processed BOOLEAN DEFAULT FALSE
 );
 ```
 
@@ -36,12 +36,15 @@ CREATE TABLE angle_measurements (
   id SERIAL PRIMARY KEY,
   image_id INTEGER NOT NULL REFERENCES images(id),
   user_id INTEGER NOT NULL REFERENCES users(id),
-  angle INTEGER NOT NULL,
-  timestamp TIMESTAMP DEFAULT NOW() NOT NULL
+  angle REAL NOT NULL,
+  angle2 REAL NOT NULL,
+  timestamp TIMESTAMP DEFAULT NOW() NOT NULL,
+  memo TEXT,
+  icon_ids TEXT
 );
 ```
 
-### Session Table
+### Session Table (Legacy - used by older versions)
 ```sql
 CREATE TABLE session (
   sid TEXT PRIMARY KEY,
@@ -67,9 +70,9 @@ The database schema includes the following relationships:
 
 1. **Registration**: New users register with username, email, and password
 2. **Password Hashing**: Passwords are securely hashed using Node.js crypto scrypt function with salt
-3. **Session Management**: Express-session with PostgreSQL session store for persistent sessions
-4. **Login Process**: Passport.js local strategy authenticates users against database
-5. **Session Serialization**: User ID is stored in session after successful authentication
+3. **JWT Authentication**: JSON Web Tokens used for stateless authentication
+4. **Login Process**: Successful authentication returns a JWT token stored in the client's localStorage
+5. **Token Verification**: Requests include the token in Authorization header for verification
 
 ### Security Mechanisms
 
@@ -78,28 +81,35 @@ The database schema includes the following relationships:
    - Timing-safe comparison used to prevent timing attacks
    - Original passwords are never stored or transmitted
 
-2. **Session Security**:
-   - Server-side session storage with secure cookies
-   - Session expiration to limit session duration
-   - Session invalidation on logout
-   - Protection against session fixation
+2. **JWT Security**:
+   - Server-side token verification before processing protected requests
+   - Token expiration set to 7 days by default
+   - Tokens store only non-sensitive user information
+   - JWT_SECRET environment variable used for signing tokens
 
 3. **API Security**:
-   - Authentication middleware (`isAuthenticated`) protects all sensitive routes
+   - Authentication middleware (`authenticateJWT`) protects all sensitive routes
    - User-specific access control for private resources
-   - CSRF protection through proper cookie configuration
-   - HTTP-only session cookies
    - API routes verify user authorization before providing access to resources
 
 ### Authentication Middleware
 
-```javascript
-const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated()) {
-    return next();
+```typescript
+export function authenticateJWT(req: Request, res: Response, next: NextFunction) {
+  const token = extractToken(req);
+  if (!token) {
+    return res.status(401).json({ message: "Authentication required" });
   }
-  res.status(401).json({ message: "Not authenticated" });
-};
+
+  const payload = verifyToken(token);
+  if (!payload) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+
+  // Set user information in request
+  req.user = payload;
+  next();
+}
 ```
 
 ## API Endpoints
@@ -108,10 +118,10 @@ const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
 
 | Endpoint | Method | Description | Authentication Required | Request Body | Response |
 |----------|--------|-------------|-------------------------|--------------|----------|
-| `/api/register` | POST | Register a new user | No | `{ username, email, password }` | User object (without password) |
-| `/api/login` | POST | Login a user | No | `{ username, password }` | User object (without password) |
-| `/api/logout` | POST | Logout a user | Yes | None | Status 200 |
-| `/api/user` | GET | Get current user | Yes | None | User object (without password) |
+| `/api/register` | POST | Register a new user | No | `{ username, email, password }` | User object and JWT token |
+| `/api/login` | POST | Login a user | No | `{ username, password }` | User object and JWT token |
+| `/api/logout` | POST | Logout a user (client-side only) | No | None | Status 200 |
+| `/api/user` | GET | Get current user | Yes | None | User object |
 
 ### Image Management Endpoints
 
@@ -121,13 +131,12 @@ const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
 | `/api/images/:hashKey` | GET | Get image by hash key | Yes | None | Image file |
 | `/api/images/:hashKey/original` | GET | Get original image | Yes | None | Original image file |
 | `/api/images/:hashKey/medium` | GET | Get medium sized image | Yes | None | Medium sized image file |
-| `/api/images/:hashKey/thumbnail` | GET | Get thumbnail | Yes | None | Thumbnail image |
 
 ### Data Endpoints
 
 | Endpoint | Method | Description | Authentication Required | Query Parameters | Response |
 |----------|--------|-------------|-------------------------|------------------|----------|
-| `/api/angle-data` | GET | Get angle measurements | Yes | `days` (optional, default: 30) | Array of measurements with dates |
+| `/api/angle-data` | GET | Get angle measurements | Yes | `start`, `end` (ISO date strings) | Array of measurements with dates |
 | `/api/latest-angle` | GET | Get the latest angle measurement | Yes | None | Latest measurement object |
 
 ## Client-Side Image Upload Flow
@@ -154,6 +163,7 @@ The client-side image upload process incorporates both client-side and server-si
      - Processed image file
      - Custom date (ISO format with time set to noon to avoid timezone issues)
      - Rotation angle
+   - JWT token is added to the Authorization header
    - Submitted to `/api/images/upload` endpoint
    - Upload progress is indicated with loading animation
 
@@ -184,36 +194,52 @@ The server employs a sophisticated image processing pipeline:
    - Generates a unique hash key for the image
 
 2. **Image Storage**:
-   - Original images stored in `uploads/originals` directory
-   - Creates directory structure if not present
+   - Support for both local file storage and Cloudflare R2 cloud storage
+   - Creates appropriate storage structure based on configuration
    - Uses hash-based filenames to prevent collisions
 
-3. **Thumbnail Generation**:
-   - Creates 64x64 pixel thumbnails with Sharp
-   - Stores thumbnails as base64 strings in the database for fast retrieval
-   - Maintains aspect ratio with object-fit: cover approach
+3. **Medium Image Generation**:
+   - Creates optimized medium-sized images (preserving aspect ratio)
+   - Used for display in the application UI
+   - Applies quality optimization for size reduction
 
-4. **Medium Image Generation**:
-   - Creates 800x800 pixel medium-sized images (preserving aspect ratio)
-   - Stores in `uploads/mediums` directory
-   - Used for expanded image views
-   - Applies 85% JPEG quality for size optimization
-
-5. **Angle Detection**:
+4. **Angle Detection**:
    - Processes image with OpenCV algorithms to detect lines and angles
    - Implements edge detection and Hough transform
-   - Calculates dominant angles in the image
+   - Calculates two dominant angles in the image
    - Applies user-specified rotation before processing
 
-6. **Data Storage**:
+5. **Data Storage**:
    - Stores image metadata in the database
    - Creates angle measurement records linked to images and users
    - Supports custom timestamp assignment for historical data
+   - Stores optional memo text and icon IDs for better categorization
 
-7. **Cache Headers**:
+6. **Cache Management**:
    - Sets appropriate cache control headers for different image types
    - Prevents browser caching issues with appropriate headers
    - Implements etag support for efficient network usage
+
+## Netlify Serverless Functions
+
+The application is designed to run both as a traditional Node.js server and as a serverless application on Netlify:
+
+1. **Function Structure**:
+   - Individual JavaScript functions in the `/netlify/functions` directory
+   - Each function handles a specific API endpoint or related group of endpoints
+   - Configuration in `netlify.toml` maps API routes to functions
+
+2. **Authentication in Functions**:
+   - JWT authentication is implemented in functions using the same pattern as the server
+   - Token verification and user extraction are consistent between environments
+
+3. **Database Access**:
+   - Functions connect to the same PostgreSQL database as the server
+   - Uses the `@neondatabase/serverless` driver for optimized database connections
+
+4. **Image Processing**:
+   - Image processing is available in functions for complete functionality
+   - Uses the same OpenCV bindings for consistent results
 
 ## Development and Deployment Notes
 
@@ -222,31 +248,35 @@ The server employs a sophisticated image processing pipeline:
 The application requires the following environment variables:
 
 - `DATABASE_URL`: PostgreSQL connection string
-- `SESSION_SECRET`: Secret key for session encryption
-- `PORT`: (Optional) Port to run the server on (defaults to 5000)
+- `JWT_SECRET`: Secret key for JWT token signing
+
+For Cloudflare R2 storage (optional):
+- `R2_ACCESS_KEY_ID`: Cloudflare R2 access key ID
+- `R2_SECRET_ACCESS_KEY`: Cloudflare R2 secret access key
+- `R2_ENDPOINT`: Cloudflare R2 endpoint URL
+- `R2_BUCKET_NAME`: Cloudflare R2 bucket name
 
 ### File Storage Considerations
 
-- Ensure the `uploads` directory and its subdirectories exist and are writable
+- If using local storage, ensure the `uploads` directory and its subdirectories exist and are writable
 - Required subdirectories:
   - `uploads/originals`: Original uploaded images
   - `uploads/processed`: Processed images with annotations
-  - `uploads/thumbnails`: Thumbnail images (if not using base64)
   - `uploads/mediums`: Medium-sized images for display
 
 ### Performance Optimizations
 
 1. **Image Processing**:
    - Server-side image resize before OpenCV processing
-   - Web worker threading for non-blocking processing
    - Asynchronous processing with immediate response
+   - Support for cloud storage with Cloudflare R2
 
 2. **Response Time**:
-   - Base64 thumbnail storage for reduced HTTP requests
    - Client-side image and data caching
    - Medium image preloading for expanded views
+   - Efficient queries with proper indices
 
 3. **Data Loading**:
-   - Pagination of measurement history
-   - Lazy loading of historical data
-   - Optimized database queries with proper indices
+   - Month-based data queries for efficient loading
+   - Optimized rendering with React hooks
+   - Chart data pre-processing for smooth visualization
