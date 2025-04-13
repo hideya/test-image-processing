@@ -78,8 +78,9 @@ export default function UploadPage() {
         return null;
       }
       
-      const response = await fetch(`/api/images/${imageKey}/${type}`, {
-        headers
+      const response = await fetch(`/api/images/${imageKey}/${type}?t=${new Date().getTime()}`, {
+        headers,
+        cache: 'no-cache' // Force a fresh request each time
       });
       
       if (!response.ok) {
@@ -101,15 +102,22 @@ export default function UploadPage() {
   useEffect(() => {
     if (lastUploadedImage) {
       console.log(`*** Last uploaded image changed to: ${lastUploadedImage}`);
-      fetchImageWithAuth(lastUploadedImage, 'processed').then(url => {
-        if (url) {
-          console.log(`*** Setting processed image in cache for ${lastUploadedImage}`);
-          setProcessedImageCache(prev => ({
-            ...prev,
-            [lastUploadedImage]: url
-          }));
-        }
-      });
+      
+      // Wait a bit to ensure processing has time to complete
+      setTimeout(() => {
+        console.log('*** Fetching processed image after delay to ensure processing is complete');
+        fetchImageWithAuth(lastUploadedImage, 'processed').then(url => {
+          if (url) {
+            console.log(`*** Setting processed image in cache for ${lastUploadedImage}`);
+            setProcessedImageCache(prev => ({
+              ...prev,
+              [lastUploadedImage]: url
+            }));
+          } else {
+            console.error('*** Failed to fetch processed image');
+          }
+        });
+      }, 3000); // 3 second delay to allow for processing
     }
   }, [lastUploadedImage]);
 

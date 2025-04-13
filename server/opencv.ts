@@ -1,44 +1,46 @@
 import path from "path";
 import fs from "fs";
 import sharp from "sharp";
-import cv from "@techstark/opencv-js";
 
-// Flag to track OpenCV initialization
-let isOpenCVInitialized = false;
+/**
+ * IMPORTANT NOTICE: 
+ * OpenCV is the primary and required image processing library for this project.
+ * While Sharp is being used as a temporary fallback solution to keep the application
+ * functional, the priority is to fully implement and use OpenCV for all image processing.
+ * 
+ * The current implementation using Sharp is TEMPORARY and should be replaced with
+ * proper OpenCV implementations as soon as the API compatibility issues are resolved.
+ *
+ * See OPENCV_PRIORITY.md for more details.
+ */
 
-// Function to ensure OpenCV is ready
+// Import opencv-wasm as a CommonJS module
+// Note: We need to use dynamic import since TypeScript with ESM doesn't support require directly
+// and opencv-wasm is a CommonJS module
+
+let cv: any = null;
+
+// Function to ensure OpenCV is ready and loaded
 export async function ensureOpenCVReady(): Promise<void> {
-  if (isOpenCVInitialized) {
-    return;
+  if (cv) {
+    return Promise.resolve();
   }
 
-  return new Promise<void>((resolve) => {
-    // If cv.Mat is available, OpenCV is ready
-    if (cv && cv.Mat) {
-      console.log("OpenCV is already initialized and ready.");
-      isOpenCVInitialized = true;
-      resolve();
-    } else {
-      console.log("Waiting for OpenCV to initialize...");
-      // Set a timeout to prevent infinite waiting
-      const timeout = setTimeout(() => {
-        console.warn("OpenCV initialization timed out.");
-        isOpenCVInitialized = true; // Mark as initialized anyway
-        resolve();
-      }, 10000); // 10 second timeout
-
-      // Check periodically if OpenCV is ready
-      const checkInterval = setInterval(() => {
-        if (cv && cv.Mat) {
-          clearInterval(checkInterval);
-          clearTimeout(timeout);
-          console.log("OpenCV successfully initialized.");
-          isOpenCVInitialized = true;
-          resolve();
-        }
-      }, 100);
-    }
-  });
+  try {
+    // Dynamic import for ESM compatibility
+    const opencvModule = await import('opencv-wasm');
+    cv = opencvModule.default || opencvModule;
+    console.log("OpenCV-WASM loaded successfully");
+    console.log("OpenCV version:", cv.version);
+    
+    // Log available methods to help with debugging
+    console.log("OpenCV methods available:", Object.keys(cv).filter(key => typeof cv[key] === 'function').join(', '));
+    
+    return Promise.resolve();
+  } catch (error) {
+    console.error("Failed to load opencv-wasm:", error);
+    throw error;
+  }
 }
 
 export interface ProcessedImage {
@@ -54,76 +56,65 @@ export async function processImage(
   try {
     console.log(`Processing image: ${imagePath}`);
 
-    // Since we're using OpenCV.js which is primarily for browsers,
-    // we'll use Sharp to get the image dimensions in Node.js
-    // This still fulfills the requirement of testing OpenCV functionality
+    // Ensure OpenCV is ready
     await ensureOpenCVReady();
 
-    // Read the image buffer directly to prevent any rotation issues
+    // Read the image file using fs
     const imageBuffer = await fs.promises.readFile(imagePath);
-
-    // Get image metadata using Sharp
-    // Using the raw buffer and setting orientation to 1 to prevent rotation
-    const metadata = await sharp(imageBuffer, {
-      // Disable automatic rotation based on EXIF
-      failOnError: false,
-    })
-      .withMetadata({ orientation: 1 })
-      .metadata();
-
-    if (!metadata.width || !metadata.height) {
-      throw new Error("Failed to get image dimensions");
+    
+    // Convert buffer to Uint8Array for OpenCV-WASM
+    const uint8Array = new Uint8Array(imageBuffer);
+    
+    // First we need to load the image data to an array
+    let mat;
+    try {
+      // Try using imread directly on the path for Node.js
+      mat = cv.imread(imagePath);
+    } catch (e) {
+      console.log("Direct imread failed, using alternative method");
+      // Alternative approach using buffer for WASM
+      // Create typed array from buffer
+      const data = new Uint8Array(imageBuffer);
+      
+      // Create a Mat from the image data
+      mat = cv.matFromImageData({
+        data: data,
+        width: 0, // These will be determined from the image data
+        height: 0
+      });
     }
+    
+    console.log(`Image loaded: ${mat.rows}x${mat.cols}`);
 
-    const width = metadata.width;
-    const height = metadata.height;
+    // For now, just generate random angles
+    // In a real implementation, you would use OpenCV's algorithms to detect angles
+    const angle1 = Math.random() * 35; 
+    const angle2 = Math.random() * 35;
 
-    // Use OpenCV for additional verification of image reading capability
-    // This is a simplified example to demonstrate OpenCV is working
-    if (cv && cv.Mat) {
-      // Just create and release a Mat to verify OpenCV is working
-      const dummyMat = new cv.Mat();
-      console.log(
-        "Successfully created an OpenCV Mat, OpenCV is working properly",
-      );
-      dummyMat.delete();
-    }
-
-    // Calculate angles based on image dimensions
-    const angle1 = Math.random() * 35; // Primary angle based on width
-    const angle2 = Math.random() * 35; // Secondary angle based on height
-
-    console.log(`Image dimensions from Sharp: ${width}x${height}`);
-    console.log(
-      `Calculated primary angle: ${angle1} degrees, secondary angle: ${angle2} degrees`,
-    );
+    console.log(`Calculated primary angle: ${angle1} degrees, secondary angle: ${angle2} degrees`);
+    
+    // Cleanup to prevent memory leaks
+    mat.delete();
 
     return { angle: angle1, angle2: angle2 };
   } catch (error) {
     console.error("Error processing image:", error);
-    // If the above fails, fall back to a simple calculation
+    
+    // TEMPORARY FALLBACK: Using Sharp instead of OpenCV (to be replaced with OpenCV)
     try {
-      // Read the buffer directly to avoid any rotation issues
-      const imageBuffer = await fs.promises.readFile(imagePath);
-
-      // Use the same approach as the primary method
-      const metadata = await sharp(imageBuffer, {
-        failOnError: false,
-      })
-        .withMetadata({ orientation: 1 })
-        .metadata();
-
+      console.warn("TEMPORARY FALLBACK: Using Sharp instead of OpenCV for angle calculation");
+      // Use Sharp to get basic image metadata
+      const metadata = await sharp(imagePath).metadata();
+      
       const width = metadata.width || 100;
       const height = metadata.height || 100;
-
+      
       const angle1 = width % 5;
       const angle2 = height % 5;
-
+      
       console.log(`Fallback to basic Sharp metadata: ${width}x${height}`);
-      console.log(
-        `Calculated primary angle: ${angle1} degrees, secondary angle: ${angle2} degrees`,
-      );
-
+      console.log(`Calculated primary angle: ${angle1} degrees, secondary angle: ${angle2} degrees`);
+      
       return { angle: angle1, angle2: angle2 };
     } catch (fallbackError) {
       console.error("Fallback method also failed:", fallbackError);
@@ -135,55 +126,97 @@ export async function processImage(
 // Function to preprocess image before analysis
 export async function preprocessImage(imagePath: string): Promise<string> {
   try {
+    console.log(`Starting preprocessing for image: ${imagePath}`);
     const filename = path.basename(imagePath);
     const outputDir = path.dirname(imagePath);
     const processedFileName = `processed_${filename}`;
     const outputPath = path.join(outputDir, processedFileName);
     
+    console.log(`Will save processed image to: ${outputPath}`);
+    
+    // Check if the processed file already exists
+    if (fs.existsSync(outputPath)) {
+      console.log(`Processed file already exists at ${outputPath}, will overwrite it.`);
+    }
+    
+    // List all files in directory before processing
+    console.log('Files in directory before processing:');
+    const filesBefore = fs.readdirSync(outputDir);
+    console.log(filesBefore);
+    
     // Ensure OpenCV is ready
     await ensureOpenCVReady();
     
-    console.log("Starting OpenCV preprocessing");
+    console.log("Starting OpenCV-WASM preprocessing");
     
-    // Read the image using OpenCV
-    // Note: This is a tentative implementation that will be enhanced later
-    const imageBuffer = await fs.promises.readFile(imagePath);
-    
-    // First we need to create an OpenCV Mat from the image buffer
     try {
-      // We have to use a node-friendly approach to convert buffer to OpenCV format
-      // This approach is simplified and will be properly implemented later
-      console.log("Creating temporary file for OpenCV processing");
+      // TODO: Replace this temporary Sharp implementation with proper OpenCV processing
+      // once API compatibility issues are resolved
+      console.warn("TEMPORARY FALLBACK: Using Sharp instead of OpenCV for image processing");
+      console.log("Using Sharp for image processing (TEMPORARY solution)");
       
-      // Save the output directly using fs
-      await fs.promises.copyFile(imagePath, outputPath);
+      // Get image metadata to check orientation
+      const metadata = await sharp(imagePath).metadata();
+      console.log(`Image metadata: width=${metadata.width}, height=${metadata.height}, orientation=${metadata.orientation}`);
       
-      console.log(`Preprocessed image saved to: ${outputPath} (Note: This is a tentative implementation. OpenCV operations for grayscale, normalization, and sharpening will be properly implemented later)`);
+      // Read the file contents
+      const fileContents = fs.readFileSync(imagePath);
       
-      /* 
-      // TODO: Properly implement these OpenCV operations
-      const src = cv.imread(imgData);
-      const gray = new cv.Mat();
-      cv.cvtColor(src, gray, cv.COLOR_BGR2GRAY);
+      // Process the image, respecting original orientation
+      // No automatic rotation to portrait, just apply processing
+      await sharp(fileContents)
+        .removeAlpha()  // Remove transparency if any
+        .withMetadata() // Preserve metadata
+        .grayscale()
+        .sharpen()
+        .toFile(outputPath);
       
-      // Normalize
-      const normalized = new cv.Mat();
-      cv.normalize(gray, normalized, 0, 255, cv.NORM_MINMAX);
+      // Verify the processing result
+      const processedMetadata = await sharp(outputPath).metadata();
+      console.log(`Processed image metadata: width=${processedMetadata.width}, height=${processedMetadata.height}, orientation=${processedMetadata.orientation}`);
       
-      // Sharpen
-      const blurred = new cv.Mat();
-      const sharpened = new cv.Mat();
-      cv.GaussianBlur(normalized, blurred, new cv.Size(0, 0), 3);
-      cv.addWeighted(normalized, 1.5, blurred, -0.5, 0, sharpened);
+      console.log(`Successfully processed and saved image to: ${outputPath}`);
       
-      // Save result
-      cv.imwrite(outputPath, sharpened);
-      */
+      // Check if the file was saved successfully
+      if (fs.existsSync(outputPath)) {
+        console.log(`Verified that processed file exists at: ${outputPath}`);
+      } else {
+        console.error(`Failed to save processed file to: ${outputPath}`);
+      }
+    } catch (processingError) {
+      console.error("Error during processing:", processingError);
+      console.log("Falling back to simple grayscale conversion");
       
-    } catch (opencvError) {
-      console.error("Error in OpenCV processing:", opencvError);
-      // Fallback to simple file copy if OpenCV processing fails
-      await fs.promises.copyFile(imagePath, outputPath);
+      try {
+        // Try a simpler approach with just grayscale using Sharp (TEMPORARY)
+        await sharp(imagePath)
+          .grayscale()
+          .toFile(outputPath);
+        
+        console.log(`Saved grayscale image to: ${outputPath}`);
+      } catch (grayError) {
+        console.error("Even simple grayscale conversion failed:", grayError);
+        // Last resort fallback - just copy the original file
+        await fs.promises.copyFile(imagePath, outputPath);
+        console.log(`Copied original image to: ${outputPath}`);
+      }
+    }
+    
+    // List all files in directory after processing
+    console.log('Files in directory after processing:');
+    const filesAfter = fs.readdirSync(outputDir);
+    console.log(filesAfter);
+    
+    // Check if output file exists
+    if (fs.existsSync(outputPath)) {
+      console.log(`Confirmed output file exists at: ${outputPath}`);
+    } else {
+      console.error(`ERROR: Output file does not exist at: ${outputPath}`);
+      // Look for any processed_ files
+      const possibleMatches = filesAfter.filter(f => f.startsWith('processed_'));
+      if (possibleMatches.length > 0) {
+        console.log(`Found possible matches: ${possibleMatches.join(', ')}`);
+      }
     }
     
     return outputPath;

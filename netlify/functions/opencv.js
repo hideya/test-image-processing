@@ -1,44 +1,50 @@
+// netlify/functions/opencv.js - Using opencv-wasm for compatibility
+
+/**
+ * IMPORTANT NOTICE: 
+ * OpenCV is the primary and required image processing library for this project.
+ * While Sharp is being used as a temporary fallback solution to keep the application
+ * functional, the priority is to fully implement and use OpenCV for all image processing.
+ * 
+ * The current implementation using Sharp is TEMPORARY and should be replaced with
+ * proper OpenCV implementations as soon as the API compatibility issues are resolved.
+ *
+ * See OPENCV_PRIORITY.md for more details.
+ */
+
 const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
-const cv = require("@techstark/opencv-js");
 
-// Flag to track OpenCV initialization
-let isOpenCVInitialized = false;
+// Import opencv-wasm - this is compatible with Netlify Functions
+let cv = null;
+try {
+  cv = require('opencv-wasm');
+  console.log("OpenCV-WASM loaded successfully in Netlify function");
+  
+  // Log available methods to help with debugging
+  console.log("OpenCV methods available:", Object.keys(cv).filter(key => typeof cv[key] === 'function').join(', '));
+} catch (err) {
+  console.error("Failed to load opencv-wasm:", err.message);
+}
 
-// Function to ensure OpenCV is ready
+// Function to ensure OpenCV is ready and loaded
 async function ensureOpenCVReady() {
-  if (isOpenCVInitialized) {
-    return;
-  }
-
-  return new Promise((resolve) => {
-    // If cv.Mat is available, OpenCV is ready
-    if (cv && cv.Mat) {
-      console.log("OpenCV is already initialized and ready.");
-      isOpenCVInitialized = true;
-      resolve();
-    } else {
-      console.log("Waiting for OpenCV to initialize...");
-      // Set a timeout to prevent infinite waiting
-      const timeout = setTimeout(() => {
-        console.warn("OpenCV initialization timed out.");
-        isOpenCVInitialized = true; // Mark as initialized anyway
-        resolve();
-      }, 10000); // 10 second timeout
-
-      // Check periodically if OpenCV is ready
-      const checkInterval = setInterval(() => {
-        if (cv && cv.Mat) {
-          clearInterval(checkInterval);
-          clearTimeout(timeout);
-          console.log("OpenCV successfully initialized.");
-          isOpenCVInitialized = true;
-          resolve();
-        }
-      }, 100);
+  if (!cv) {
+    try {
+      cv = require('opencv-wasm');
+      console.log("OpenCV-WASM loaded successfully on retry");
+      
+      // Log available methods to help with debugging
+      console.log("OpenCV methods available:", Object.keys(cv).filter(key => typeof cv[key] === 'function').join(', '));
+    } catch (err) {
+      console.error("Failed to load opencv-wasm on retry:", err.message);
+      throw new Error("Could not load OpenCV WASM module");
     }
-  });
+  }
+  
+  console.log("Using OpenCV-WASM version:", cv.version || "unknown");
+  return Promise.resolve();
 }
 
 // Function to process image and calculate angles
@@ -46,63 +52,44 @@ async function processImage(imagePath) {
   try {
     console.log(`Processing image: ${imagePath}`);
 
-    // Since we're using OpenCV.js which is primarily for browsers,
-    // we'll use Sharp to get the image dimensions in Node.js
-    // This still fulfills the requirement of testing OpenCV functionality
+    // Ensure OpenCV is ready
     await ensureOpenCVReady();
 
-    // Read the image buffer directly to prevent any rotation issues
-    const imageBuffer = await fs.promises.readFile(imagePath);
+    try {
+      // TODO: Replace this temporary Sharp implementation with proper OpenCV processing
+      // once API compatibility issues are resolved
+      console.warn("TEMPORARY FALLBACK: Using Sharp instead of OpenCV for angle calculation");
+      
+      // Use Sharp for angle calculation for now while debugging OpenCV
+      const metadata = await sharp(imagePath).metadata();
+      
+      const width = metadata.width || 100;
+      const height = metadata.height || 100;
+      
+      // This is just a placeholder algorithm - replace with actual angle detection
+      // when OpenCV WASM issues are resolved
+      const aspect = width / height;
+      const angle1 = Math.min(35, Math.max(0, (aspect - 1) * 10));
+      const angle2 = Math.min(35, Math.max(0, Math.abs(1 - aspect) * 15));
+      
+      console.log(`Calculated primary angle: ${angle1} degrees, secondary angle: ${angle2} degrees`);
 
-    // Get image metadata using Sharp
-    // Using the raw buffer and setting orientation to 1 to prevent rotation
-    const metadata = await sharp(imageBuffer, {
-      // Disable automatic rotation based on EXIF
-      failOnError: false,
-    })
-      .withMetadata({ orientation: 1 })
-      .metadata();
-
-    if (!metadata.width || !metadata.height) {
-      throw new Error("Failed to get image dimensions");
+      return { angle: angle1, angle2: angle2 };
+    } catch (cvErr) {
+      console.error("Processing error:", cvErr.message);
+      throw cvErr; // Re-throw to trigger fallback
     }
-
-    const width = metadata.width;
-    const height = metadata.height;
-
-    // Use OpenCV for additional verification of image reading capability
-    // This is a simplified example to demonstrate OpenCV is working
-    if (cv && cv.Mat) {
-      // Just create and release a Mat to verify OpenCV is working
-      const dummyMat = new cv.Mat();
-      console.log(
-        "Successfully created an OpenCV Mat, OpenCV is working properly",
-      );
-      dummyMat.delete();
-    }
-
-    // Calculate angles based on image dimensions
-    const angle1 = Math.random() * 35; // Primary angle based on width
-    const angle2 = Math.random() * 35; // Secondary angle based on height
-
-    console.log(`Image dimensions from Sharp: ${width}x${height}`);
-    console.log(
-      `Calculated primary angle: ${angle1} degrees, secondary angle: ${angle2} degrees`,
-    );
-
-    return { angle: angle1, angle2: angle2 };
   } catch (error) {
     console.error("Error processing image:", error);
-    // If the above fails, fall back to a simple calculation
+    // Fallback to simple calculation
     try {
       // Read the buffer directly to avoid any rotation issues
       const imageBuffer = await fs.promises.readFile(imagePath);
 
-      // Use the same approach as the primary method
+      // Use Sharp for fallback (TEMPORARY)
       const metadata = await sharp(imageBuffer, {
         failOnError: false,
       })
-        .withMetadata({ orientation: 1 })
         .metadata();
 
       const width = metadata.width || 100;
@@ -127,59 +114,62 @@ async function processImage(imagePath) {
 // Function to preprocess image before analysis
 async function preprocessImage(imagePath) {
   try {
+    console.log(`Starting preprocessing for image: ${imagePath}`);
     const filename = path.basename(imagePath);
     const outputDir = path.dirname(imagePath);
     const processedFileName = `processed_${filename}`;
     const outputPath = path.join(outputDir, processedFileName);
     
-    // Ensure OpenCV is ready
-    await ensureOpenCVReady();
+    console.log(`Will save processed image to: ${outputPath}`);
     
-    console.log("Starting OpenCV preprocessing");
+    // Note: Netlify Functions are stateless with read-only filesystem
+    // For production, you would need to use a service like S3 instead of local files
+    // This implementation works for development or if you're using a writable /tmp directory
     
-    // Read the image using OpenCV
-    // Note: This is a tentative implementation that will be enhanced later
-    const imageBuffer = await fs.promises.readFile(imagePath);
+    // TODO: Replace this temporary Sharp implementation with proper OpenCV processing
+    // once API compatibility issues are resolved
+    console.warn("TEMPORARY FALLBACK: Using Sharp instead of OpenCV for image processing");
+    console.log("Using Sharp for image processing (TEMPORARY solution)");
     
-    // First we need to create an OpenCV Mat from the image buffer
     try {
-      // We have to use a node-friendly approach to convert buffer to OpenCV format
-      // This approach is simplified and will be properly implemented later
-      console.log("Creating temporary file for OpenCV processing");
+      // Get image metadata to check orientation
+      const metadata = await sharp(imagePath).metadata();
+      console.log(`Image metadata: width=${metadata.width}, height=${metadata.height}, orientation=${metadata.orientation}`);
       
-      // Note: This file operation may need to be revised for Netlify Functions
-      // since Netlify Functions are stateless and have a read-only filesystem
-      // We'll need to implement a cloud storage solution for production
-      // This is temporary for development purposes
-      await fs.promises.copyFile(imagePath, outputPath);
+      // Read the file contents
+      const fileContents = await fs.promises.readFile(imagePath);
       
-      console.log(`Preprocessed image saved to: ${outputPath} (Note: This is a tentative implementation. OpenCV operations for grayscale, normalization, and sharpening will be properly implemented later)`);
+      // Process the image, respecting original orientation
+      // No automatic rotation to portrait, just apply processing
+      await sharp(fileContents)
+        .removeAlpha()  // Remove transparency if any
+        .withMetadata() // Preserve metadata
+        .grayscale()
+        .sharpen()
+        .toFile(outputPath);
       
-      /* 
-      // TODO: Properly implement these OpenCV operations
-      // For Netlify, we'll need to use a cloud storage solution instead of local files
-      const src = cv.imread(imgData);
-      const gray = new cv.Mat();
-      cv.cvtColor(src, gray, cv.COLOR_BGR2GRAY);
+      // Verify the processing result
+      const processedMetadata = await sharp(outputPath).metadata();
+      console.log(`Processed image metadata: width=${processedMetadata.width}, height=${processedMetadata.height}, orientation=${processedMetadata.orientation}`);
       
-      // Normalize
-      const normalized = new cv.Mat();
-      cv.normalize(gray, normalized, 0, 255, cv.NORM_MINMAX);
+      console.log(`Successfully processed and saved image to: ${outputPath}`);
+    } catch (sharpError) {
+      console.error("Error during Sharp processing:", sharpError);
+      console.log("Falling back to simple grayscale conversion");
       
-      // Sharpen
-      const blurred = new cv.Mat();
-      const sharpened = new cv.Mat();
-      cv.GaussianBlur(normalized, blurred, new cv.Size(0, 0), 3);
-      cv.addWeighted(normalized, 1.5, blurred, -0.5, 0, sharpened);
-      
-      // Save result - will need cloud storage implementation
-      cv.imwrite(outputPath, sharpened);
-      */
-      
-    } catch (opencvError) {
-      console.error("Error in OpenCV processing:", opencvError);
-      // Fallback to simple file copy if OpenCV processing fails
-      await fs.promises.copyFile(imagePath, outputPath);
+      try {
+        // Try a simpler approach with just grayscale
+        await sharp(imagePath)
+          .grayscale()
+          .toFile(outputPath);
+        
+        console.log(`Saved grayscale image to: ${outputPath}`);
+      } catch (grayError) {
+        console.error("Even simple grayscale conversion failed:", grayError);
+        // Last resort fallback - just copy the file as-is
+        await fs.promises.copyFile(imagePath, outputPath);
+        console.log(`Copied original image to: ${outputPath}`);
+      }
     }
     
     return outputPath;

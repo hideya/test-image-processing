@@ -316,6 +316,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify the file exists
       if (!fs.existsSync(processedImagePath)) {
+        console.log(`Processed image not found at ${processedImagePath}. Available files in directory:`);
+        const files = fs.readdirSync(outputDir);
+        console.log(files);
+        
+        // Try to find a matching processed file with a different extension
+        const baseFilename = filename.split('.')[0];
+        const possibleFiles = files.filter(f => 
+          f.startsWith(`processed_${baseFilename}`) || 
+          f === `${processedFileName}.jpg` ||
+          f === `${processedFileName}_gray.jpg`
+        );
+        
+        if (possibleFiles.length > 0) {
+          console.log(`Found alternative processed file: ${possibleFiles[0]}`);
+          const alternateProcessedPath = path.join(outputDir, possibleFiles[0]);
+          
+          // Set cache control headers
+          res.setHeader("Cache-Control", "public, max-age=86400"); // 24 hour cache
+          console.log(`Sending alternate processed image file: ${alternateProcessedPath}`);
+          return res.sendFile(path.resolve(alternateProcessedPath));
+        }
+        
         return res
           .status(404)
           .json({ message: "Processed image not found" });
