@@ -40,8 +40,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const token = getAuthToken();
     if (token) {
-      console.log('Found existing auth token, attempting to use it...');
-      // We don't need to do anything here - the token will be used in API requests
+      console.log('*** Found existing auth token on app start, length:', token.length);
+      // The token will be used in API requests
+    } else {
+      console.log('*** No auth token found on app start');
     }
   }, []);
 
@@ -53,12 +55,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<User | null, Error>({
     queryKey: ['/api/user'],
     queryFn: async () => {
+      console.log('*** Running user query function');
+      // Skip if no token exists
+      if (!getAuthToken()) {
+        console.log('*** No token available, skipping user fetch');
+        return null;
+      }
+      
       try {
-        // Use apiRequest which now includes token handling
+        console.log('*** Fetching current user data');
+        // Use apiRequest which includes token handling
         const res = await apiRequest('GET', '/api/user');
-        return await res.json();
+        const userData = await res.json();
+        console.log('*** User data fetched successfully:', userData ? { id: userData.id, username: userData.username } : 'No user data');
+        return userData;
       } catch (error) {
-        console.error("Error fetching user:", error);
+        console.error("*** Error fetching user:", error);
+        // Clear token if invalid
+        if (error instanceof Error && error.message.includes('401')) {
+          console.log('*** Authentication error, clearing token');
+          clearAuthToken();
+        }
         return null;
       }
     }
@@ -67,24 +84,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login mutation
   const login = useMutation({
     mutationFn: async (credentials: { username: string, password: string }) => {
+      console.log("*** Login mutation started for user:", credentials.username);
       const res = await apiRequest('POST', '/api/login', credentials);
       const data = await res.json();
       
+      console.log('*** Login response received:', { 
+        userReceived: !!data.user, 
+        username: data.user?.username,
+        tokenReceived: !!data.token,
+        tokenLength: data.token?.length
+      });
+      
       // Save JWT token when login is successful
       if (data.token) {
+        console.log('*** Saving JWT token to localStorage');
         setAuthToken(data.token);
+      } else {
+        console.log('*** WARNING: No token received from server!');
       }
       
       return data.user || data;
     },
-    onSuccess: () => {
+    onSuccess: (userData) => {
+      console.log('*** Login successful, user data received:', userData ? { id: userData.id, username: userData.username } : 'No user data');
+      console.log('*** Invalidating user query cache');
+      
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-      setLocation('/');
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-        variant: "success",
-      });
+      
+      // Add a small delay to ensure the query invalidation has time to process
+      console.log('*** Scheduling navigation to home page');
+      setTimeout(() => {
+        console.log('*** Navigating to home page now');
+        setLocation('/');
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+          variant: "success",
+        });
+      }, 100);
     },
     onError: (error: Error) => {
       toast({

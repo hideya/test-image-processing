@@ -4,21 +4,31 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 const TOKEN_KEY = 'auth_token';
 
 export function setAuthToken(token: string) {
+  console.log("*** Setting auth token in localStorage", token ? `(length: ${token.length})` : "(empty)");
   localStorage.setItem(TOKEN_KEY, token);
 }
 
 export function getAuthToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  console.log("*** Getting auth token from localStorage", token ? `(length: ${token.length})` : "(not found)");
+  return token;
 }
 
 export function clearAuthToken() {
+  console.log("*** Clearing auth token from localStorage");
   localStorage.removeItem(TOKEN_KEY);
 }
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    try {
+      const data = await res.json();
+      throw new Error(data.message || `${res.status}: ${res.statusText}`);
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      const text = await res.text() || res.statusText;
+      throw new Error(`${res.status}: ${text}`);
+    }
   }
 }
 
@@ -27,6 +37,7 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  console.log(`*** API Request: ${method} ${url}`);
   const headers: Record<string, string> = {};
   
   // Add content-type for requests with data
@@ -38,8 +49,12 @@ export async function apiRequest(
   const token = getAuthToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    console.log('*** Adding Authorization header with Bearer token');
+  } else {
+    console.log('*** No token available for request');
   }
 
+  console.log(`*** Sending ${method} request to ${url}`);
   const res = await fetch(url, {
     method,
     headers,
@@ -47,7 +62,9 @@ export async function apiRequest(
     credentials: "include", // Keep this for local dev with cookies
   });
 
+  console.log(`*** Response received: ${res.status} ${res.statusText}`);
   await throwIfResNotOk(res);
+  console.log(`*** Response validation passed, returning response`);
   return res;
 }
 

@@ -13,10 +13,13 @@ import NotFound from "./pages/not-found";
 import { Toaster } from "./components/ui/toaster";
 import { BottomNav } from "./components/ui/bottom-nav";
 import { ThemeProvider } from '@/contexts/ThemeProvider.tsx';
+import { RouterDebugger } from './debug-router';
 
 export default function App() {
   const [location] = useLocation();
   const showBottomNav = location !== "/auth";
+
+  console.log('*** App rendering, current location:', location);
 
   const containerClass = location === "/auth" 
     ? "h-screen flex flex-col overflow-hidden" 
@@ -36,6 +39,7 @@ export default function App() {
                 <Route component={NotFound} />
               </Switch>
               {showBottomNav && <BottomNav />}
+              <RouterDebugger />
               <Toaster />
             </div>
           </ThemeProvider>

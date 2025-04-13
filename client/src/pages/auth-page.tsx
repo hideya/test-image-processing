@@ -28,7 +28,10 @@ export default function AuthPage() {
   // Redirect to home if already logged in
   useEffect(() => {
     if (user) {
+      console.log('*** AuthPage: User detected, redirecting to home');
       setLocation("/");
+    } else {
+      console.log('*** AuthPage: No user detected, staying on auth page');
     }
   }, [user, setLocation]);
 
@@ -52,10 +55,12 @@ export default function AuthPage() {
   });
 
   const onLoginSubmit = (data: LoginFormValues) => {
+    console.log('*** AuthPage: Login form submitted with username:', data.username);
     loginMutation.mutate(data);
   };
 
   const onRegisterSubmit = (data: RegisterFormValues) => {
+    console.log('*** AuthPage: Register form submitted with username:', data.username);
     registerMutation.mutate(data);
   };
 

@@ -3,6 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { ensureOpenCVReady } from "./opencv";
+import { setupJWTAuth } from "./auth-jwt";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +38,9 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// Set up JWT-based authentication
+setupJWTAuth(app);
 
 (async () => {
   // Initialize OpenCV

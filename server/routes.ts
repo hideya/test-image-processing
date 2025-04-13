@@ -1,7 +1,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+// Import JWT auth instead of session auth
+import { isAuthenticated } from "./auth-jwt";
 import { processImage, preprocessImage } from "./opencv";
 import multer from "multer";
 import path from "path";
@@ -41,17 +42,10 @@ const upload = multer({
   },
 });
 
-// Middleware to check if user is authenticated
-const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ message: "Unauthorized" });
-};
+// Authentication middleware is now imported from auth-jwt.ts
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup authentication routes
-  setupAuth(app);
+  // Authentication routes are now set up in index.ts with setupJWTAuth
 
   // API endpoints
 
@@ -66,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "No image file provided" });
         }
 
-        const userId = (req.user as Express.User).id;
+        const userId = req.user.id;
         const hashKey = storage.generateHashKey();
         const fileExt = path.extname(req.file.originalname);
         const filename = `${hashKey}${fileExt}`;
@@ -191,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get angle data for chart
   app.get("/api/angle-data", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as Express.User).id;
+      const userId = req.user.id;
       const days = parseInt(req.query.days as string) || 30;
 
       // Get angle measurements for the specified date range
@@ -218,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if the user is authorized to access this image
-      if (image.userId !== (req.user as Express.User).id) {
+      if (image.userId !== req.user.id) {
         return res
           .status(403)
           .json({ message: "Unauthorized access to image" });
@@ -259,7 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Check if the user is authorized to access this image
-        if (image.userId !== (req.user as Express.User).id) {
+        if (image.userId !== req.user.id) {
           return res
             .status(403)
             .json({ message: "Unauthorized access to image" });
@@ -298,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if the user is authorized to access this image
-      if (image.userId !== (req.user as Express.User).id) {
+      if (image.userId !== req.user.id) {
         return res
           .status(403)
           .json({ message: "Unauthorized access to image" });
@@ -332,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get the latest calculated angle
   app.get("/api/latest-angle", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as Express.User).id;
+      const userId = req.user.id;
       // Fetch the last measurement based on the ID (last inserted)
       const [lastMeasurement] = await db
         .select()
