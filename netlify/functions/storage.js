@@ -194,6 +194,49 @@ class DatabaseStorage {
       )
       .orderBy(angleMeasurements.timestamp);
   }
+  
+  // New function to get angle measurements by date range in the same format as getLatestAngleMeasurementByDay
+  async getAngleMeasurementsByDateRange(userId, startDate, endDate) {
+    // Using SQL directly to get properly formatted results with image information
+    // and one measurement per day (latest for each day)
+    const result = await db.execute(sql`
+      WITH daily_measurements AS (
+        SELECT 
+          TO_CHAR(am.timestamp, 'YYYY-MM-DD') as date,
+          am.angle,
+          am.angle2,
+          am.image_id as "imageId",
+          img.hash_key as "hashKey",
+          am.memo,
+          am.icon_ids as "iconIds",
+          ROW_NUMBER() OVER (
+            PARTITION BY TO_CHAR(am.timestamp, 'YYYY-MM-DD') 
+            ORDER BY am.id DESC
+          ) as rn
+        FROM angle_measurements am
+        JOIN images img ON am.image_id = img.id
+        WHERE 
+          am.user_id = ${userId} AND
+          am.timestamp >= ${startDate} AND
+          am.timestamp <= ${endDate}
+      )
+      SELECT date, angle, angle2, "imageId", "hashKey", memo, "iconIds"
+      FROM daily_measurements
+      WHERE rn = 1
+      ORDER BY date
+    `);
+
+    // Process results
+    return result.rows.map(row => ({
+      date: row.date,
+      angle: row.angle,
+      angle2: row.angle2,
+      imageId: row.imageId,
+      hashKey: row.hashKey,
+      memo: row.memo || undefined,
+      iconIds: row.iconIds || undefined
+    }));
+  }
 
   async getLatestAngleMeasurementByDay(userId, days = 30) {
     const endDate = new Date();

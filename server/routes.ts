@@ -186,15 +186,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/angle-data", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user.id;
-      const days = parseInt(req.query.days as string) || 30;
-
-      // Get angle measurements for the specified date range
-      const measurements = await storage.getLatestAngleMeasurementByDay(
-        userId,
-        days,
-      );
-
-      res.json(measurements);
+      
+      // Check if start and end dates are provided
+      if (req.query.start && req.query.end) {
+        const startDate = new Date(req.query.start as string);
+        const endDate = new Date(req.query.end as string);
+        
+        console.log(`Fetching measurements for date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+        
+        // Get angle measurements for the specified date range
+        const measurements = await storage.getAngleMeasurementsByDateRange(
+          userId,
+          startDate,
+          endDate
+        );
+        
+        res.json(measurements);
+      } else {
+        // Fallback to days parameter if no date range provided
+        const days = parseInt(req.query.days as string) || 30;
+        console.log(`Fetching measurements for last ${days} days`);
+        
+        // Get angle measurements for the specified number of days
+        const measurements = await storage.getLatestAngleMeasurementByDay(
+          userId,
+          days,
+        );
+        
+        res.json(measurements);
+      }
     } catch (error) {
       console.error("Error fetching angle data:", error);
       res.status(500).json({ message: "Failed to fetch angle data" });
