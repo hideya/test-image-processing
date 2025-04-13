@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 // Import JWT auth instead of session auth
 import { isAuthenticated } from "./auth-jwt";
-import { processImage, preprocessImage } from "./opencv";
+import { processImageBuffer } from "./opencv";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -16,6 +16,7 @@ import { z } from "zod";
 import { eq, desc } from "drizzle-orm";
 import { db } from "./db";
 import { angleMeasurements } from "@shared/schema";
+import { createImageWithoutPath } from "./createImageWithoutPath";
 
 // Set up multer for file uploads
 const upload = multer({
@@ -96,74 +97,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Client applied rotation of ${req.body.clientRotation} degrees before upload`);
         }
         
-        // Save the original image (rotation is already applied on the client side)
-        console.log("Saving pre-rotated image uploaded from client");
-        const imagePath = await storage.saveImageFile(
-          req.file.buffer,
-          filename
+        // Process the image directly in memory
+        const processingResult = await processImageBuffer(req.file.buffer);
+        
+        // Create a single image record with angle data
+        const image = await createImageWithoutPath(
+          userId,
+          hashKey,
+          {
+            angle: processingResult.angle,
+            angle2: processingResult.angle2
+          }
         );
 
-        // Save image record to storage
-        const image = await storage.createImage({
+        // Create angle measurement record with mandatory client-provided timestamp
+        const measurementData: InsertAngleMeasurement & {
+          customTimestamp: Date;
+        } = {
+          imageId: image.id,
           userId,
-          imagePath,
-          hashKey,
-        });
+          angle: processingResult.angle,
+          angle2: processingResult.angle2,
+          customTimestamp: customDate, // Always use client-provided date
+          memo: req.body.memo || undefined, // Add memo if provided
+          iconIds: req.body.iconIds || undefined, // Add icon IDs if provided
+        };
 
-        // Preprocess the image (async)
-        preprocessImage(imagePath)
-          .then((processedImagePath) => {
-            // Process the image to calculate angles
-            return processImage(processedImagePath).then(async (angles) => {
-              // Update the image with processed angles
-              await storage.updateImageProcessedAngles(
-                image.id,
-                angles.angle,
-                angles.angle2,
-              );
+        // Check if there are existing measurements for this date
+        const existingMeasurements =
+          await storage.findMeasurementsByUserIdAndDate(
+            userId,
+            customDate,
+          );
 
-              // Check if there are existing measurements for this date
-              const existingMeasurements =
-                await storage.findMeasurementsByUserIdAndDate(
-                  userId,
-                  customDate,
-                );
+        // If there are existing measurements, delete them (we're replacing them)
+        if (existingMeasurements.length > 0) {
+          console.log(
+            `Found ${existingMeasurements.length} existing measurements for date ${customDate.toISOString()}, deleting them before adding new one`,
+          );
+          for (const measurement of existingMeasurements) {
+            await storage.deleteMeasurementById(measurement.id);
+          }
+        }
 
-              // If there are existing measurements, delete them (we're replacing them)
-              if (existingMeasurements.length > 0) {
-                console.log(
-                  `Found ${existingMeasurements.length} existing measurements for date ${customDate.toISOString()}, deleting them before adding new one`,
-                );
-                for (const measurement of existingMeasurements) {
-                  await storage.deleteMeasurementById(measurement.id);
-                }
-              }
+        const measurement = await storage.createAngleMeasurement(measurementData);
 
-              // Create angle measurement record with mandatory client-provided timestamp
-              const measurementData: InsertAngleMeasurement & {
-                customTimestamp: Date;
-              } = {
-                imageId: image.id,
-                userId,
-                angle: angles.angle,
-                angle2: angles.angle2,
-                customTimestamp: customDate, // Always use client-provided date
-                memo: req.body.memo || undefined, // Add memo if provided
-                iconIds: req.body.iconIds || undefined, // Add icon IDs if provided
-              };
-
-              await storage.createAngleMeasurement(measurementData);
-            });
-          })
-          .catch((err) => {
-            console.error("Error processing image:", err);
-          });
-
-        // Return immediate response with image info
-        res.status(201).json({
-          id: image.id,
-          hashKey: image.hashKey,
-          message: "Image uploaded successfully and scheduled for processing",
+        // Return complete response with processed image and angles
+        res.status(200).json({
+          success: true,
+          measurement: {
+            id: measurement.id,
+            angle: processingResult.angle,
+            angle2: processingResult.angle2,
+            date: customDate
+          },
+          image: {
+            id: image.id,
+            hashKey: image.hashKey
+          },
+          processedImage: {
+            base64: processingResult.processedImageBuffer.toString('base64'),
+            mimeType: 'image/jpeg'
+          }
         });
       } catch (error) {
         console.error("Upload error:", error);
@@ -228,21 +223,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ message: "Unauthorized access to image" });
       }
 
-      // Verify the file exists
-      if (!fs.existsSync(image.imagePath)) {
-        return res.status(404).json({ message: "Image file not found" });
-      }
-
-      // Set cache control headers to prevent caching issues
-      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-      res.setHeader("Pragma", "no-cache");
-      res.setHeader("Expires", "0");
-
-      // Log that we're sending the image file
-      console.log(`Sending image file: ${image.imagePath}`);
-
-      // Send the image file
-      res.sendFile(path.resolve(image.imagePath));
+      // For serverless functions, respond with a message that direct image access is no longer supported
+      // Instead, clients should use the base64 data returned from the upload endpoint
+      return res.status(307).json({ 
+        message: "Image data is now returned directly in the upload response. Please update your client to the newest version.", 
+        redirectUrl: "/app/settings?update=true"
+      });
     } catch (error) {
       console.error("Error retrieving image:", error);
       res.status(500).json({ message: "Failed to retrieve image" });
@@ -269,21 +255,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .json({ message: "Unauthorized access to image" });
         }
 
-        // Verify the file exists
-        if (!fs.existsSync(image.imagePath)) {
-          return res.status(404).json({ message: "Image file not found" });
-        }
-
-        // Set cache control headers to prevent caching issues
-        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        res.setHeader("Pragma", "no-cache");
-        res.setHeader("Expires", "0");
-
-        // Log that we're sending the image file
-        console.log(`Sending image file: ${image.imagePath}`);
-
-        // Send the original image file
-        res.sendFile(path.resolve(image.imagePath));
+        // For serverless functions, respond with a message that direct image access is no longer supported
+        // Instead, clients should use the base64 data returned from the upload endpoint
+        return res.status(307).json({ 
+          message: "Image data is now returned directly in the upload response. Please update your client to the newest version.", 
+          redirectUrl: "/app/settings?update=true"
+        });
       } catch (error) {
         console.error("Error retrieving original image:", error);
         res.status(500).json({ message: "Failed to retrieve original image" });
@@ -308,49 +285,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ message: "Unauthorized access to image" });
       }
 
-      // Get the processed image path
-      const filename = path.basename(image.imagePath);
-      const outputDir = path.dirname(image.imagePath);
-      const processedFileName = `processed_${filename}`;
-      const processedImagePath = path.join(outputDir, processedFileName);
-
-      // Verify the file exists
-      if (!fs.existsSync(processedImagePath)) {
-        console.log(`Processed image not found at ${processedImagePath}. Available files in directory:`);
-        const files = fs.readdirSync(outputDir);
-        console.log(files);
-        
-        // Try to find a matching processed file with a different extension
-        const baseFilename = filename.split('.')[0];
-        const possibleFiles = files.filter(f => 
-          f.startsWith(`processed_${baseFilename}`) || 
-          f === `${processedFileName}.jpg` ||
-          f === `${processedFileName}_gray.jpg`
-        );
-        
-        if (possibleFiles.length > 0) {
-          console.log(`Found alternative processed file: ${possibleFiles[0]}`);
-          const alternateProcessedPath = path.join(outputDir, possibleFiles[0]);
-          
-          // Set cache control headers
-          res.setHeader("Cache-Control", "public, max-age=86400"); // 24 hour cache
-          console.log(`Sending alternate processed image file: ${alternateProcessedPath}`);
-          return res.sendFile(path.resolve(alternateProcessedPath));
-        }
-        
-        return res
-          .status(404)
-          .json({ message: "Processed image not found" });
-      }
-
-      // Set cache control headers
-      res.setHeader("Cache-Control", "public, max-age=86400"); // 24 hour cache
-
-      // Log that we're sending the processed image file
-      console.log(`Sending processed image file: ${processedImagePath}`);
-
-      // Send the processed image file
-      res.sendFile(path.resolve(processedImagePath));
+      // For serverless functions, respond with a message that direct image access is no longer supported
+      // Instead, clients should use the base64 data returned from the upload endpoint
+      return res.status(307).json({ 
+        message: "Image data is now returned directly in the upload response. Please update your client to the newest version.", 
+        redirectUrl: "/app/settings?update=true"
+      });
     } catch (error) {
       console.error("Error retrieving processed image:", error);
       res.status(500).json({ message: "Failed to retrieve processed image" });

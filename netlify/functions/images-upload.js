@@ -10,77 +10,101 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
-  }
+  },
+  // Configure the field name to match what the client sends
+  fields: [{ name: 'file' }]
 });
 
 // Parse multipart form data
 const parseMultipartForm = (event) => {
-  try {
-    console.log('*** Parsing multipart form data');
-    const contentType = event.headers['content-type'] || '';
-    const boundary = contentType.split('boundary=')[1];
-    
-    if (!boundary) {
-      console.log('*** No boundary found in content-type');
-      return null;
-    }
+try {
+  console.log('*** Parsing multipart form data');
+  const contentType = event.headers['content-type'] || '';
+  console.log('*** Content-Type:', contentType);
+  const boundary = contentType.split('boundary=')[1];
+  
+  if (!boundary) {
+    console.log('*** No boundary found in content-type');
+    return null;
+  }
 
-    const parts = event.body.split(`--${boundary}`);
-    const formData = {};
-    let fileBuffer = null;
-    let fileName = '';
-    let fileContentType = '';
+  const parts = event.body.split(`--${boundary}`);
+  console.log(`*** Found ${parts.length} parts in the request`);
+  
+  const formData = {};
+  let fileBuffer = null;
+  let fileName = '';
+  let fileContentType = '';
+  let fileFieldName = '';
 
-    parts.forEach(part => {
-      if (part.includes('Content-Disposition: form-data;')) {
-        // Extract field name
-        const nameMatch = part.match(/name="([^"]+)"/);
-        if (nameMatch) {
-          const name = nameMatch[1];
-          
-          if (part.includes('filename="')) {
-            // This is a file
-            const filenameMatch = part.match(/filename="([^"]+)"/);
-            if (filenameMatch) {
-              fileName = filenameMatch[1];
-              
-              // Extract content type
-              const contentTypeMatch = part.match(/Content-Type: ([^\\r\\n]+)/);
-              if (contentTypeMatch) {
-                fileContentType = contentTypeMatch[1].trim();
-              }
-              
-              // Extract file content
-              const fileContentStart = part.indexOf('\r\n\r\n') + 4;
-              if (fileContentStart > 4) {
-                const fileContent = part.slice(fileContentStart).trim();
-                // Convert to Buffer
-                fileBuffer = Buffer.from(fileContent, 'binary');
-              }
+  parts.forEach((part, index) => {
+    if (part.includes('Content-Disposition: form-data;')) {
+      // Extract field name
+      const nameMatch = part.match(/name="([^"]+)"/); 
+      if (nameMatch) {
+        const name = nameMatch[1];
+        console.log(`*** Found field: ${name} at part ${index}`);
+        
+        if (part.includes('filename="')) {
+          // This is a file
+          fileFieldName = name; // Save the field name of the file
+          const filenameMatch = part.match(/filename="([^"]+)"/); 
+          if (filenameMatch) {
+            fileName = filenameMatch[1];
+            console.log(`*** File found: ${fileName}`);
+            
+            // Extract content type 
+            const contentTypeMatch = part.match(/Content-Type: ([^\r\n]+)/);
+            if (contentTypeMatch) {
+              fileContentType = contentTypeMatch[1].trim();
+              console.log(`*** File content type: ${fileContentType}`);
             }
-          } else {
-            // This is a regular field
-            const valueStart = part.indexOf('\r\n\r\n') + 4;
-            if (valueStart > 4) {
-              formData[name] = part.slice(valueStart).trim();
+            
+            // Extract file content
+            const fileContentStart = part.indexOf('\r\n\r\n') + 4;
+            if (fileContentStart > 4) {
+              const fileContent = part.slice(fileContentStart).trim();
+              // Convert to Buffer
+              fileBuffer = Buffer.from(fileContent, 'binary');
+              console.log(`*** File buffer created with ${fileBuffer.length} bytes`);
             }
+          }
+        } else {
+          // This is a regular field
+          const valueStart = part.indexOf('\r\n\r\n') + 4;
+          if (valueStart > 4) {
+            formData[name] = part.slice(valueStart).trim();
+            console.log(`*** Field value for ${name}:`, formData[name]);
           }
         }
       }
-    });
+    }
+  });
 
-    if (fileBuffer) {
+  if (fileBuffer) {
+    // Store file in the appropriate field (either file or image) based on field name
+    if (fileFieldName === 'image') {
+      formData.image = {
+        buffer: fileBuffer,
+        originalname: fileName,
+        mimetype: fileContentType
+      };
+      console.log('*** Added image to formData');
+    } else {
       formData.file = {
         buffer: fileBuffer,
         originalname: fileName,
         mimetype: fileContentType
       };
+      console.log('*** Added file to formData');
     }
+  }
 
-    console.log('*** Form data parsed:', Object.keys(formData));
+    console.log('*** Form data parsed. Fields:', Object.keys(formData));
     return formData;
   } catch (error) {
     console.log('*** Error parsing multipart form:', error.message);
+    console.log('*** Error stack:', error.stack);
     return null;
   }
 };
@@ -122,14 +146,29 @@ exports.handler = async (event, context) => {
         // Assume it's already an object
         formData = event.body;
       }
+      
+      console.log('*** Form data after parsing:', formData ? Object.keys(formData) : 'null');
+      if (formData && formData.image) {
+        console.log('*** Found image field instead of file field, adjusting...');
+        formData.file = formData.image;
+        delete formData.image;
+      }
     } catch (err) {
       console.log('*** Error parsing form data:', err);
       return formatResponse(400, { message: "Invalid form data" });
     }
     
-    if (!formData || !formData.file) {
+    if (!formData || !(formData.file || formData.image)) {
       console.log('*** No file provided in request');
+      console.log('*** Available fields:', formData ? Object.keys(formData) : 'none');
       return formatResponse(400, { message: "No image file provided" });
+    }
+    
+    // Handle if image is provided but not file
+    if (formData.image && !formData.file) {
+      console.log('*** Moving image to file field');
+      formData.file = formData.image;
+      delete formData.image;
     }
     
     // Generate a hash key for the image (still needed for database reference)

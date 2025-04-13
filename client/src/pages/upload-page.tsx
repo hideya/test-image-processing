@@ -73,7 +73,7 @@ export default function UploadPage() {
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("image", file);
 
       const dateForServer = new Date(customDate);
       dateForServer.setHours(12, 0, 0, 0);

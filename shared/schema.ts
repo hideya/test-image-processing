@@ -25,7 +25,6 @@ export const images = pgTable("images", {
   userId: integer("user_id")
     .notNull()
     .references(() => users.id),
-  imagePath: text("image_path").notNull(),
   hashKey: text("hash_key").notNull().unique(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   processedAngle: real("processed_angle"),
@@ -96,8 +95,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertImageSchema = createInsertSchema(images).pick({
   userId: true,
-  imagePath: true,
   hashKey: true,
+  processedAngle: true,
+  processedAngle2: true,
+  isProcessed: true
 });
 
 export const insertAngleMeasurementSchema = createInsertSchema(
