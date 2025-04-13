@@ -66,10 +66,7 @@ export default function MainPage() {
   // Thumbnail tracking removed - no longer needed
   // Thumbnail caching removed - no longer needed
 
-  // Track medium-sized image URLs to avoid redundant fetches
-  const [mediumImageCache, setMediumImageCache] = useState<{
-    [key: string]: string;
-  }>({});
+  // Medium image cache removed - no longer needed
 
   // For highlighting a dot in the chart with a pulse animation
   const [pulsingDot, setPulsingDot] = useState<string | null>(null);
@@ -401,15 +398,7 @@ export default function MainPage() {
       setProcessingImage(data.hashKey);
       setLastUploadedImage(data.hashKey);
 
-      // Preload medium image for the processed image display
-      const mediumImg = new Image();
-      mediumImg.onload = () => {
-        setMediumImageCache((prev) => ({
-          ...prev,
-          [data.hashKey]: `/api/images/${data.hashKey}/medium`,
-        }));
-      };
-      mediumImg.src = `/api/images/${data.hashKey}/medium`;
+      // Medium image preloading removed - no longer needed
 
       // Preload image if needed
       if (data.hashKey) {
