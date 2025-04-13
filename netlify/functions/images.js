@@ -23,7 +23,7 @@ exports.handler = async (event, context) => {
     let hashKey, requestType;
     
     // Check if this is a specific image type request
-    if (pathParts.includes('original') || pathParts.includes('processed')) {
+    if (pathParts.includes('original')) {
       // Format: /api/images/{hashKey}/{type}
       hashKey = pathParts[pathParts.length - 2];
       requestType = pathParts[pathParts.length - 1];
@@ -59,69 +59,12 @@ exports.handler = async (event, context) => {
       return formatResponse(403, { message: "Unauthorized access to image" });
     }
     
-    // Handle different image types
-    let imagePath;
-    let cacheControl;
-    
-    switch (requestType) {
-      case 'processed':
-        console.log('*** Getting processed image');
-        // Get the processed image path
-        const filename = path.basename(image.imagePath);
-        const outputDir = path.dirname(image.imagePath);
-        const processedFileName = `processed_${filename}`;
-        imagePath = path.join(outputDir, processedFileName);
-        cacheControl = 'public, max-age=86400'; // 24 hour cache
-        break;
-        
-      case 'original':
-      case 'default':
-        console.log('*** Getting original image');
-        imagePath = image.imagePath;
-        cacheControl = 'no-cache, no-store, must-revalidate';
-        break;
-        
-      default:
-        return formatResponse(400, { message: "Invalid image type requested" });
-    }
-    
-    // Verify the file exists
-    if (!imagePath || !fs.existsSync(imagePath)) {
-      console.log(`*** Image file not found: ${imagePath}`);
-      return formatResponse(404, { message: "Image file not found" });
-    }
-    
-    console.log(`*** Sending image file: ${imagePath}`);
-    
-    // For serverless functions, we can't directly send files
-    // We need to read the file and return it as base64 encoded data
-    const fileData = await fs.promises.readFile(imagePath);
-    const base64Data = fileData.toString('base64');
-    
-    // Determine content type based on file extension
-    const ext = path.extname(imagePath).toLowerCase();
-    let contentType = 'image/jpeg'; // default
-    
-    if (ext === '.png') {
-      contentType = 'image/png';
-    } else if (ext === '.gif') {
-      contentType = 'image/gif';
-    } else if (ext === '.webp') {
-      contentType = 'image/webp';
-    }
-    
-    // Return the image
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': cacheControl,
-        'Pragma': requestType === 'processed' ? 'cache' : 'no-cache',
-        'Expires': requestType === 'processed' ? '86400' : '0'
-      },
-      body: base64Data,
-      isBase64Encoded: true
-    };
+    // For serverless functions, respond with a message that direct image access is no longer supported
+    // Instead, clients should use the base64 data returned from the upload endpoint
+    return formatResponse(307, { 
+      message: "Image data is now returned directly in the upload response. Please update your client to the newest version.", 
+      redirectUrl: "/app/settings?update=true"
+    });
     
   } catch (error) {
     console.error('*** Error retrieving image:', error);

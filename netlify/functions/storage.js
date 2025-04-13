@@ -94,6 +94,13 @@ class DatabaseStorage {
     return image;
   }
 
+  async createImageWithoutFile(imageData) {
+    // For Netlify functions, we don't save physical files
+    console.log('Creating image record without file path');
+    const [image] = await db.insert(images).values(imageData).returning();
+    return image;
+  }
+
   async getImage(id) {
     const [image] = await db.select().from(images).where(eq(images.id, id));
     return image;

@@ -1,11 +1,8 @@
 // netlify/functions/images-upload.js
 const { formatResponse, getUserFromToken, handleOptions } = require("./auth-utils");
 const { storage } = require("./storage");
-const { processImage, preprocessImage } = require("./opencv");
-const path = require("path");
-const fs = require("fs");
+const { processImageBuffer } = require("./opencv");
 const multer = require("multer");
-const util = require("util");
 const { Buffer } = require("buffer");
 
 // Configure multer for in-memory storage
@@ -135,12 +132,10 @@ exports.handler = async (event, context) => {
       return formatResponse(400, { message: "No image file provided" });
     }
     
-    // Generate a hash key for the image
+    // Generate a hash key for the image (still needed for database reference)
     const hashKey = storage.generateHashKey();
-    const fileExt = path.extname(formData.file.originalname);
-    const filename = `${hashKey}${fileExt}`;
     
-    console.log(`*** Processing file: ${filename}`);
+    console.log(`*** Processing file with hash key: ${hashKey}`);
     
     // Check for required customDate field
     if (!formData.customDate) {
@@ -175,75 +170,73 @@ exports.handler = async (event, context) => {
       console.log(`*** Client applied rotation of ${formData.clientRotation} degrees before upload`);
     }
     
-    // Save the original image (rotation is already applied on the client side)
-    console.log('*** Saving pre-rotated image uploaded from client');
-    const imagePath = await storage.saveImageFile(
-      formData.file.buffer,
-      filename
+    // Process the image synchronously
+    console.log('*** Processing image synchronously');
+    const processingResult = await processImageBuffer(formData.file.buffer);
+    
+    // Convert image to base64 for response
+    const processedImageBase64 = processingResult.processedImageBuffer.toString('base64');
+    
+    console.log('*** Image processing completed successfully');
+    
+    // Create image record in the database (without physical file)
+    const imageData = {
+      userId: user.id,
+      hashKey: hashKey,
+      isProcessed: true,
+      processedAngle: processingResult.angle,
+      processedAngle2: processingResult.angle2
+    };
+    
+    console.log('*** Creating image record in database');
+    const image = await storage.createImageWithoutFile(imageData);
+    
+    // Create angle measurement record
+    console.log('*** Creating angle measurement record');
+    const measurementData = {
+      imageId: image.id,
+      userId: user.id,
+      angle: processingResult.angle,
+      angle2: processingResult.angle2,
+      customTimestamp: customDate,
+      memo: formData.memo || undefined,
+      iconIds: formData.iconIds || undefined
+    };
+    
+    // Check if there are existing measurements for this date
+    const existingMeasurements = await storage.findMeasurementsByUserIdAndDate(
+      user.id,
+      customDate
     );
     
-    // Save image record to database
-    console.log('*** Creating image record in database');
-    const image = await storage.createImage({
-      userId: user.id,
-      imagePath,
-      hashKey,
-    });
+    // If there are existing measurements, delete them (we're replacing them)
+    if (existingMeasurements.length > 0) {
+      console.log(`*** Found ${existingMeasurements.length} existing measurements for date ${customDate.toISOString()}`);
+      for (const measurement of existingMeasurements) {
+        await storage.deleteMeasurementById(measurement.id);
+      }
+    }
     
-    // Process the image asynchronously (don't wait for it to finish)
-    console.log('*** Starting async image processing');
-    preprocessImage(imagePath)
-      .then((processedImagePath) => {
-        console.log('*** Image preprocessed, calculating angles');
-        return processImage(processedImagePath).then(async (angles) => {
-          // Update the image with processed angles
-          console.log('*** Updating image with angles:', angles);
-          await storage.updateImageProcessedAngles(
-            image.id,
-            angles.angle,
-            angles.angle2
-          );
-          
-          // Check if there are existing measurements for this date
-          const existingMeasurements = await storage.findMeasurementsByUserIdAndDate(
-            user.id,
-            customDate
-          );
-          
-          // If there are existing measurements, delete them (we're replacing them)
-          if (existingMeasurements.length > 0) {
-            console.log(`*** Found ${existingMeasurements.length} existing measurements for date ${customDate.toISOString()}`);
-            for (const measurement of existingMeasurements) {
-              await storage.deleteMeasurementById(measurement.id);
-            }
-          }
-          
-          // Create angle measurement record
-          console.log('*** Creating angle measurement record');
-          const measurementData = {
-            imageId: image.id,
-            userId: user.id,
-            angle: angles.angle,
-            angle2: angles.angle2,
-            customTimestamp: customDate,
-            memo: formData.memo || undefined,
-            iconIds: formData.iconIds || undefined
-          };
-          
-          await storage.createAngleMeasurement(measurementData);
-          console.log('*** Image processing completed successfully');
-        });
-      })
-      .catch((err) => {
-        console.error('*** Error processing image:', err);
-      });
+    const measurement = await storage.createAngleMeasurement(measurementData);
     
-    // Return immediate response with image info
-    console.log('*** Returning success response');
-    return formatResponse(201, {
-      id: image.id,
-      hashKey: image.hashKey,
-      message: "Image uploaded successfully and scheduled for processing"
+    // Return complete response with processed image and data
+    console.log('*** Returning success response with processed image');
+    return formatResponse(200, {
+      success: true,
+      measurement: {
+        id: measurement.id,
+        angle: processingResult.angle,
+        angle2: processingResult.angle2,
+        date: customDate
+      },
+      image: {
+        id: image.id,
+        hashKey: image.hashKey
+      },
+      processedImage: {
+        base64: processedImageBase64,
+        mimeType: 'image/jpeg'
+      }
     });
     
   } catch (error) {

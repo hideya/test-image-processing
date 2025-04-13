@@ -25,12 +25,21 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface UploadResponse {
-  id: number;
-  hashKey: string;
-  // thumbnailBase64 field removed
-  angle: number;
-  angle2: number;
-  message: string;
+  success: boolean;
+  measurement: {
+    id: number;
+    angle: number;
+    angle2: number;
+    date: string;
+  };
+  image: {
+    id: number;
+    hashKey: string;
+  };
+  processedImage: {
+    base64: string;
+    mimeType: string;
+  };
 }
 
 export default function UploadPage() {
@@ -40,10 +49,6 @@ export default function UploadPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewRotation, setPreviewRotation] = useState<number>(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [processingImage, setProcessingImage] = useState<string | null>(null);
-  const [lastUploadedImage, setLastUploadedImage] = useState<string | null>(
-    null,
-  );
   const [showDateConflictConfirmation, setShowDateConflictConfirmation] =
     useState(false);
   const [processedFileToUpload, setProcessedFileToUpload] =
@@ -56,76 +61,19 @@ export default function UploadPage() {
     today.setHours(12, 0, 0, 0);
     return today;
   });
-  // NOTE: We now use processed images directly instead of medium images
-  // to display processed images
-  const [processedImageCache, setProcessedImageCache] = useState<{
-    [key: string]: string;
-  }>({});
+  
+  // State for processed image and results
+  const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
+  const [processedAngles, setProcessedAngles] = useState<{
+    angle: number;
+    angle2: number;
+  } | null>(null);
 
-  // Add a function to fetch images with authentication
-  // This function uses processed images for the results display
-  const fetchImageWithAuth = async (imageKey: string, type = 'processed'): Promise<string | null> => {
-    console.log(`*** Fetching authenticated image: /api/images/${imageKey}/${type}`);
-    try {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-        console.log('*** Adding Authorization token to image request');
-      } else {
-        console.log('*** WARNING: No token available for image request');
-        return null;
-      }
-      
-      const response = await fetch(`/api/images/${imageKey}/${type}?t=${new Date().getTime()}`, {
-        headers,
-        cache: 'no-cache' // Force a fresh request each time
-      });
-      
-      if (!response.ok) {
-        console.error(`*** Failed to load image: ${response.status} ${response.statusText}`);
-        return null;
-      }
-      
-      console.log(`*** Image fetch successful, creating object URL`);
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
-    } catch (error) {
-      console.error('*** Error loading image:', error);
-      return null;
-    }
-  };
-
-  // Load the processed image when lastUploadedImage changes
-  // This effect is important for displaying processed images in the upload page
-  useEffect(() => {
-    if (lastUploadedImage) {
-      console.log(`*** Last uploaded image changed to: ${lastUploadedImage}`);
-      
-      // Wait a bit to ensure processing has time to complete
-      setTimeout(() => {
-        console.log('*** Fetching processed image after delay to ensure processing is complete');
-        fetchImageWithAuth(lastUploadedImage, 'processed').then(url => {
-          if (url) {
-            console.log(`*** Setting processed image in cache for ${lastUploadedImage}`);
-            setProcessedImageCache(prev => ({
-              ...prev,
-              [lastUploadedImage]: url
-            }));
-          } else {
-            console.error('*** Failed to fetch processed image');
-          }
-        });
-      }, 3000); // 3 second delay to allow for processing
-    }
-  }, [lastUploadedImage]);
-
-  // Upload mutation
+  // Upload mutation with updated implementation
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append("image", file);
+      formData.append("file", file);
 
       const dateForServer = new Date(customDate);
       dateForServer.setHours(12, 0, 0, 0);
@@ -144,7 +92,9 @@ export default function UploadPage() {
 
       // Add authorization header for JWT authentication
       const token = getAuthToken();
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = {
+        'Accept': 'application/json'
+      };
       
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -167,53 +117,33 @@ export default function UploadPage() {
       return (await response.json()) as UploadResponse;
     },
     onSuccess: (data) => {
+      // Display success message
       toast({
-        title: "Image uploaded successfully",
-        description: "Your image is being processed. Results will appear soon.",
+        title: "Image uploaded and processed",
+        description: "Your image has been analyzed successfully.",
         variant: "success",
       });
 
-      setProcessingImage(data.hashKey);
-      setLastUploadedImage(data.hashKey);
-      // Initialize angles state to null
-      setProcessedAngles(null);
+      // Update state with the processed image and angle data
+      setProcessedAngles({
+        angle: data.measurement.angle,
+        angle2: data.measurement.angle2,
+      });
 
-      // Poll for results
-      const checkInterval = setInterval(async () => {
-        try {
-          // Add authorization token to the request
-          const token = getAuthToken();
-          const headers: Record<string, string> = {};
-          
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-            console.log('*** Adding Authorization token to latest-angle request');
-          } else {
-            console.log('*** WARNING: No token available for latest-angle request');
-          }
-          
-          const response = await fetch("/api/latest-angle", { headers });
-          if (response.ok) {
-            const angleData = await response.json();
-            if (angleData.angle !== null) {
-              clearInterval(checkInterval);
-              setProcessingImage(null);
-              setProcessedAngles({
-                angle: angleData.angle,
-                angle2: angleData.angle2,
-              });
-              queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });
-            }
-          }
-        } catch (error) {
-          console.error("*** Error checking processing status:", error);
-        }
-      }, 2000);
+      // Create URL from base64 data
+      const processedImageSrc = `data:${data.processedImage.mimeType};base64,${data.processedImage.base64}`;
+      setProcessedImageUrl(processedImageSrc);
 
-      setTimeout(() => {
-        clearInterval(checkInterval);
-        setProcessingImage(null);
-      }, 30000);
+      // Invalidate angle data cache for the charts
+      queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });
+      
+      // Reset form state except for the results
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setPreviewRotation(0);
+      setMemo("");
+      setSelectedIcons([]);
+      setIsUploading(false);
     },
     onError: (error: Error) => {
       toast({
@@ -237,6 +167,10 @@ export default function UploadPage() {
         setPreviewUrl(fileReader.result as string);
       };
       fileReader.readAsDataURL(file);
+      
+      // Clear previous processed results when a new file is selected
+      setProcessedImageUrl(null);
+      setProcessedAngles(null);
     }
   };
 
@@ -359,11 +293,7 @@ export default function UploadPage() {
           return;
         }
 
-        uploadMutation.mutate(processedFile, {
-          onSettled: () => {
-            resetForm();
-          },
-        });
+        uploadMutation.mutate(processedFile);
       } catch (error) {
         console.error("Error processing image:", error);
         setIsUploading(false);
@@ -383,12 +313,6 @@ export default function UploadPage() {
     }
   };
 
-  // Add state for processed angles
-  const [processedAngles, setProcessedAngles] = useState<{
-    angle: number;
-    angle2: number;
-  } | null>(null);
-
   const resetForm = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
@@ -396,7 +320,7 @@ export default function UploadPage() {
     setMemo("");
     setSelectedIcons([]);
     setIsUploading(false);
-    setProcessedAngles(null);
+    // Don't reset the processed results so they remain visible
   };
 
   const handleConfirmDateConflict = () => {
@@ -404,7 +328,6 @@ export default function UploadPage() {
       setIsUploading(true);
       uploadMutation.mutate(processedFileToUpload, {
         onSettled: () => {
-          resetForm();
           setProcessedFileToUpload(null);
           setShowDateConflictConfirmation(false);
         },
@@ -416,7 +339,6 @@ export default function UploadPage() {
   const formatTableDayPart = useMemo(() => {
     return (dateStr: string) => {
       const date = new Date(dateStr);
-      // return format(date, "EEE");
       const dayOfWeek = date.getDay();
       const weekDayJP = ["日", "月", "火", "水", "木", "金", "土"];
       return weekDayJP[dayOfWeek];
@@ -560,7 +482,7 @@ export default function UploadPage() {
                 {isUploading ? (
                   <span className="flex items-center justify-center">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
+                    Uploading & Processing...
                   </span>
                 ) : (
                   "Upload and Analyze"
@@ -568,55 +490,26 @@ export default function UploadPage() {
               </button>
             )}
 
-            {processingImage && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-100 rounded-md">
-                <div className="flex items-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-yellow-500" />
-                  <p className="text-sm text-yellow-700">
-                    Processing image... This may take a few moments.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {lastUploadedImage && !selectedFile && (
+            {/* Show processed image results */}
+            {processedImageUrl && processedAngles && !selectedFile && (
               <div className="mt-6 border p-4 rounded-lg">
                 <div className="flex flex-col items-center">
-                  {processedAngles && <h3>Processed Image</h3>}
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Processed Image</h3>
                   <div className="relative h-[50vh] rounded-md overflow-hidden">
-                    {processingImage === lastUploadedImage && (
-                      <div className="absolute top-2 right-2 z-10">
-                        <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full flex items-center">
-                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                          Processing
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Display the processed image from cache when available */}
-                    {processedImageCache[lastUploadedImage] ? (
-                      <img
-                        src={processedImageCache[lastUploadedImage]}
-                        alt="Server processed image"
-                        className="object-contain h-full w-full"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                        <span className="ml-2 text-gray-600">Loading image...</span>
-                      </div>
-                    )}
+                    <img
+                      src={processedImageUrl}
+                      alt="Processed image"
+                      className="object-contain h-full w-full"
+                    />
                   </div>
-                  {processedAngles && (
-                    <div className="flex mt-4 text-sm text-gray-600 gap-4">
-                      <div>
-                        左 {processedAngles.angle.toFixed(2)}°
-                      </div>
-                      <div>
-                        右 {processedAngles.angle2.toFixed(2)}°
-                      </div>
+                  <div className="flex mt-4 text-sm text-gray-600 gap-4">
+                    <div>
+                      左 {processedAngles.angle.toFixed(2)}°
                     </div>
-                  )}
+                    <div>
+                      右 {processedAngles.angle2.toFixed(2)}°
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
