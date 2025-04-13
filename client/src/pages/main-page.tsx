@@ -58,10 +58,7 @@ export default function MainPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [processingImage, setProcessingImage] = useState<string | null>(null);
   const [lastUploadedImage, setLastUploadedImage] = useState<string | null>(null);
-  const [loadingThumbnails, setLoadingThumbnails] = useState<{
-    [key: string]: boolean;
-  }>({});
-  const [expandedThumbnail, setExpandedThumbnail] = useState<string | null>(null);
+  // Image loading states removed - no longer needed
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   // Thumbnail tracking removed - no longer needed
   // Thumbnail caching removed - no longer needed
@@ -100,34 +97,19 @@ export default function MainPage() {
 
   // Using the date formatting function from use-settings with user's preferences
 
-  // Create a memoized formatter function that will update when settings change
-  // Create a ref to store the timeout ID
-  const loadingTimeoutRef = useRef<number | null>(null);
-
-  // Cleanup the timeout when component unmounts
-  useEffect(() => {
-    return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-      }
-    };
-  }, []);
-
   // Format for the table view (M/D DDD) - without leading zeros and day of week
-  // Format date part (e.g., "4/8") for the table view
+  // Format date part (e.g., "8") for the table view
   const formatTableDatePart = useMemo(() => {
     return (dateStr: string) => {
       const date = new Date(dateStr);
-      // return format(date, "M/d");
       return format(date, "d");
     };
   }, []);
 
-  // Format day of week part (e.g., "Tue") for the table view
+  // Format day of week part (e.g., "火") for the table view
   const formatTableDayPart = useMemo(() => {
     return (dateStr: string) => {
       const date = new Date(dateStr);
-      // return format(date, "EEE");
       const dayOfWeek = date.getDay();
       const weekDayJP = ["日", "月", "火", "水", "木", "金", "土"];
       return weekDayJP[dayOfWeek];
@@ -150,40 +132,12 @@ export default function MainPage() {
     };
   }, []);
 
-  // Format year part (e.g., "2025") for the table view
-  const formatTableYearPart = useMemo(() => {
-    return (dateStr: string) => {
-      const date = new Date(dateStr);
-      return format(date, "yyyy");
-    };
-  }, []);
-
-  // For backward compatibility with other parts of the code
-  const formatTableDate = useMemo(() => {
-    return (dateStr: string) => {
-      const date = new Date(dateStr);
-      return `${format(date, "M/d")} ${format(date, "EEE")}`;
-    };
-  }, []);
-
-  // Format for the expanded image view - day/month without leading zeros
-  const formatExpandedDate = useMemo(() => {
-    return (dateStr: string) => {
-      const date = new Date(dateStr);
-      return format(date, "yyyy/M/d");
-    };
-  }, []);
-
-  // Format using user's settings for other places
-  const formatDateWithSettings = useMemo(() => {
-    return (date: string | Date) => formatDate(date, settings);
-  }, [settings]);
+  // Format functions for date display
 
   // Create a simplified date formatter for the chart that shows day/month without leading zeros
   const formatSimpleDate = useMemo(() => {
     return (dateStr: string) => {
       const date = new Date(dateStr);
-      // return `${format(date, "M/d")}`;
       return `${format(date, "d")}`;
     };
   }, []);
@@ -258,17 +212,14 @@ export default function MainPage() {
 
   // Get today's date in the same format as measurements' date
   const today = new Date();
-  today.setHours(12, 0, 0, 0); // FIXME: dealing with timezone
+  today.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
   const todayDate = today.toISOString().split("T")[0];
   // Find today's measurement
   const todayMeasurement = measurements.find(
     (measurement) => measurement.date === todayDate,
   );
 
-  // Get the most recent measurement for the "Latest Measurement" display
-  const latestMeasurement = useMemo(() => {
-    return sortedMeasurements.length > 0 ? sortedMeasurements[0] : null;
-  }, [sortedMeasurements]);
+  // Latest measurement calculation removed - no longer used
 
   const { chartDateRange, chartData } = useMemo(() => {
     // Get all dates in current month
@@ -400,33 +351,7 @@ export default function MainPage() {
 
       // Medium image preloading removed - no longer needed
 
-      // Preload image if needed
-      if (data.hashKey) {
-        // Start loading the server-processed image
-        setLoadingThumbnails((prev) => ({
-          ...prev,
-          [data.hashKey]: true,
-        }));
-
-        // Fetch the image from the server
-        const img = new Image();
-        img.onload = () => {
-          // Mark as not loading
-          setLoadingThumbnails((prev) => ({
-            ...prev,
-            [data.hashKey]: false,
-          }));
-        };
-        img.onerror = () => {
-          // Mark as not loading on error
-          setLoadingThumbnails((prev) => ({
-            ...prev,
-            [data.hashKey]: false,
-          }));
-        };
-        // Load the image directly
-        img.src = `/api/images/${data.hashKey}`;
-      }
+      // Image preloading removed - no longer needed
 
       // Poll for results
       const checkInterval = setInterval(async () => {
@@ -565,18 +490,10 @@ export default function MainPage() {
     // Format date as YYYY-MM-DD for comparison
     const formattedDate = dateToCheck.toISOString().split("T")[0];
 
-    // Log for debugging
-    console.log("Checking date conflict for:", formattedDate);
-    console.log(
-      "Available measurement dates:",
-      measurements.map((m) => m.date),
-    );
-
     // Check if any measurement has this date
     const hasConflict = measurements.some(
       (measurement) => measurement.date === formattedDate,
     );
-    console.log("Has conflict:", hasConflict);
 
     return hasConflict;
   };
@@ -659,12 +576,7 @@ export default function MainPage() {
     }
   };
 
-  // Handle cancellation of overwrite
-  const handleCancelDateConflict = () => {
-    setShowDateConflictConfirmation(false);
-    setProcessedFileToUpload(null);
-    setIsUploading(false);
-  };
+  // Cancellation handling moved to AlertDialogCancel onClick
 
   // Format the date for display in the confirmation dialog
   const getFormattedDateForDialog = () => {
@@ -694,7 +606,11 @@ export default function MainPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDateConflict}>
+            <AlertDialogCancel onClick={() => {
+              setShowDateConflictConfirmation(false);
+              setProcessedFileToUpload(null);
+              setIsUploading(false);
+            }}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -763,7 +679,6 @@ export default function MainPage() {
                 setCurrentViewMonth(newDate);
               }}
               className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              // className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
             >
               ◀︎
             </button>
