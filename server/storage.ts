@@ -59,8 +59,6 @@ export interface IStorage {
 
   generateHashKey(): string;
   saveImageFile(imageBuffer: Buffer, filename: string): Promise<string>;
-  generateMediumImage(imagePath: string): Promise<string>;
-  getMediumImagePath(hashKey: string): Promise<string | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -258,81 +256,7 @@ export class MemStorage implements IStorage {
     return filePath;
   }
 
-  async generateMediumImage(imagePath: string): Promise<string> {
-    try {
-      // Get the filename without the directory path
-      const filename = path.basename(imagePath);
 
-      // Create a path for the medium image
-      const mediumsDir = path.join(this.uploadDir, 'mediums');
-
-      // Ensure mediums directory exists
-      if (!fs.existsSync(mediumsDir)) {
-        fs.mkdirSync(mediumsDir, { recursive: true });
-      }
-
-      // Medium image path
-      const mediumImagePath = path.join(mediumsDir, filename);
-
-      // Skip if medium image already exists
-      if (fs.existsSync(mediumImagePath)) {
-        return mediumImagePath;
-      }
-
-      // Read the image as a buffer to ensure we don't apply any automatic rotation
-      // This preserves the rotation that was already applied to the original image
-      const imageBuffer = await fs.promises.readFile(imagePath);
-
-      // Create an 800px width/height medium image with 85% JPEG quality
-      // Force orientation to 1 (normal) to prevent automatic rotation based on EXIF data
-      const image = sharp(imageBuffer, {
-        // Disable automatic rotation based on EXIF
-        failOnError: false
-      }).withMetadata({ orientation: 1 });
-
-      // Resize to fit within 800x800 while maintaining aspect ratio
-      const resizedImage = image.resize({
-        width: 800,
-        height: 800,
-        fit: 'inside',
-        withoutEnlargement: true
-      });
-
-      // Convert to JPEG with 85% quality
-      await resizedImage
-        .toFormat('jpeg', { quality: 85 })
-        .toFile(mediumImagePath);
-
-      console.log(`Generated medium image at ${mediumImagePath} from ${imagePath}`);
-      return mediumImagePath;
-    } catch (error) {
-      console.error('Error generating medium image:', error);
-      return imagePath; // Return original path as fallback
-    }
-  }
-
-  async getMediumImagePath(hashKey: string): Promise<string | null> {
-    try {
-      const image = await this.getImageByHashKey(hashKey);
-      if (!image || !image.imagePath) {
-        return null;
-      }
-
-      const filename = path.basename(image.imagePath);
-      const mediumImagePath = path.join(this.uploadDir, 'mediums', filename);
-
-      // If medium image exists, return its path
-      if (fs.existsSync(mediumImagePath)) {
-        return mediumImagePath;
-      }
-
-      // Otherwise generate it
-      return await this.generateMediumImage(image.imagePath);
-    } catch (error) {
-      console.error('Error getting medium image path:', error);
-      return null;
-    }
-  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -583,81 +507,7 @@ export class DatabaseStorage implements IStorage {
     return filePath;
   }
 
-  async generateMediumImage(imagePath: string): Promise<string> {
-    try {
-      // Get the filename without the directory path
-      const filename = path.basename(imagePath);
 
-      // Create a path for the medium image
-      const mediumsDir = path.join(this.uploadDir, 'mediums');
-
-      // Ensure mediums directory exists
-      if (!fs.existsSync(mediumsDir)) {
-        fs.mkdirSync(mediumsDir, { recursive: true });
-      }
-
-      // Medium image path
-      const mediumImagePath = path.join(mediumsDir, filename);
-
-      // Skip if medium image already exists
-      if (fs.existsSync(mediumImagePath)) {
-        return mediumImagePath;
-      }
-
-      // Read the image as a buffer to ensure we don't apply any automatic rotation
-      // This preserves the rotation that was already applied to the original image
-      const imageBuffer = await fs.promises.readFile(imagePath);
-
-      // Create an 800px width/height medium image with 85% JPEG quality
-      // Force orientation to 1 (normal) to prevent automatic rotation based on EXIF data
-      const image = sharp(imageBuffer, {
-        // Disable automatic rotation based on EXIF
-        failOnError: false
-      }).withMetadata({ orientation: 1 });
-
-      // Resize to fit within 800x800 while maintaining aspect ratio
-      const resizedImage = image.resize({
-        width: 800,
-        height: 800,
-        fit: 'inside',
-        withoutEnlargement: true
-      });
-
-      // Convert to JPEG with 85% quality
-      await resizedImage
-        .toFormat('jpeg', { quality: 85 })
-        .toFile(mediumImagePath);
-
-      console.log(`Generated medium image at ${mediumImagePath} from ${imagePath}`);
-      return mediumImagePath;
-    } catch (error) {
-      console.error('Error generating medium image:', error);
-      return imagePath; // Return original path as fallback
-    }
-  }
-
-  async getMediumImagePath(hashKey: string): Promise<string | null> {
-    try {
-      const image = await this.getImageByHashKey(hashKey);
-      if (!image || !image.imagePath) {
-        return null;
-      }
-
-      const filename = path.basename(image.imagePath);
-      const mediumImagePath = path.join(this.uploadDir, 'mediums', filename);
-
-      // If medium image exists, return its path
-      if (fs.existsSync(mediumImagePath)) {
-        return mediumImagePath;
-      }
-
-      // Otherwise generate it
-      return await this.generateMediumImage(image.imagePath);
-    } catch (error) {
-      console.error('Error getting medium image path:', error);
-      return null;
-    }
-  }
 }
 
 // Use the database storage

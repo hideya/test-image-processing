@@ -56,17 +56,16 @@ export default function UploadPage() {
     today.setHours(12, 0, 0, 0);
     return today;
   });
-  // NOTE: Medium image cache is still used in this component to display processed images
-  // This was intentionally kept when removing medium image usage from main-page.tsx
-  const [mediumImageCache, setMediumImageCache] = useState<{
+  // NOTE: We now use processed images directly instead of medium images
+  // to display processed images
+  const [processedImageCache, setProcessedImageCache] = useState<{
     [key: string]: string;
   }>({});
 
   // Add a function to fetch images with authentication
-  // This function uses medium-sized images by default for the results display
-  // Kept intentionally while removing medium image usage from other components
-  const fetchImageWithAuth = async (imageKey: string, size = 'medium'): Promise<string | null> => {
-    console.log(`*** Fetching authenticated image: /api/images/${imageKey}/${size}`);
+  // This function uses processed images for the results display
+  const fetchImageWithAuth = async (imageKey: string, type = 'processed'): Promise<string | null> => {
+    console.log(`*** Fetching authenticated image: /api/images/${imageKey}/${type}`);
     try {
       const token = getAuthToken();
       const headers: Record<string, string> = {};
@@ -79,7 +78,7 @@ export default function UploadPage() {
         return null;
       }
       
-      const response = await fetch(`/api/images/${imageKey}/${size}`, {
+      const response = await fetch(`/api/images/${imageKey}/${type}`, {
         headers
       });
       
@@ -97,16 +96,15 @@ export default function UploadPage() {
     }
   };
 
-  // Load the processed medium-sized image when lastUploadedImage changes
+  // Load the processed image when lastUploadedImage changes
   // This effect is important for displaying processed images in the upload page
-  // and was intentionally preserved when removing medium image usage elsewhere
   useEffect(() => {
     if (lastUploadedImage) {
       console.log(`*** Last uploaded image changed to: ${lastUploadedImage}`);
-      fetchImageWithAuth(lastUploadedImage, 'medium').then(url => {
+      fetchImageWithAuth(lastUploadedImage, 'processed').then(url => {
         if (url) {
-          console.log(`*** Setting medium image in cache for ${lastUploadedImage}`);
-          setMediumImageCache(prev => ({
+          console.log(`*** Setting processed image in cache for ${lastUploadedImage}`);
+          setProcessedImageCache(prev => ({
             ...prev,
             [lastUploadedImage]: url
           }));
@@ -587,10 +585,10 @@ export default function UploadPage() {
                       </div>
                     )}
 
-                    {/* Display the medium-sized processed image from cache when available */}
-                    {mediumImageCache[lastUploadedImage] ? (
+                    {/* Display the processed image from cache when available */}
+                    {processedImageCache[lastUploadedImage] ? (
                       <img
-                        src={mediumImageCache[lastUploadedImage]}
+                        src={processedImageCache[lastUploadedImage]}
                         alt="Server processed image"
                         className="object-contain h-full w-full"
                       />

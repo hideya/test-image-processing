@@ -291,8 +291,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Get medium-sized image by hash key
-  app.get("/api/images/:hashKey/medium", isAuthenticated, async (req, res) => {
+  // Get processed image by hash key
+  app.get("/api/images/:hashKey/processed", isAuthenticated, async (req, res) => {
     try {
       const { hashKey } = req.params;
 
@@ -308,26 +308,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ message: "Unauthorized access to image" });
       }
 
-      // Generate or get the medium-sized image
-      const mediumImagePath = await storage.getMediumImagePath(hashKey);
-      if (!mediumImagePath || !fs.existsSync(mediumImagePath)) {
+      // Get the processed image path
+      const filename = path.basename(image.imagePath);
+      const outputDir = path.dirname(image.imagePath);
+      const processedFileName = `processed_${filename}`;
+      const processedImagePath = path.join(outputDir, processedFileName);
+
+      // Verify the file exists
+      if (!fs.existsSync(processedImagePath)) {
         return res
           .status(404)
-          .json({ message: "Medium image could not be generated" });
+          .json({ message: "Processed image not found" });
       }
 
-      // Set cache control headers - medium images can be cached for longer periods
-      // since they're less likely to change than the dynamic components
+      // Set cache control headers
       res.setHeader("Cache-Control", "public, max-age=86400"); // 24 hour cache
 
-      // Log that we're sending the medium image file
-      console.log(`Sending medium image file: ${mediumImagePath}`);
+      // Log that we're sending the processed image file
+      console.log(`Sending processed image file: ${processedImagePath}`);
 
-      // Send the medium image file
-      res.sendFile(path.resolve(mediumImagePath));
+      // Send the processed image file
+      res.sendFile(path.resolve(processedImagePath));
     } catch (error) {
-      console.error("Error retrieving medium image:", error);
-      res.status(500).json({ message: "Failed to retrieve medium image" });
+      console.error("Error retrieving processed image:", error);
+      res.status(500).json({ message: "Failed to retrieve processed image" });
     }
   });
 

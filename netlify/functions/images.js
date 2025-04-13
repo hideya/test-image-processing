@@ -23,7 +23,7 @@ exports.handler = async (event, context) => {
     let hashKey, requestType;
     
     // Check if this is a specific image type request
-    if (pathParts.includes('original') || pathParts.includes('medium')) {
+    if (pathParts.includes('original') || pathParts.includes('processed')) {
       // Format: /api/images/{hashKey}/{type}
       hashKey = pathParts[pathParts.length - 2];
       requestType = pathParts[pathParts.length - 1];
@@ -64,9 +64,13 @@ exports.handler = async (event, context) => {
     let cacheControl;
     
     switch (requestType) {
-      case 'medium':
-        console.log('*** Getting medium-sized image');
-        imagePath = await storage.getMediumImagePath(hashKey);
+      case 'processed':
+        console.log('*** Getting processed image');
+        // Get the processed image path
+        const filename = path.basename(image.imagePath);
+        const outputDir = path.dirname(image.imagePath);
+        const processedFileName = `processed_${filename}`;
+        imagePath = path.join(outputDir, processedFileName);
         cacheControl = 'public, max-age=86400'; // 24 hour cache
         break;
         
@@ -112,8 +116,8 @@ exports.handler = async (event, context) => {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': cacheControl,
-        'Pragma': requestType === 'medium' ? 'cache' : 'no-cache',
-        'Expires': requestType === 'medium' ? '86400' : '0'
+        'Pragma': requestType === 'processed' ? 'cache' : 'no-cache',
+        'Expires': requestType === 'processed' ? '86400' : '0'
       },
       body: base64Data,
       isBase64Encoded: true
