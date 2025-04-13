@@ -7,3 +7,6 @@ vite.config.ts.*
 
 uploads/*
 .env
+
+# Local Netlify folder
+.netlify

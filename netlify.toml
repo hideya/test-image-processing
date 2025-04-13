@@ -4,8 +4,31 @@
   publish = "dist/public"
   functions = "netlify/functions"
 
+# Use esbuild with external modules
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["sharp", "@techstark/opencv-js"]
+
+# Environment variable settings
+[build.environment]
+  NODE_VERSION = "18.18.0"
+  AWS_LAMBDA_JS_RUNTIME = "nodejs18.x"
+  NODE_OPTIONS = "--no-warnings"
+
 # API redirects - these must come BEFORE the catch-all redirect
 # Specific API endpoint redirects
+[[redirects]]
+  from = "/api/user"
+  to = "/.netlify/functions/user/user" # Path to the standalone user function
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/login"
+  to = "/.netlify/functions/login/login" # Path to the standalone login function
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/api/images/upload"
   to = "/.netlify/functions/images-upload"

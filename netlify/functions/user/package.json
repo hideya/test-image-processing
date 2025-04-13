@@ -1,0 +1,11 @@
+{
+  "name": "user-function",
+  "version": "1.0.0",
+  "main": "user.js",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "crypto": "^1.0.1",
+    "drizzle-orm": "^0.39.3",
+    "pg": "^8.14.1"
+  }
+}
