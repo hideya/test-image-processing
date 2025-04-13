@@ -8,7 +8,7 @@ const { Pool } = pg;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
-
+console.log("*** DATABASE_URL", process.env.DATABASE_URL);
 // Create a Drizzle instance using the pool and schema
 export const db = drizzle(pool, { schema });
 
