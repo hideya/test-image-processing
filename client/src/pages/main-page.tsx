@@ -1,32 +1,18 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Link } from "wouter";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../hooks/use-auth";
 import { queryClient, apiRequest, getAuthToken } from "../lib/queryClient";
-import { useSettings, formatDate } from "@/hooks/use-settings";
+import { useSettings } from "@/hooks/use-settings";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { IconDisplay } from "@/components/icon-picker";
 import { format } from "date-fns";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-  ReferenceArea,
-} from "recharts";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  DateConflictDialog,
+  TodaySummary,
+  MonthNavigation,
+  MeasurementChart,
+  MeasurementTable
+} from "@/components/main-page";
 
 interface Measurement {
   date: string;
@@ -34,7 +20,6 @@ interface Measurement {
   angle2: number;
   imageId: number;
   hashKey: string;
-  // thumbnailBase64 field removed
   memo?: string;
   iconIds?: string;
 }
@@ -42,7 +27,6 @@ interface Measurement {
 interface UploadResponse {
   id: number;
   hashKey: string;
-  // thumbnailBase64 field removed
   angle: number;
   angle2: number;
   message: string;
@@ -58,12 +42,7 @@ export default function MainPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [processingImage, setProcessingImage] = useState<string | null>(null);
   const [lastUploadedImage, setLastUploadedImage] = useState<string | null>(null);
-  // Image loading states removed - no longer needed
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  // Thumbnail tracking removed - no longer needed
-  // Thumbnail caching removed - no longer needed
-
-  // Medium image cache removed - no longer needed
 
   // For highlighting a dot in the chart with a pulse animation
   const [pulsingDot, setPulsingDot] = useState<string | null>(null);
@@ -77,6 +56,7 @@ export default function MainPage() {
       return () => clearTimeout(timer);
     }
   }, [pulsingDot]);
+  
   // Initialize with current date by default to avoid server/client time inconsistencies
   // Initialize customDate with today's date set to noon to avoid timezone issues
   const [customDate, setCustomDate] = useState<Date>(() => {
@@ -94,8 +74,6 @@ export default function MainPage() {
   });
   const [memo, setMemo] = useState("");
   const [selectedIcons, setSelectedIcons] = useState<number[]>([]);
-
-  // Using the date formatting function from use-settings with user's preferences
 
   // Format for the table view (M/D DDD) - without leading zeros and day of week
   // Format date part (e.g., "8") for the table view
@@ -131,8 +109,6 @@ export default function MainPage() {
       return date.getDay() === 6; // 6 is Saturday in JavaScript
     };
   }, []);
-
-  // Format functions for date display
 
   // Create a simplified date formatter for the chart that shows day/month without leading zeros
   const formatSimpleDate = useMemo(() => {
@@ -219,8 +195,6 @@ export default function MainPage() {
     (measurement) => measurement.date === todayDate,
   );
 
-  // Latest measurement calculation removed - no longer used
-
   const { chartDateRange, chartData } = useMemo(() => {
     // Get all dates in current month
     const allDates = getAllDatesInMonth();
@@ -285,10 +259,6 @@ export default function MainPage() {
     };
   }, [measurements]);
 
-  // Thumbnail caching effect removed - no longer needed
-
-  // No need for a separate sortedMeasurements variable as we have chartData now
-
   // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -348,10 +318,6 @@ export default function MainPage() {
 
       setProcessingImage(data.hashKey);
       setLastUploadedImage(data.hashKey);
-
-      // Medium image preloading removed - no longer needed
-
-      // Image preloading removed - no longer needed
 
       // Poll for results
       const checkInterval = setInterval(async () => {
@@ -576,8 +542,6 @@ export default function MainPage() {
     }
   };
 
-  // Cancellation handling moved to AlertDialogCancel onClick
-
   // Format the date for display in the confirmation dialog
   const getFormattedDateForDialog = () => {
     const dateForDialog = new Date(customDate);
@@ -588,116 +552,31 @@ export default function MainPage() {
   return (
     <div className="bg-neutral-50">
       {/* Date Conflict Confirmation Dialog */}
-      <AlertDialog
+      <DateConflictDialog
         open={showDateConflictConfirmation}
         onOpenChange={setShowDateConflictConfirmation}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-500" />
-              Replace Existing Measurement?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              You already have a measurement for{" "}
-              <strong>{getFormattedDateForDialog()}</strong>. Uploading this new
-              image will replace the existing measurement for this date. This
-              action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setShowDateConflictConfirmation(false);
-              setProcessedFileToUpload(null);
-              setIsUploading(false);
-            }}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDateConflict}
-              className="bg-amber-500 hover:bg-amber-600"
-            >
-              Yes, Replace
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        formattedDate={getFormattedDateForDialog()}
+        onConfirm={handleConfirmDateConflict}
+        onCancel={() => {
+          setShowDateConflictConfirmation(false);
+          setProcessedFileToUpload(null);
+          setIsUploading(false);
+        }}
+      />
 
       <div className="grid grid-cols-1 gap-8">
         <div className="bg-white p-4 rounded-lg shadow-sm">
-          <Link href="/upload">
-            <div className="bg-blue-50 p-4 rounded-full">
-              <div className="flex items-center justify-center gap-4">
-                <div className="flex flex-end gap-1">
-                  <div className="text-xl font-medium text-blue-800 mt-1">
-                    {format(new Date(today), "M月 d日")}
-                  </div>
-                  <div className="font-medium text-blue-800 mt-1.5">
-                    ({formatTableDayPart(today.toISOString())})
-                  </div>
-                </div>
-                {todayMeasurement ? (
-                  <>
-                    <div className="flex gap-2">
-                      <div className="text-sm font-medium text-blue-600 mt-2">
-                        左足
-                      </div>
-                      <div className="text-2xl font-semibold text-blue-800">
-                        {todayMeasurement.angle !== undefined
-                          ? todayMeasurement.angle.toFixed(1)
-                          : "--"}
-                        °
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="text-sm font-medium text-green-600 mt-2">
-                        右足
-                      </div>
-                      <div className="text-2xl font-semibold text-green-700">
-                        {todayMeasurement.angle2 !== undefined
-                          ? todayMeasurement.angle2.toFixed(1)
-                          : "--"}
-                        °
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-gray-500 mt-2 ml-4">
-                    未測定
-                  </div>
-                )}
-              </div>
-            </div>
-          </Link>
+          <TodaySummary
+            today={today}
+            todayMeasurement={todayMeasurement}
+            formatTableDayPart={formatTableDayPart}
+          />
 
           {/* Month Navigation */}
-          <div className="flex items-center justify-center gap-4 py-2">
-            <button
-              onClick={() => {
-                const newDate = new Date(currentViewMonth);
-                newDate.setMonth(newDate.getMonth() - 1);
-                setCurrentViewMonth(newDate);
-              }}
-              className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              ◀︎
-            </button>
-            <span className="text-lg font-medium">
-              {format(currentViewMonth, "yyyy年 M月")}
-            </span>
-            <button
-              onClick={() => {
-                const newDate = new Date(currentViewMonth);
-                newDate.setMonth(newDate.getMonth() + 1);
-                const today = new Date();
-                if (newDate > today) return; // Don't allow future months
-                setCurrentViewMonth(newDate);
-              }}
-              className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              ▶︎
-            </button>
-          </div>
+          <MonthNavigation
+            currentViewMonth={currentViewMonth}
+            setCurrentViewMonth={setCurrentViewMonth}
+          />
         
           {isLoading ? (
             <div className="py-10 flex justify-center">
@@ -719,478 +598,33 @@ export default function MainPage() {
             </div>
           ) : (
             <div className="space-y-4">
-
               {/* Chart view */}
               <div>
-                <div className="h-80 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={chartData} // Use chart data with actual measurements
-                      margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      {/*  */}
-                      <ReferenceArea
-                        y1={40}
-                        y2={50}
-                        fill="#FFEBEE" /* red */
-                        fillOpacity={0.75}
-                      />
-                      {/*  */}
-                      <ReferenceArea
-                        y1={20}
-                        y2={40}
-                        fill="#FFF3E0"
-                        fillOpacity={0.75} /* orange */
-                      />
-                      {/*  */}
-                      <ReferenceArea
-                        y1={15}
-                        y2={20}
-                        fill="#FFFFE0" /* yellow */
-                        fillOpacity={0.75}
-                      />
-                      {/*  */}
-                      <ReferenceArea
-                        y1={0}
-                        y2={15}
-                        fill="#E8F5E9" /* green */
-                        fillOpacity={0.75}
-                      />
-
-                      {/*  */}
-                      <ReferenceArea
-                        y1={40}
-                        y2={40}
-                        fill="#FFEBEE"
-                        fillOpacity={0}
-                        label={{
-                          value: "40°",
-                          position: "insideLeft",
-                          fontSize: 12,
-                          offset: 4,
-                          fill: "#E02020",
-                        }}
-                      />
-                      {/*  */}
-                      <ReferenceArea
-                        y1={20}
-                        y2={20}
-                        fillOpacity={0}
-                        label={{
-                          value: "20°",
-                          position: "insideLeft",
-                          fontSize: 12,
-                          fill: "#E05000",
-                          offset: 4,
-                        }}
-                      />
-                      {/*  */}
-                      <ReferenceArea
-                        y1={15}
-                        y2={15}
-                        fillOpacity={0}
-                        label={{
-                          value: "15°",
-                          position: "insideLeft",
-                          fontSize: 12,
-                          fill: "#008000",
-                          offset: 4,
-                        }}
-                      />
-
-                      <XAxis
-                        dataKey="date"
-                        tickFormatter={(date) => formatSimpleDate(date)} // Simplified date format (MM/DD)
-                        tick={(props) => {
-                          const { x, y, payload } = props;
-                          const isSun = isSunday(payload.value);
-                          const isSat = isSaturday(payload.value);
-                          let textColor = "#6b7280"; // Default gray
-
-                          if (isSun) {
-                            textColor = "#ef4444"; // Red for Sunday
-                          } else if (isSat) {
-                            textColor = "#3b82f6"; // Blue for Saturday
-                          }
-
-                          return (
-                            <g transform={`translate(${x},${y})`}>
-                              <text
-                                x={0}
-                                y={0}
-                                dy={16}
-                                textAnchor="middle"
-                                fill={textColor}
-                                fontSize={12}
-                              >
-                                {formatSimpleDate(payload.value)}
-                              </text>
-                            </g>
-                          );
-                        }}
-                        stroke="#6b7280"
-                        fontSize={12}
-                        // Define custom ticks - filter out the padding dates
-                        ticks={chartDateRange.filter(
-                          (date, index) =>
-                            index !== 0 &&
-                            index !== chartDateRange.length - 1,
-                        )}
-                        // Force showing all ticks (one per date in the range)
-                        interval={0}
-                        // Use type category for discrete dates
-                        type="category"
-                        // Add padding to ensure all labels are visible
-                        padding={{ left: 0.5, right: 0.5 }}
-                        // Scale to fit all dates
-                        scale="point"
-                      />
-                      <YAxis
-                        domain={[0, 50]}
-                        hide={true} // Hide the axis entirely
-                      />
-
-                      {/* Legend removed as requested since colors are now consistent with table */}
-
-                      <Line
-                        type="monotone"
-                        dataKey="angle"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        name="Primary Angle"
-                        isAnimationActive={false} 
-                        connectNulls={true} // Connect points even when there are null values in between
-                        // Use a render function for dots to handle the selected state
-                        dot={(props: any) => {
-                          const { cx, cy, payload, index } = props;
-                          const key=`dot-${payload.date}-${index}` // Use combination of date and index
-                          const datakey=`dot-${payload.date}-${index}` // Add this to help Recharts with uniqueness
-                          // Don't render anything for data points without angle values
-                          if (payload.angle === undefined) {
-                            // We need to return a valid SVG element due to TypeScript constraints,
-                            // so return an invisible circle instead of null
-                            return (
-                              <circle
-                                key={key}
-                                data-key={datakey}
-                                cx={cx}
-                                cy={cy}
-                                r={0}
-                                fill="transparent"
-                                stroke="none"
-                              />
-                            );
-                          }
-
-                          // Check if this dot corresponds to the selected date
-                          const isSelected = selectedDate === payload.date;
-                          // Check if this dot is currently pulsing
-                          const isPulsing = pulsingDot === payload.date;
-
-                          return (
-                            <circle
-                              key={key}
-                              data-key={datakey}
-                              cx={cx}
-                              cy={cy}
-                              r={isPulsing ? 20 : isSelected ? 6 : 4}
-                              fill={isSelected ? "#2563eb" : "#3b82f6"}
-                              stroke={
-                                isSelected || isPulsing ? "#fff" : "none"
-                              }
-                              strokeWidth={isSelected || isPulsing ? 2 : 0}
-                              onClick={() => {
-                                if (payload && payload.angle !== undefined) {
-                                  if (selectedDate === payload.date) {
-                                    setSelectedDate(null);
-                                    setPulsingDot(null);
-                                  } else {
-                                    setSelectedDate(payload.date);
-                                    // Show pulse animation - animation will handle the transitions
-                                    setPulsingDot(payload.date);
-                                  }
-                                }
-                              }}
-                              style={{
-                                cursor: "pointer",
-                                animation: isPulsing
-                                  ? "pulse-dot 500ms cubic-bezier(0.2, 0, 0.35, 1) forwards"
-                                  : "none",
-                              }}
-                            />
-                          );
-                        }}
-                        activeDot={(props: any) => {
-                          // Use a function to customize active dot behavior
-                          const { cx, cy, payload, index } = props;
-                          const key=`active-dot-${payload.date}-${index}`
-                          const datakey=`active-dot-${payload.date}-${index}`
-
-                          // For points without data, return an invisible circle
-                          if (payload.angle === undefined) {
-                            return (
-                              <circle
-                                key={key}
-                                data-key={datakey}
-                                cx={cx}
-                                cy={cy}
-                                r={0}
-                                fill="transparent"
-                                stroke="none"
-                              />
-                            );
-                          }
-
-                          return (
-                            <circle
-                              key={`active-dot-${payload.date}-${index}`}
-                              data-key={`active-dot-${payload.date}-${index}`}
-                              cx={cx}
-                              cy={cy}
-                              r={6}
-                              fill="#2563eb"
-                              stroke="#fff"
-                              strokeWidth={2}
-                              onClick={() => {
-                                if (selectedDate === payload.date) {
-                                  setSelectedDate(null);
-                                } else {
-                                  setSelectedDate(payload.date);
-                                }
-                              }}
-                              style={{ cursor: "pointer" }}
-                            />
-                          );
-                        }}
-                      />
-
-                      <Line
-                        type="monotone"
-                        dataKey="angle2"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        name="Secondary Angle"
-                        isAnimationActive={false} 
-                        connectNulls={true}
-                        dot={(props: any) => {
-                          const { cx, cy, payload, index } = props;
-                          const key=`active-dot2-${payload.date}-${index}`
-                          const datakey=`active-dot2-${payload.date}-${index}`
-
-                          // Don't render anything for data points without angle2 values
-                          if (payload.angle2 === undefined) {
-                            return (
-                              <circle
-                                key={key}
-                                data-key={datakey}
-                                cx={cx}
-                                cy={cy}
-                                r={0}
-                                fill="transparent"
-                                stroke="none"
-                              />
-                            );
-                          }
-
-                          // Check if this dot corresponds to the selected date
-                          const isSelected = selectedDate === payload.date;
-                          // Check if this dot is currently pulsing
-                          const isPulsing = pulsingDot === payload.date;
-
-                          return (
-                            <circle
-                              key={key}
-                              data-key={datakey}
-                              cx={cx}
-                              cy={cy}
-                              r={isPulsing ? 20 : isSelected ? 6 : 4}
-                              fill={isSelected ? "#059669" : "#10b981"}
-                              stroke={
-                                isSelected || isPulsing ? "#fff" : "none"
-                              }
-                              strokeWidth={isSelected || isPulsing ? 2 : 0}
-                              onClick={() => {
-                                if (payload && payload.angle2 !== undefined) {
-                                  if (selectedDate === payload.date) {
-                                    setSelectedDate(null);
-                                    setPulsingDot(null);
-                                  } else {
-                                    setSelectedDate(payload.date);
-                                    setPulsingDot(payload.date);
-                                  }
-                                }
-                              }}
-                              style={{
-                                cursor: "pointer",
-                                animation: isPulsing
-                                  ? "pulse-dot 500ms cubic-bezier(0.2, 0, 0.35, 1) forwards"
-                                  : "none",
-                              }}
-                            />
-                          );
-                        }}
-                        activeDot={(props: any) => {
-                          const { cx, cy, payload, index } = props;
-                          const key=`active-dot2-${payload.date}-${index}`
-                          const datakey=`active-dot2-${payload.date}-${index}`
-                          if (payload.angle2 === undefined) {
-                            return (
-                              <circle
-                                key={key}
-                                data-key={datakey}
-                                cx={cx}
-                                cy={cy}
-                                r={0}
-                                fill="transparent"
-                                stroke="none"
-                              />
-                            );
-                          }
-                          return (
-                            <circle
-                              key={key}
-                              data-key={datakey}
-                              cx={cx}
-                              cy={cy}
-                              r={6}
-                              fill="#059669"
-                              stroke="#fff"
-                              strokeWidth={2}
-                              onClick={() => {
-                                if (selectedDate === payload.date) {
-                                  setSelectedDate(null);
-                                } else {
-                                  setSelectedDate(payload.date);
-                                }
-                              }}
-                              style={{ cursor: "pointer" }}
-                            />
-                          );
-                        }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                <MeasurementChart
+                  chartData={chartData}
+                  chartDateRange={chartDateRange}
+                  selectedDate={selectedDate}
+                  setSelectedDate={setSelectedDate}
+                  pulsingDot={pulsingDot}
+                  setPulsingDot={setPulsingDot}
+                  formatSimpleDate={formatSimpleDate}
+                  isSunday={isSunday}
+                  isSaturday={isSaturday}
+                />
               </div>
 
               {/* Data Table */}
               <div>
-                <div className="max-h-[64rem] overflow-y-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="w-10 pl-2 pr-0 py-1 text-center text-xs font-medium text-gray-500 uppercase">
-                          日付
-                        </th>
-                        <th className="w-9 pl-2 py-1 text-center text-xs font-medium text-blue-600 uppercase">
-                          左
-                        </th>
-                        <th className="w-9 pl-1 py-1 text-center text-xs font-medium text-emerald-600 uppercase">
-                          右
-                        </th>
-                        <th className="px-0 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          メ モ
-                        </th>
-                        <th className="w-20 text-center">
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {sortedMeasurements.map((measurement, index) => {
-                        const isSun = isSunday(measurement.date);
-                        const isSat = isSaturday(measurement.date);
-                        let textColor = "#6b7280"; // Default gray
-
-                        if (isSun) {
-                          textColor = "#ef4444"; // Red for Sunday
-                        } else if (isSat) {
-                          textColor = "#3b82f6"; // Blue for Saturday
-                        }
-                        const isSelected = selectedDate === measurement.date;
-                        return (
-                          <React.Fragment key={index}>
-                            <tr
-                              className={`cursor-pointer transition-colors duration-150
-                                ${
-                                  isSelected
-                                    ? "bg-blue-50 hover:bg-blue-100"
-                                    : index % 2 === 0
-                                      ? "bg-white hover:bg-gray-50"
-                                      : "bg-gray-50 hover:bg-gray-100"
-                                }`}
-                              onClick={() => {
-                                // Toggle selection or set new selection
-                                if (selectedDate === measurement.date) {
-                                  // Deselect row and close expanded image
-                                  setSelectedDate(null);
-                                  setPulsingDot(null);
-                                } else {
-                                  // Set the date as pulsing dot and animation will handle the transitions
-                                  setPulsingDot(measurement.date);
-                                  setSelectedDate(measurement.date);
-                                }
-                              }}
-                            >
-                              <td
-                                className={`pl-1 pr-2 whitespace-nowrap text-sm ${isSelected ? "font-medium text-blue-900" : "text-gray-900"}`}
-                              >
-                                <div
-                                  className="text-right leading-tight"
-                                  style={{ color: textColor }}
-                                >
-                                  {formatTableDatePart(measurement.date)}
-                                  &nbsp;
-                                  <span className={"text-xs font-mono"}>
-                                    {formatTableDayPart(measurement.date)}
-                                  </span>
-                                </div>
-                              </td>
-                              <td
-                                className={`px-1 whitespace-nowrap text-sm text-right ${isSelected ? "font-medium text-blue-700" : "text-blue-600"}`}
-                              >
-                                {measurement.angle !== undefined
-                                  ? measurement.angle.toFixed(1)
-                                  : ""}
-                              </td>
-                              <td
-                                className={`px-1 whitespace-nowrap text-sm text-right ${isSelected ? "font-medium text-emerald-700" : "text-emerald-600"}`}
-                              >
-                                {measurement.angle2 !== undefined
-                                  ? measurement.angle2.toFixed(1)
-                                  : ""}
-                              </td>
-                              <td
-                                className={`pl-2 pr-0 text-sm ${isSelected ? "font-medium text-blue-900" : "text-gray-900"}`}
-                              >
-                                <span
-                                  className={`transition-all duration-200`}
-                                >
-                                  {measurement.memo || ""}
-                                </span>
-                              </td>
-                              <td
-                                className={`pl-1 pr-0 text-center text-sm ${isSelected ? "font-medium text-blue-900" : "text-gray-900"}`}
-                              >
-                                {measurement.iconIds ? (
-                                  <span className="whitespace-nowrap">
-                                    <IconDisplay
-                                      iconIds={measurement.iconIds}
-                                      size="sm"
-                                    />
-                                  </span>
-                                ) : (
-                                  ""
-                                )}
-                              </td>
-                            </tr>
-                            {/* Memo is now shown inline in the row above */}
-                          </React.Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <MeasurementTable 
+                  sortedMeasurements={sortedMeasurements}
+                  selectedDate={selectedDate}
+                  setSelectedDate={setSelectedDate}
+                  setPulsingDot={setPulsingDot}
+                  isSunday={isSunday}
+                  isSaturday={isSaturday}
+                  formatTableDatePart={formatTableDatePart}
+                  formatTableDayPart={formatTableDayPart}
+                />
               </div>
             </div>
           )}
