@@ -5,7 +5,50 @@
   functions = "netlify/functions"
 
 # API redirects - these must come BEFORE the catch-all redirect
-# This redirects all /api/* requests to their corresponding functions
+# Specific API endpoint redirects
+[[redirects]]
+  from = "/api/images/upload"
+  to = "/.netlify/functions/images-upload"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/angle-data"
+  to = "/.netlify/functions/angle-data"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/latest-angle"
+  to = "/.netlify/functions/latest-angle"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/images/:hashKey/original"
+  to = "/.netlify/functions/images"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/images/:hashKey/medium"
+  to = "/.netlify/functions/images"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/images/:hashKey"
+  to = "/.netlify/functions/images"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/thumbnails/:hashKey"
+  to = "/.netlify/functions/thumbnails"
+  status = 200
+  force = true
+
+# Default API redirect for any remaining /api routes
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
