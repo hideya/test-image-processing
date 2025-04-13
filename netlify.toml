@@ -42,12 +42,6 @@
   status = 200
   force = true
 
-[[redirects]]
-  from = "/api/thumbnails/:hashKey"
-  to = "/.netlify/functions/thumbnails"
-  status = 200
-  force = true
-
 # Default API redirect for any remaining /api routes
 [[redirects]]
   from = "/api/*"
