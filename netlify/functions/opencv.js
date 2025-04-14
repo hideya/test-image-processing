@@ -209,45 +209,9 @@ async function generateMediumImageBuffer(imageBuffer, maxSize = 800) {
   }
 }
 
-// Keep old functions for backward compatibility
-async function processImage(imagePath) {
-  console.log(`Legacy processImage called with path: ${imagePath}`);
-  console.warn("This method is deprecated. Please use processImageBuffer instead.");
-  
-  const fs = require("fs");
-  const imageBuffer = await fs.promises.readFile(imagePath);
-  const result = await processImageBuffer(imageBuffer);
-  
-  return { angle: result.angle, angle2: result.angle2 };
-}
-
-async function preprocessImage(imagePath) {
-  console.log(`Legacy preprocessImage called with path: ${imagePath}`);
-  console.warn("This method is deprecated. Please use preprocessImageBuffer instead.");
-  
-  const fs = require("fs");
-  const path = require("path");
-  
-  const imageBuffer = await fs.promises.readFile(imagePath);
-  const processedBuffer = await preprocessImageBuffer(imageBuffer);
-  
-  // Save the processed buffer to a file
-  const filename = path.basename(imagePath);
-  const outputDir = path.dirname(imagePath);
-  const processedFileName = `processed_${filename}`;
-  const outputPath = path.join(outputDir, processedFileName);
-  
-  await fs.promises.writeFile(outputPath, processedBuffer);
-  console.log(`Saved processed image to: ${outputPath}`);
-  
-  return outputPath;
-}
-
 module.exports = { 
   ensureOpenCVReady, 
-  processImage, 
-  preprocessImage,
-  // New buffer-based functions:
+  // Buffer-based functions:
   processImageBuffer,
   preprocessImageBuffer,
   generateMediumImageBuffer

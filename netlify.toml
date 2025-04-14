@@ -14,7 +14,7 @@
 
 [[redirects]]
   from = "/api/measurements/:id/metadata"
-  to = "/.netlify/functions/update-metadata"
+  to = "/.netlify/functions/update-metadata/:id"
   status = 200
   force = true
 

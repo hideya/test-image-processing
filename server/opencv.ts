@@ -133,16 +133,3 @@ async function preprocessImageBuffer(imageBuffer: Buffer): Promise<Buffer> {
     throw error;
   }
 }
-
-// Legacy file-based preprocessing functions - These are kept for backward compatibility
-// but they should not be used in the new implementation
-
-export async function preprocessImage(imagePath: string): Promise<string> {
-  console.warn("Deprecated: Use preprocessImageBuffer instead");
-  return Promise.resolve(imagePath);
-}
-
-export async function processImage(imagePath: string): Promise<{ angle: number; angle2: number }> {
-  console.warn("Deprecated: Use processImageBuffer instead");
-  return Promise.resolve({ angle: 0, angle2: 0 });
-}

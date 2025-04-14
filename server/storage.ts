@@ -55,7 +55,7 @@ export interface IStorage {
   getLatestAngleMeasurementByDay(
     userId: number,
     days: number
-  ): Promise<{date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo?: string}[]>;
+  ): Promise<{date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo?: string, iconIds?: string}[]>;
 
   sessionStore: session.Store;
 
@@ -151,11 +151,6 @@ export class MemStorage implements IStorage {
 
     this.images.set(id, updatedImage);
     return updatedImage;
-  }
-
-  // Keep old method for backward compatibility
-  async updateImageProcessedAngle(id: number, angle: number): Promise<Image | undefined> {
-    return this.updateImageProcessedAngles(id, angle, angle + 5); // Default second angle slightly different
   }
 
   async createAngleMeasurement(insertMeasurement: InsertAngleMeasurement): Promise<AngleMeasurement> {
@@ -345,11 +340,6 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return updatedImage;
-  }
-
-  // Keep old method for backward compatibility
-  async updateImageProcessedAngle(id: number, angle: number): Promise<Image | undefined> {
-    return this.updateImageProcessedAngles(id, angle, angle + 5); // Default second angle slightly different
   }
 
   async createAngleMeasurement(insertMeasurement: InsertAngleMeasurement): Promise<AngleMeasurement> {

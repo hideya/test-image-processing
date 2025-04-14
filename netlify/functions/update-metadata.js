@@ -25,8 +25,32 @@ exports.handler = async (event, context) => {
     
     console.log('*** User authenticated:', user.id);
     
-    // Get measurement ID from URL path
-    const measurementId = event.path.split('/').pop();
+    // Debug log to show exactly what we're receiving
+    console.log('*** Event path:', event.path);
+    console.log('*** Event path segments:', event.path.split('/'));
+    console.log('*** Event headers:', event.headers);
+    console.log('*** Event body:', event.body);
+    
+    // Better path extraction that works with both direct function calls and redirects
+    let measurementId;
+    
+    // Try to extract from path parameters if available
+    if (event.pathParameters && event.pathParameters.id) {
+      measurementId = event.pathParameters.id;
+    } 
+    // Try to get the ID from the path (works with redirects in netlify.toml)
+    else {
+      // Check different path patterns
+      const pathSegments = event.path.split('/');
+      // Look for 'metadata' and take the segment before it
+      const metadataIndex = pathSegments.findIndex(segment => segment === 'metadata');
+      if (metadataIndex > 0) {
+        measurementId = pathSegments[metadataIndex - 1];
+      } else {
+        // Just take the last segment as a fallback
+        measurementId = pathSegments[pathSegments.length - 1];
+      }
+    }
     
     if (!measurementId || isNaN(parseInt(measurementId))) {
       console.log('*** Invalid measurement ID:', measurementId);
@@ -44,6 +68,15 @@ exports.handler = async (event, context) => {
     
     // Extract metadata fields
     const { memo, iconIds } = requestBody;
+    
+    console.log('*** Request body fields:', { memo, iconIds });
+    
+    // Normalize iconIds if needed
+    let normalizedIconIds = iconIds;
+    if (Array.isArray(iconIds)) {
+      normalizedIconIds = iconIds.join(',');
+      console.log('*** Normalized iconIds from array:', normalizedIconIds);
+    }
     
     // Get existing measurement to verify ownership
     const existingMeasurement = await storage.getMeasurementById(parseInt(measurementId));
@@ -63,7 +96,7 @@ exports.handler = async (event, context) => {
     console.log('*** Updating measurement metadata for ID:', measurementId);
     const updatedMeasurement = await storage.updateMeasurementMetadata(
       parseInt(measurementId),
-      { memo, iconIds }
+      { memo, iconIds: normalizedIconIds }
     );
     
     console.log('*** Metadata update successful');

@@ -114,11 +114,6 @@ class DatabaseStorage {
     return updatedImage;
   }
 
-  // Keep old method for backward compatibility
-  async updateImageProcessedAngle(id, angle) {
-    return this.updateImageProcessedAngles(id, angle, angle + 5); // Default second angle slightly different
-  }
-
   async createAngleMeasurement(insertMeasurement) {
     const { customTimestamp, ...measurementData } = insertMeasurement;
 
