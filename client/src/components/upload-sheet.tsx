@@ -4,7 +4,17 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient, getAuthToken } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCw, RotateCcw, AlertCircle, Upload } from "lucide-react";
+import { 
+  Loader2, 
+  RotateCw, 
+  RotateCcw, 
+  AlertCircle, 
+  Upload, 
+  Camera, 
+  Calendar as CalendarIcon,
+  Check,
+  X
+} from "lucide-react";
 import { IconPicker } from "@/components/icon-picker";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -24,6 +34,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+// Removed Progress import
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { iconOptions } from "@/lib/icons";
 
 // Reuse the interfaces and enums from your existing upload-page.tsx
 interface UploadResponse {
@@ -73,6 +95,7 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [memo, setMemo] = useState("");
   const [selectedIcons, setSelectedIcons] = useState<number[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [customDate, setCustomDate] = useState<Date>(() => {
     // Create a date for today but ensure it's not in the future
     const today = new Date();
@@ -99,7 +122,30 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
   // Track the currentMeasurementId for metadata updates
   const [currentMeasurementId, setCurrentMeasurementId] = useState<number | null>(null);
 
-  // Copy the rest of the code from upload-page.tsx including all the functions and mutations
+  // For simulating progress
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    
+    if (currentStep === UploadStep.UPLOADING) {
+      setUploadProgress(0);
+      interval = setInterval(() => {
+        setUploadProgress(prev => {
+          // Simulate progress up to 90% (the final 10% will happen when response comes back)
+          if (prev < 90) {
+            return prev + 5;
+          }
+          return prev;
+        });
+      }, 200);
+    } else if (uploadProgress < 100 && (currentStep === UploadStep.RESULTS || currentStep === UploadStep.COMPLETE)) {
+      setUploadProgress(100);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [currentStep, uploadProgress]);
+
   // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -447,14 +493,13 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
   };
 
   // Format day of week part (e.g., "Tue") for the table view
-  const formatTableDayPart = useMemo(() => {
-    return (dateStr: string) => {
-      const date = new Date(dateStr);
-      const dayOfWeek = date.getDay();
-      const weekDayJP = ["日", "月", "火", "水", "木", "金", "土"];
-      return weekDayJP[dayOfWeek];
-    };
-  }, []);
+  // Simplified formatTableDayPart function
+  const formatTableDayPart = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const dayOfWeek = date.getDay();
+    const weekDayJP = ["日", "月", "火", "水", "木", "金", "土"];
+    return weekDayJP[dayOfWeek];
+  };
 
   // Handle close sheet
   const handleCloseSheet = () => {
@@ -480,22 +525,31 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
     }
   }, [open]);
 
+  // Using all icons in a single row
+
   // Render different content based on the current step
   const renderContent = () => {
     switch (currentStep) {
       case UploadStep.INITIAL:
         return (
-          <form onSubmit={handleUpload} className="space-y-4">
-            <div className="space-y-2">
+          <div className="space-y-6">
+            {/* Date Selection */}
+            <div className="flex items-center space-x-4">
               <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={`w-full justify-center text-lg text-left rounded-full font-normal ${!customDate && "text-gray-400"}`}
+                    className="w-full flex justify-between items-center text-left rounded-lg font-normal"
                   >
-                    {customDate
-                      ? format(customDate, "yyyy年 M月 d日")
-                      : "Select date (defaults to today)"}
+                    <div className="flex items-center">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customDate
+                        ? format(customDate, "yyyy年 M月 d日")
+                        : "Select date"}
+                    </div>
+                    <span className="bg-gray-100 px-2 py-1 rounded-md text-xs">
+                      {customDate && formatTableDayPart(customDate.toISOString())}曜日
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -527,8 +581,11 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
                   />
                 </PopoverContent>
               </Popover>
+            </div>
 
-              <div className="flex items-center justify-center pt-2">
+            {/* File Selection Area */}
+            <Card className="border-dashed border-2 bg-gray-50">
+            <CardContent className="pt-4 pb-4 flex flex-col items-center justify-center">
                 <input
                   type="file"
                   id="file-upload-sheet"
@@ -536,177 +593,262 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                {selectedFile ? (
+                
+                {!previewUrl ? (
                   <label
                     htmlFor="file-upload-sheet"
-                    className="py-2 w-full justify-center border rounded-full shadow-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer inline-flex items-center"
+                    className="w-full flex flex-col items-center justify-center cursor-pointer"
                   >
-                    <span className="truncate">
-                      {selectedFile.name}
-                    </span>
+                    <div className="bg-blue-50 rounded-full p-4 mb-4">
+                      <Camera className="h-10 w-10 text-blue-500" />
+                    </div>
+                    <p className="text-gray-700 mb-2 font-medium">Click to select a photo</p>
+                    <p className="text-gray-500 text-sm text-center max-w-xs">
+                      Upload a clear image to measure angles accurately
+                    </p>
                   </label>
                 ) : (
-                  <label
-                    htmlFor="file-upload-sheet"
-                    className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                  >
-                    Select Photo
-                  </label>
-                )}
-              </div>
-
-              {previewUrl && (
-                <div className="flex items-center justify-center pt-4">
-                  <div className="relative">
-                    <img
-                      src={previewUrl}
-                      alt="Preview"
-                      className="h-[40vh] object-contain rounded-md"
-                      style={{
-                        transform: `rotate(${previewRotation}deg)`,
-                        transition: "transform 0.3s ease",
-                      }}
-                    />
-                    <div className="absolute top-2 left-2 flex space-x-2">
-                      <button
-                        type="button"
-                        className="p-1 bg-white/80 rounded-full hover:bg-white/90 focus:outline-none"
-                        onClick={() =>
-                          setPreviewRotation((prev) => (prev - 90) % 360)
-                        }
-                      >
-                        <RotateCcw className="h-4 w-4 text-gray-700" />
-                      </button>
-                      <button
-                        type="button"
-                        className="p-1 bg-white/80 rounded-full hover:bg-white/90 focus:outline-none"
-                        onClick={() =>
-                          setPreviewRotation((prev) => (prev + 90) % 360)
-                        }
-                      >
-                        <RotateCw className="h-4 w-4 text-gray-700" />
-                      </button>
+                  <div className="w-full">
+                    <div className="relative">
+                        <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="h-[35vh] object-contain rounded-md mx-auto"
+                        style={{
+                          transform: `rotate(${previewRotation}deg)`,
+                          transition: "transform 0.3s ease",
+                        }}
+                      />
+                      
+                      {/* Rotation Controls */}
+                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow">
+                        <button
+                          type="button"
+                          className="p-2 hover:bg-gray-100 rounded-full"
+                          onClick={() => setPreviewRotation((prev) => (prev - 90) % 360)}
+                        >
+                          <RotateCcw className="h-5 w-5 text-gray-700" />
+                        </button>
+                        <button
+                          type="button"
+                          className="p-2 hover:bg-gray-100 rounded-full"
+                          onClick={() => setPreviewRotation((prev) => (prev + 90) % 360)}
+                        >
+                          <RotateCw className="h-5 w-5 text-gray-700" />
+                        </button>
+                      </div>
+                      
+                      {/* Image Info & Change Button */}
+                      <div className="flex items-center justify-between mt-4">
+                        <p className="text-sm text-gray-500 truncate max-w-[60%]">
+                          {selectedFile?.name}
+                        </p>
+                        <label
+                          htmlFor="file-upload-sheet"
+                          className="text-sm text-blue-600 cursor-pointer"
+                        >
+                          Change
+                        </label>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </CardContent>
+            </Card>
 
+            {/* Upload Button */}
             {selectedFile && (
-              <button
-                type="submit"
-                className="w-full py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              <Button
+                onClick={handleUpload}
+                className="w-full py-6 rounded-xl text-base font-medium"
+                size="lg"
               >
+                <Upload className="mr-2 h-5 w-5" />
                 Upload and Analyze
-              </button>
+              </Button>
             )}
 
-            {/* Show processed image from previous uploads */}
+            {/* Previous Results Card (if available) */}
             {processedImageUrl && processedAngles && !selectedFile && (
-              <div className="mt-6 border p-4 rounded-lg">
-                <div className="flex flex-col items-center">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Previous Results</h3>
-                  <div className="relative h-[40vh] rounded-md overflow-hidden">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Previous Results</CardTitle>
+                  <CardDescription>
+                    Your last analyzed measurement
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative h-[25vh] rounded-md overflow-hidden">
                     <img
                       src={processedImageUrl}
                       alt="Processed image"
                       className="object-contain h-full w-full"
                     />
                   </div>
-                  <div className="flex mt-4 text-sm text-gray-600 gap-4">
-                    <div>
-                      左 {processedAngles.angle.toFixed(2)}°
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="bg-gray-50 p-3 rounded-lg text-center">
+                      <p className="text-sm text-gray-500">Left Angle</p>
+                      <p className="text-xl font-semibold">{processedAngles.angle.toFixed(2)}°</p>
                     </div>
-                    <div>
-                      右 {processedAngles.angle2.toFixed(2)}°
+                    <div className="bg-gray-50 p-3 rounded-lg text-center">
+                      <p className="text-sm text-gray-500">Right Angle</p>
+                      <p className="text-xl font-semibold">{processedAngles.angle2.toFixed(2)}°</p>
                     </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Close Button - Only shown in initial state when no photo is selected */}
+            {!selectedFile && !processedImageUrl && (
+              <div className="fixed bottom-6 left-0 right-0 flex justify-center">
+                <Button 
+                  variant="outline"
+                  onClick={handleCloseSheet}
+                  className="rounded-full px-6 py-2 border-gray-300 shadow-sm"
+                >
+                  Close
+                </Button>
               </div>
             )}
-          </form>
+          </div>
         );
         
       case UploadStep.UPLOADING:
         return (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">Processing your image...</h3>
-            <p className="text-gray-500 mt-2">This might take a few seconds</p>
+          <div className="flex flex-col items-center justify-center py-10 space-y-6">
+            <div className="bg-blue-50 rounded-full p-4">
+              <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+            </div>
+            
+            <div className="text-center">
+              <h3 className="text-xl font-medium text-gray-900 mb-2">Processing Image</h3>
+              <p className="text-gray-500 max-w-xs mx-auto">
+                We're analyzing your image and calculating the angles. This may take a moment.
+              </p>
+            </div>
+            
+            <div className="w-full max-w-md space-y-2">
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                <div 
+                  className="h-full bg-blue-500 transition-all" 
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-gray-500 text-right">{uploadProgress}%</p>
+            </div>
           </div>
         );
         
       case UploadStep.RESULTS:
         return (
           <div className="space-y-6">
-            <div className="flex flex-col items-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-1">Image Analysis Results</h3>
-              <p className="text-gray-500 mb-4">{format(customDate, "yyyy年 M月 d日")}</p>
-              
-              {processedImageUrl && (
-                <div className="w-full max-w-md">
-                  <div className="relative h-[40vh] rounded-md overflow-hidden mb-4">
-                    <img
-                      src={processedImageUrl}
-                      alt="Processed image"
-                      className="object-contain h-full w-full"
+            <div className="text-center mb-2">
+              <h3 className="text-xl font-medium text-gray-900">Analysis Results</h3>
+              <p className="text-gray-500">
+                {format(customDate, "yyyy年 M月 d日")} ({formatTableDayPart(customDate.toISOString())}曜日)
+              </p>
+            </div>
+            
+            {processedImageUrl && (
+              <div>
+                <Card className="mb-6">
+                  <CardContent className="pt-6">
+                    <div className="relative h-[30vh] rounded-md overflow-hidden mb-4">
+                      <img
+                        src={processedImageUrl}
+                        alt="Processed image"
+                        className="object-contain h-full w-full"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {processedAngles && (
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-0">
+                      <CardContent className="pt-6 text-center">
+                        <h4 className="text-sm font-medium text-gray-700 mb-1">Left Angle</h4>
+                        <p className="text-3xl font-bold text-blue-700">{processedAngles.angle.toFixed(2)}°</p>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-0">
+                      <CardContent className="pt-6 text-center">
+                        <h4 className="text-sm font-medium text-gray-700 mb-1">Right Angle</h4>
+                        <p className="text-3xl font-bold text-purple-700">{processedAngles.angle2.toFixed(2)}°</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                
+                {/* Add metadata fields with improved UI */}
+                <div className="space-y-5 mt-8">
+                  <div className="space-y-2">
+                    <Label htmlFor="memo" className="text-gray-700">Add Notes (Optional)</Label>
+                    <Input
+                      type="text"
+                      id="memo"
+                      value={memo}
+                      onChange={(e) => setMemo(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault(); // Prevent form submission
+                        }
+                      }}
+                      className="w-full"
+                      placeholder="Add notes about this measurement..."
+                      maxLength={100}
                     />
                   </div>
                   
-                  {processedAngles && (
-                    <div className="flex justify-between p-4 bg-gray-50 rounded-lg mb-6 text-center">
-                      <div>
-                        <p className="text-gray-500 text-sm">Primary Angle</p>
-                        <p className="text-2xl font-bold">{processedAngles.angle.toFixed(2)}°</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-sm">Secondary Angle</p>
-                        <p className="text-2xl font-bold">{processedAngles.angle2.toFixed(2)}°</p>
-                      </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center mb-3">
+                      <Label className="text-gray-700">Select Icons (Optional)</Label>
+                      {selectedIcons.length === 3 && (
+                        <p className="text-xs text-amber-600">
+                          Max 3 selected
+                        </p>
+                      )}
                     </div>
-                  )}
-                  
-                  {/* Add metadata fields directly on the results page */}
-                  <div className="space-y-4 mt-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Add Notes</label>
-                      <input
-                        type="text"
-                        id="memo"
-                        value={memo}
-                        onChange={(e) => setMemo(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault(); // Prevent form submission
-                          }
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        placeholder="Add notes about this measurement..."
-                        maxLength={100}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Icons (Optional)</label>
-                      <IconPicker
-                        selectedIcons={selectedIcons}
-                        onChange={setSelectedIcons}
-                        maxSelection={3}
-                      />
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {iconOptions.map(icon => (
+                        <button
+                          key={icon.id}
+                          type="button"
+                          onClick={() => {
+                            if (selectedIcons.includes(icon.id)) {
+                              setSelectedIcons(selectedIcons.filter(id => id !== icon.id));
+                            } else if (selectedIcons.length < 3) {
+                              setSelectedIcons([...selectedIcons, icon.id]);
+                            } else {
+                              // Remove oldest and add new
+                              setSelectedIcons([...selectedIcons.slice(1), icon.id]);
+                            }
+                          }}
+                          className={`
+                            w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all
+                            ${selectedIcons.includes(icon.id)
+                              ? "bg-blue-100 border-2 border-blue-400 shadow-sm"
+                              : "bg-gray-100 hover:bg-gray-200"}
+                          `}
+                        >
+                          {icon.emoji}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
-              )}
-              
-              <div className="w-full max-w-md flex flex-col gap-3 mt-6">
+                
                 <Button 
                   onClick={handleSubmitMetadata}
-                  className="w-full py-2 px-4"
+                  className="w-full py-4 mt-6 rounded-xl text-base font-medium"
+                  size="lg"
                 >
-                  Save Details
+                  Save Measurement
                 </Button>
               </div>
-            </div>
+            )}
           </div>
         );
         
@@ -720,22 +862,28 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
         
       case UploadStep.COMPLETE:
         return (
-          <div className="text-center py-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+          <div className="text-center py-10 space-y-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-2">
+              <Check className="h-8 w-8 text-green-600" />
             </div>
             
-            <h3 className="text-xl font-medium text-gray-900 mb-2">Measurement Complete!</h3>
-            <p className="text-gray-500 mb-8">Your image has been processed and all details saved successfully.</p>
+            <div>
+              <h3 className="text-2xl font-medium text-gray-900 mb-2">Measurement Complete!</h3>
+              <p className="text-gray-500 max-w-xs mx-auto">
+                Your image has been processed and all details saved successfully.
+              </p>
+            </div>
             
-            <Button 
-              onClick={resetForm}
-              className="px-6 py-2"
-            >
-              Upload Another Photo
-            </Button>
+            <div className="pt-6 space-y-4">
+              <Button 
+                onClick={resetForm}
+                className="px-8 py-6 rounded-xl"
+                size="lg"
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                Upload Another Photo
+              </Button>
+            </div>
           </div>
         );
         
@@ -746,11 +894,19 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
 
   return (
     <>
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet open={open} onOpenChange={(isOpen) => {
+        // Only allow closing if not in uploading or updating state
+        if (!isOpen && currentStep !== UploadStep.UPLOADING && currentStep !== UploadStep.UPDATING) {
+          setOpen(isOpen);
+          if (!isOpen) handleCloseSheet();
+        } else if (isOpen) {
+          setOpen(isOpen);
+        }
+      }}>
         <SheetTrigger asChild>
           <button
             type="button"
-            className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 md:flex-row md:gap-2"
+            className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 rounded-md py-2 md:flex-row md:gap-2"
             onClick={() => setOpen(true)}
           >
             <Upload className="w-6 h-6" />
@@ -759,18 +915,20 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
         </SheetTrigger>
         <SheetContent
           side="bottom"
-          className="h-[85vh] rounded-t-xl overflow-y-auto"
-          aria-describedby="upload-sheet-description"
+          className="h-[75vh] rounded-t-xl overflow-y-auto"
+          onCloseAutoFocus={() => {
+            if (currentStep !== UploadStep.UPLOADING && currentStep !== UploadStep.UPDATING) {
+              handleCloseSheet();
+            }
+          }}
         >
           <SheetTitle className="sr-only">Upload Image</SheetTitle>
-          <SheetDescription id="upload-sheet-description" className="sr-only">
-            Upload and process an image to measure angles
-          </SheetDescription>
-          <div className="absolute top-0 left-0 right-0 h-1 flex justify-center">
-            <div className="w-12 h-1.5 rounded-full bg-gray-300 my-2" />
+          {/* Removed custom close button - using the built-in one from SheetContent */}
+          <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
+            <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />
           </div>
-          <div className="pt-6 pb-20">
-            <div className="bg-white">
+          <div className="pt-6 pb-20 px-6">
+            <div className="mx-auto max-w-md">
               {renderContent()}
             </div>
           </div>
