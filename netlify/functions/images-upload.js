@@ -2,112 +2,88 @@
 const { formatResponse, getUserFromToken, handleOptions } = require("./auth-utils");
 const { storage } = require("./storage");
 const { processImageBuffer } = require("./opencv");
-const multer = require("multer");
 const { Buffer } = require("buffer");
+const Busboy = require('busboy');
 
-// Configure multer for in-memory storage
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-  // Configure the field name to match what the client sends
-  fields: [{ name: 'file' }]
-});
-
-// Parse multipart form data
-const parseMultipartForm = (event) => {
-try {
-  console.log('*** Parsing multipart form data');
-  const contentType = event.headers['content-type'] || '';
-  console.log('*** Content-Type:', contentType);
-  const boundary = contentType.split('boundary=')[1];
-  
-  if (!boundary) {
-    console.log('*** No boundary found in content-type');
-    return null;
-  }
-
-  const parts = event.body.split(`--${boundary}`);
-  console.log(`*** Found ${parts.length} parts in the request`);
-  
-  const formData = {};
-  let fileBuffer = null;
-  let fileName = '';
-  let fileContentType = '';
-  let fileFieldName = '';
-
-  parts.forEach((part, index) => {
-    if (part.includes('Content-Disposition: form-data;')) {
-      // Extract field name
-      const nameMatch = part.match(/name="([^"]+)"/); 
-      if (nameMatch) {
-        const name = nameMatch[1];
-        console.log(`*** Found field: ${name} at part ${index}`);
-        
-        if (part.includes('filename="')) {
-          // This is a file
-          fileFieldName = name; // Save the field name of the file
-          const filenameMatch = part.match(/filename="([^"]+)"/); 
-          if (filenameMatch) {
-            fileName = filenameMatch[1];
-            console.log(`*** File found: ${fileName}`);
-            
-            // Extract content type 
-            const contentTypeMatch = part.match(/Content-Type: ([^\r\n]+)/);
-            if (contentTypeMatch) {
-              fileContentType = contentTypeMatch[1].trim();
-              console.log(`*** File content type: ${fileContentType}`);
-            }
-            
-            // Extract file content
-            const fileContentStart = part.indexOf('\r\n\r\n') + 4;
-            if (fileContentStart > 4) {
-              const fileContent = part.slice(fileContentStart).trim();
-              // Convert to Buffer
-              fileBuffer = Buffer.from(fileContent, 'binary');
-              console.log(`*** File buffer created with ${fileBuffer.length} bytes`);
-            }
-          }
-        } else {
-          // This is a regular field
-          const valueStart = part.indexOf('\r\n\r\n') + 4;
-          if (valueStart > 4) {
-            formData[name] = part.slice(valueStart).trim();
-            console.log(`*** Field value for ${name}:`, formData[name]);
-          }
-        }
+// Parse multipart form data using busboy
+function parseMultipartForm(event) {
+  return new Promise((resolve, reject) => {
+    try {
+      console.log('*** Using busboy to parse multipart form data');
+      
+      // Handle case where event.headers might have uppercase keys
+      const headers = {};
+      for (const key in event.headers) {
+        headers[key.toLowerCase()] = event.headers[key];
       }
+      
+      const busboy = new Busboy({ 
+        headers: headers,
+        limits: {
+          fileSize: 10 * 1024 * 1024 // 10MB limit
+        }
+      });
+      
+      const formData = {};
+      
+      busboy.on('field', (fieldname, val) => {
+        console.log(`*** Field received: ${fieldname}`);
+        formData[fieldname] = val;
+      });
+      
+      busboy.on('file', (fieldname, fileStream, filename, encoding, mimetype) => {
+        console.log(`*** File received: ${fieldname}, filename: ${filename}, mimetype: ${mimetype}`);
+        
+        const chunks = [];
+        
+        fileStream.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+        
+        fileStream.on('end', () => {
+          if (chunks.length > 0) {
+            const buffer = Buffer.concat(chunks);
+            console.log(`*** File buffer created with ${buffer.length} bytes for ${fieldname}`);
+            
+            formData[fieldname] = {
+              buffer: buffer,
+              originalname: filename,
+              mimetype: mimetype
+            };
+          } else {
+            console.log(`*** Warning: Empty file received for ${fieldname}`);
+          }
+        });
+      });
+      
+      busboy.on('finish', () => {
+        console.log('*** Form data parsed. Fields:', Object.keys(formData));
+        resolve(formData);
+      });
+      
+      busboy.on('error', (error) => {
+        console.log('*** Busboy error:', error.message);
+        reject(error);
+      });
+      
+      // Handle Base64 encoded bodies
+      if (event.isBase64Encoded) {
+        console.log('*** Processing base64 encoded body');
+        const buffer = Buffer.from(event.body, 'base64');
+        busboy.write(buffer);
+      } else {
+        console.log('*** Processing regular body');
+        busboy.write(Buffer.from(event.body, 'binary'));
+      }
+      
+      busboy.end();
+    } catch (error) {
+      console.log('*** Error setting up busboy:', error.message);
+      console.log('*** Error stack:', error.stack);
+      reject(error);
     }
   });
-
-  if (fileBuffer) {
-    // Store file in the appropriate field (either file or image) based on field name
-    if (fileFieldName === 'image') {
-      formData.image = {
-        buffer: fileBuffer,
-        originalname: fileName,
-        mimetype: fileContentType
-      };
-      console.log('*** Added image to formData');
-    } else {
-      formData.file = {
-        buffer: fileBuffer,
-        originalname: fileName,
-        mimetype: fileContentType
-      };
-      console.log('*** Added file to formData');
-    }
-  }
-
-    console.log('*** Form data parsed. Fields:', Object.keys(formData));
-    return formData;
-  } catch (error) {
-    console.log('*** Error parsing multipart form:', error.message);
-    console.log('*** Error stack:', error.stack);
-    return null;
-  }
-};
+}
 
 exports.handler = async (event, context) => {
   // Handle preflight OPTIONS request
@@ -140,19 +116,18 @@ exports.handler = async (event, context) => {
       const contentType = event.headers['content-type'] || '';
       console.log('*** Content-Type:', contentType);
       
-      // If the event body is a string and either content-type includes multipart/form-data or body starts with boundary
-      if (typeof event.body === 'string' && 
-          (contentType.includes('multipart/form-data') || event.body.startsWith('--'))) {
+      // If content-type includes multipart/form-data
+      if (contentType.includes('multipart/form-data')) {
         console.log('*** Detected multipart form data');
-        formData = parseMultipartForm(event);
+        formData = await parseMultipartForm(event);
       } else if (typeof event.body === 'string') {
         // Try to parse as JSON if it's not multipart
         try {
           console.log('*** Attempting to parse as JSON');
           formData = JSON.parse(event.body);
         } catch (err) {
-          console.log('*** Cannot parse as JSON, attempting multipart parse as fallback');
-          formData = parseMultipartForm(event);
+          console.log('*** Cannot parse as JSON, falling back to multipart parse');
+          formData = await parseMultipartForm(event);
         }
       } else {
         // Assume it's already an object
@@ -160,29 +135,37 @@ exports.handler = async (event, context) => {
         formData = event.body;
       }
       
-      console.log('*** Form data after parsing:', formData ? Object.keys(formData) : 'null');
-      if (formData && formData.image) {
+      // Enhanced debugging for formData
+      console.log('*** Form data after parsing:', formData ? Object.keys(formData).join(', ') : 'null');
+      for (const key in formData) {
+        if (key === 'file' || key === 'image') {
+          const fileObj = formData[key];
+          console.log(`*** ${key} details:`, {
+            originalname: fileObj.originalname,
+            mimetype: fileObj.mimetype,
+            bufferLength: fileObj.buffer ? fileObj.buffer.length : 'undefined'
+          });
+        } else {
+          console.log(`*** ${key}:`, formData[key]);
+        }
+      }
+      
+      // Normalize image/file fields
+      if (formData && formData.image && !formData.file) {
         console.log('*** Found image field instead of file field, adjusting...');
         formData.file = formData.image;
         delete formData.image;
       }
     } catch (err) {
       console.log('*** Error parsing form data:', err);
-      return formatResponse(400, { message: "Invalid form data" });
+      return formatResponse(400, { message: "Invalid form data: " + err.message });
     }
     
     if (!formData || !(formData.file || formData.image)) {
       console.log('*** No file provided in request');
-      console.log('*** Available fields:', formData ? Object.keys(formData) : 'none');
+      console.log('*** Available fields:', formData ? Object.keys(formData).join(', ') : 'none');
       console.log('*** Dumping first 200 chars of body:', typeof event.body === 'string' ? event.body.substring(0, 200) : 'not a string');
       return formatResponse(400, { message: "No image file provided" });
-    }
-    
-    // Handle if image is provided but not file
-    if (formData.image && !formData.file) {
-      console.log('*** Moving image to file field');
-      formData.file = formData.image;
-      delete formData.image;
     }
     
     // Generate a hash key for the image (still needed for database reference)
@@ -223,9 +206,20 @@ exports.handler = async (event, context) => {
       console.log(`*** Client applied rotation of ${formData.clientRotation} degrees before upload`);
     }
     
-    // Process the image synchronously
+    // Get the file buffer
+    const fileBuffer = formData.file.buffer;
+    
+    // Validate the file buffer
+    if (!fileBuffer || !Buffer.isBuffer(fileBuffer)) {
+      console.log('*** Invalid file buffer:', fileBuffer);
+      return formatResponse(400, { message: "Invalid file data" });
+    }
+    
+    console.log(`*** Valid file buffer received with ${fileBuffer.length} bytes`);
+    
+    // Process the image
     console.log('*** Processing image synchronously');
-    const processingResult = await processImageBuffer(formData.file.buffer);
+    const processingResult = await processImageBuffer(fileBuffer);
     
     // Convert image to base64 for response
     const processedImageBase64 = processingResult.processedImageBuffer.toString('base64');
@@ -294,6 +288,6 @@ exports.handler = async (event, context) => {
     
   } catch (error) {
     console.error('*** Upload error:', error);
-    return formatResponse(500, { message: "Failed to upload image" });
+    return formatResponse(500, { message: "Failed to upload image: " + error.message });
   }
 };
