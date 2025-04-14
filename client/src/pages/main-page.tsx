@@ -311,7 +311,7 @@ export default function MainPage() {
     <div className="bg-gray-50 min-h-screen">
       {/* Custom buttons for both upload and settings - matching styles */}
       {/* Fixed Upload Button (Center Bottom) */}
-      <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center">
+      <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center">
         <div className="relative inline-block group">
           <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Upload</div>
           <UploadSheet onComplete={handleUploadComplete}>
@@ -325,7 +325,7 @@ export default function MainPage() {
       </div>
 
       {/* Fixed Settings Button (Bottom Right) */}
-      <div className="fixed bottom-6 right-8 z-50">
+      <div className="fixed bottom-4 right-8 z-50">
         <div className="relative inline-block group">
           <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Settings</div>
           <SettingsSheet>
