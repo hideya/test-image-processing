@@ -135,12 +135,6 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
           <div className="mx-auto max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">Settings</h2>
-              <button 
-                onClick={handleCloseSheet}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
             </div>
 
             <div className="space-y-4">
@@ -169,6 +163,17 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
                 </CardContent>
               </Card>
 
+              <div className="mt-4 space-y-2">
+                <Button
+                  variant="destructive"
+                  className="w-full py-3 rounded-xl shadow-md hover:shadow-lg text-sm"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
+
               <Card className="shadow-md rounded-xl border border-gray-200">
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-base">Appearance Settings</CardTitle>
@@ -187,17 +192,6 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
                   </AlertDescription>
                 </Alert>
               )}
-
-              <div className="mt-4 space-y-2">
-                <Button
-                  variant="destructive"
-                  className="w-full py-3 rounded-xl shadow-md hover:shadow-lg text-sm"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </Button>
-              </div>
             </div>
           </div>
         </div>

@@ -311,7 +311,7 @@ export default function MainPage() {
     <div className="bg-gray-50 min-h-screen">
       {/* Custom buttons for both upload and settings - matching styles */}
       {/* Fixed Upload Button (Center Bottom) */}
-      <div className="fixed bottom-8 left-0 right-0 z-50 flex justify-center">
+      <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center">
         <div className="relative inline-block group">
           <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Upload</div>
           <UploadSheet onComplete={handleUploadComplete}>
@@ -325,7 +325,7 @@ export default function MainPage() {
       </div>
 
       {/* Fixed Settings Button (Bottom Right) */}
-      <div className="fixed bottom-8 right-8 z-50">
+      <div className="fixed bottom-6 right-8 z-50">
         <div className="relative inline-block group">
           <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Settings</div>
           <SettingsSheet>
@@ -338,22 +338,20 @@ export default function MainPage() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 pb-28"> {/* Increased padding bottom for floating buttons */}
-        <div className="grid grid-cols-1 gap-8">
-          <div className="bg-white p-6 rounded-xl shadow-md">
+      <div className="max-w-6xl mx-auto pb-20"> {/* Increased padding bottom for floating buttons */}
+        <div className="grid grid-cols-1 gap-2">
           <TodaySummary
             today={today}
             todayMeasurement={todayMeasurement}
             isLoading={isTodayLoading}
             formatTableDayPart={formatTableDayPart}
           />
-
-          {/* Month Navigation */}
+          
+          <div className="bg-white p-0 rounded-xl shadow-md">
           <MonthNavigation
             currentViewMonth={currentViewMonth}
             setCurrentViewMonth={setCurrentViewMonth}
           />
-        
           {isLoading ? (
             <div className="py-10 flex justify-center">
               <div className="flex flex-col items-center gap-2">
@@ -375,7 +373,7 @@ export default function MainPage() {
           ) : (
             <div className="space-y-6">
               {/* Section Title */}
-              <div className="mb-4">
+              <div className="mb-4 px-4">
                 <h2 className="text-xl font-bold text-gray-800">Measurement History</h2>
                 <p className="text-gray-500 text-sm">Track your progress over time</p>
               </div>

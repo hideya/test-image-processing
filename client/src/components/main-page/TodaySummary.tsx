@@ -32,7 +32,7 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
   });
   return (
     <div>
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-sm border border-blue-100 mb-6">
+      <div className="bg-gradient-to-b from-blue-50 to-indigo-500 p-6 rounded-2xl shadow-sm border border-blue-100 mb-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col items-center md:items-start">
             <div className="text-sm text-blue-600 uppercase font-medium mb-1">Today</div>
