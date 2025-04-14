@@ -918,9 +918,6 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
             </button>
           )}
         </SheetTrigger>
-        <SheetDescription>
-          Upload image to analyze
-        </SheetDescription>
         <SheetContent
           side="bottom"
           className={`rounded-t-xl overflow-y-auto ${currentStep === UploadStep.INITIAL && !selectedFile ? 'h-[60vh]' : 'h-[85vh]'}`}
@@ -930,7 +927,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
             }
           }}
         >
-          <SheetTitle className="sr-only">Upload Image</SheetTitle>
+          <SheetTitle className="">Upload Image</SheetTitle>
           {/* Removed custom close button - using the built-in one from SheetContent */}
           <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
             <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />

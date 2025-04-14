@@ -101,14 +101,11 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
           </button>
         )}
       </SheetTrigger>
-      <SheetDescription>
-        Manage your account settings and preferences
-      </SheetDescription>
       <SheetContent
         side="bottom"
         className="h-[85vh] rounded-t-xl overflow-y-auto"
       >
-        <SheetTitle className="sr-only">Settings</SheetTitle>
+        <SheetTitle className="">Settings</SheetTitle>
         <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
           <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />
         </div>
