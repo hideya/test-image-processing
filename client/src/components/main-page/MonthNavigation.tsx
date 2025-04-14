@@ -10,21 +10,34 @@ export const MonthNavigation: React.FC<MonthNavigationProps> = ({
   currentViewMonth,
   setCurrentViewMonth,
 }) => {
+  // Calculate if next month button should be disabled
+  const isNextMonthDisabled = () => {
+    const nextMonth = new Date(currentViewMonth);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const today = new Date();
+    return nextMonth > today;
+  };
+
   return (
-    <div className="flex items-center justify-center gap-4 py-2">
+    <div className="flex items-center justify-between py-4 px-2 mb-4 border-b border-gray-200">
       <button
         onClick={() => {
           const newDate = new Date(currentViewMonth);
           newDate.setMonth(newDate.getMonth() - 1);
           setCurrentViewMonth(newDate);
         }}
-        className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+        className="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-gray-200 hover:bg-gray-50 shadow-sm transition-all duration-200 hover:shadow-md"
       >
-        ◀︎
+        <span className="text-gray-700">◀︎</span>
       </button>
-      <span className="text-lg font-medium">
-        {format(currentViewMonth, "yyyy年 M月")}
-      </span>
+      <div className="flex items-center gap-1.5">
+        <span className="text-lg font-bold text-gray-800">
+          {format(currentViewMonth, "yyyy年")}
+        </span>
+        <span className="text-2xl font-bold text-blue-600">
+          {format(currentViewMonth, "M月")}
+        </span>
+      </div>
       <button
         onClick={() => {
           const newDate = new Date(currentViewMonth);
@@ -33,9 +46,10 @@ export const MonthNavigation: React.FC<MonthNavigationProps> = ({
           if (newDate > today) return; // Don't allow future months
           setCurrentViewMonth(newDate);
         }}
-        className="group relative flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+        disabled={isNextMonthDisabled()}
+        className="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-gray-200 hover:bg-gray-50 shadow-sm transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-sm"
       >
-        ▶︎
+        <span className="text-gray-700">▶︎</span>
       </button>
     </div>
   );

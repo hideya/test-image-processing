@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Settings, Home } from "lucide-react";
+import { Settings, Home, Upload, Plus } from "lucide-react";
 import { UploadSheet } from "@/components/upload-sheet";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,37 +19,54 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 bg-white border-t border-gray-200">
-      <div className="grid justify-items-center pt-3 h-full grid-cols-3 mx-auto max-w-lg md:max-w-2xl md:grid-cols-3">
-        {/* Replace the Upload Link with the UploadSheet component */}
-        <UploadSheet onComplete={handleUploadComplete} />
-
-        <Link href="/">
+    <div>
+      {/* Floating Action Button for Upload */}
+      <div className="fixed bottom-20 right-4 z-50 md:right-8">
+        <UploadSheet onComplete={handleUploadComplete}>
           <button
-            type="button"
-            className={cn(
-              "inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 md:flex-row md:gap-2",
-              location === "/" && "text-blue-600",
-            )}
-          >
-            <Home className="w-6 h-6" />
-            <span className="text-xs md:text-sm">Home</span>
+            className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all duration-200 hover:shadow-xl transform hover:-translate-y-1">
+            <Plus className="w-7 h-7" />
           </button>
-        </Link>
-
-        <Link href="/settings">
-          <button
-            type="button"
-            className={cn(
-              "inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 md:flex-row md:gap-2",
-              location === "/settings" && "text-blue-600",
-            )}
-          >
-            <Settings className="w-6 h-6" />
-            <span className="text-xs md:text-sm">Settings</span>
-          </button>
-        </Link>
+        </UploadSheet>
       </div>
-    </nav>
+
+      {/* Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 bg-white border-t border-gray-200 shadow-md">
+        <div className="flex justify-around items-center h-full mx-auto max-w-lg md:max-w-2xl px-4">
+          <Link href="/">
+            <button
+              type="button"
+              className={cn(
+                "inline-flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-colors",
+                location === "/" 
+                  ? "text-blue-600 bg-blue-50" 
+                  : "text-gray-600 hover:bg-gray-50"
+              )}
+            >
+              <Home className={cn("w-6 h-6", location === "/" ? "text-blue-600" : "text-gray-500")} />
+              <span className="text-xs font-medium mt-1">Home</span>
+            </button>
+          </Link>
+
+          {/* This middle space is for the floating action button */}
+          <div className="w-10"></div>
+
+          <Link href="/settings">
+            <button
+              type="button"
+              className={cn(
+                "inline-flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-colors",
+                location === "/settings" 
+                  ? "text-blue-600 bg-blue-50" 
+                  : "text-gray-600 hover:bg-gray-50"
+              )}
+            >
+              <Settings className={cn("w-6 h-6", location === "/settings" ? "text-blue-600" : "text-gray-500")} />
+              <span className="text-xs font-medium mt-1">Settings</span>
+            </button>
+          </Link>
+        </div>
+      </nav>
+    </div>
   );
 }

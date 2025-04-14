@@ -78,9 +78,10 @@ enum UploadStep {
 interface UploadSheetProps {
   onComplete?: () => void;
   onCancel?: () => void;
+  children?: React.ReactNode;
 }
 
-export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
+export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -532,7 +533,7 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
     switch (currentStep) {
       case UploadStep.INITIAL:
         return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Date Selection */}
             <div className="flex items-center space-x-4">
               <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
@@ -584,7 +585,7 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
             </div>
 
             {/* File Selection Area */}
-            <Card className="border-dashed border-2 bg-gray-50">
+            <Card className="border-dashed border-2 border-blue-200 bg-blue-50/30 hover:bg-blue-50 transition-colors rounded-xl">
             <CardContent className="pt-4 pb-4 flex flex-col items-center justify-center">
                 <input
                   type="file"
@@ -599,11 +600,11 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
                     htmlFor="file-upload-sheet"
                     className="w-full flex flex-col items-center justify-center cursor-pointer"
                   >
-                    <div className="bg-blue-50 rounded-full p-4 mb-4">
+                    <div className="bg-blue-100 text-blue-600 rounded-full p-4 mb-4 shadow-md">
                       <Camera className="h-10 w-10 text-blue-500" />
                     </div>
-                    <p className="text-gray-700 mb-2 font-medium">Click to select a photo</p>
-                    <p className="text-gray-500 text-sm text-center max-w-xs">
+                    <p className="text-blue-700 mb-2 font-medium">Click to select a photo</p>
+                    <p className="text-blue-500 text-sm text-center max-w-xs">
                       Upload a clear image to measure angles accurately
                     </p>
                   </label>
@@ -660,7 +661,7 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
             {selectedFile && (
               <Button
                 onClick={handleUpload}
-                className="w-full py-6 rounded-xl text-base font-medium"
+                className="w-full py-6 rounded-xl text-base font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
                 size="lg"
               >
                 <Upload className="mr-2 h-5 w-5" />
@@ -701,13 +702,13 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
             
             {/* Close Button - Only shown in initial state when no photo is selected */}
             {!selectedFile && !processedImageUrl && (
-              <div className="fixed bottom-6 left-0 right-0 flex justify-center">
+              <div className="fixed bottom-8 left-0 right-0 flex justify-center">
                 <Button 
                   variant="outline"
                   onClick={handleCloseSheet}
-                  className="rounded-full px-6 py-2 border-gray-300 shadow-sm"
+                  className="rounded-full w-12 h-12 p-0 border-gray-300 shadow-md flex items-center justify-center bg-white hover:bg-gray-50"
                 >
-                  Close
+                  <X className="h-5 w-5 text-gray-500" />
                 </Button>
               </div>
             )}
@@ -716,9 +717,9 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
         
       case UploadStep.UPLOADING:
         return (
-          <div className="flex flex-col items-center justify-center py-10 space-y-6">
-            <div className="bg-blue-50 rounded-full p-4">
-              <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+          <div className="flex flex-col items-center justify-center py-8 space-y-5">
+            <div className="bg-blue-100 rounded-full p-4 shadow-md">
+              <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
             </div>
             
             <div className="text-center">
@@ -729,9 +730,9 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
             </div>
             
             <div className="w-full max-w-md space-y-2">
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-200">
+              <div className="relative h-3 w-full overflow-hidden rounded-full bg-gray-200">
                 <div 
-                  className="h-full bg-blue-500 transition-all" 
+                  className="h-full bg-blue-600 transition-all" 
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
@@ -742,7 +743,7 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
         
       case UploadStep.RESULTS:
         return (
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div className="text-center mb-2">
               <h3 className="text-xl font-medium text-gray-900">Analysis Results</h3>
               <p className="text-gray-500">
@@ -752,7 +753,7 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
             
             {processedImageUrl && (
               <div>
-                <Card className="mb-6">
+                <Card className="mb-6 shadow-md rounded-xl overflow-hidden border-0">
                   <CardContent className="pt-6">
                     <div className="relative h-[30vh] rounded-md overflow-hidden mb-4">
                       <img
@@ -765,15 +766,15 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
                 </Card>
                 
                 {processedAngles && (
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-0">
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-0 shadow-md rounded-xl transform transition-transform hover:scale-105">
                       <CardContent className="pt-6 text-center">
                         <h4 className="text-sm font-medium text-gray-700 mb-1">Left Angle</h4>
                         <p className="text-3xl font-bold text-blue-700">{processedAngles.angle.toFixed(2)}°</p>
                       </CardContent>
                     </Card>
                     
-                    <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-0">
+                    <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-0 shadow-md rounded-xl transform transition-transform hover:scale-105">
                       <CardContent className="pt-6 text-center">
                         <h4 className="text-sm font-medium text-gray-700 mb-1">Right Angle</h4>
                         <p className="text-3xl font-bold text-purple-700">{processedAngles.angle2.toFixed(2)}°</p>
@@ -827,10 +828,10 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
                             }
                           }}
                           className={`
-                            w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all
+                            w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all
                             ${selectedIcons.includes(icon.id)
-                              ? "bg-blue-100 border-2 border-blue-400 shadow-sm"
-                              : "bg-gray-100 hover:bg-gray-200"}
+                              ? "bg-blue-100 border-2 border-blue-500 shadow-md transform scale-110"
+                              : "bg-gray-100 hover:bg-gray-200 hover:shadow"}
                           `}
                         >
                           {icon.emoji}
@@ -842,7 +843,7 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
                 
                 <Button 
                   onClick={handleSubmitMetadata}
-                  className="w-full py-4 mt-6 rounded-xl text-base font-medium"
+                  className="w-full py-5 mt-6 rounded-xl text-base font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
                   size="lg"
                 >
                   Save Measurement
@@ -862,14 +863,14 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
         
       case UploadStep.COMPLETE:
         return (
-          <div className="text-center py-10 space-y-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-2">
-              <Check className="h-8 w-8 text-green-600" />
+          <div className="text-center py-8 space-y-5">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4 shadow-md animate-in fade-in-50 zoom-in-95 duration-300">
+              <Check className="h-10 w-10 text-green-600" />
             </div>
             
             <div>
-              <h3 className="text-2xl font-medium text-gray-900 mb-2">Measurement Complete!</h3>
-              <p className="text-gray-500 max-w-xs mx-auto">
+              <h3 className="text-2xl font-medium text-gray-900 mb-2 animate-in fade-in-50 duration-300 delay-150">Measurement Complete!</h3>
+              <p className="text-gray-500 max-w-xs mx-auto animate-in fade-in-50 duration-300 delay-300">
                 Your image has been processed and all details saved successfully.
               </p>
             </div>
@@ -877,7 +878,7 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
             <div className="pt-6 space-y-4">
               <Button 
                 onClick={resetForm}
-                className="px-8 py-6 rounded-xl"
+                className="px-8 py-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200 animate-in fade-in-50 duration-300 delay-500"
                 size="lg"
               >
                 <Camera className="mr-2 h-5 w-5" />
@@ -904,18 +905,22 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
         }
       }}>
         <SheetTrigger asChild>
-          <button
-            type="button"
-            className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 rounded-md py-2 md:flex-row md:gap-2"
-            onClick={() => setOpen(true)}
-          >
-            <Upload className="w-6 h-6" />
-            <span className="text-xs md:text-sm">Upload</span>
-          </button>
+          {children ? (
+            children
+          ) : (
+            <button
+              type="button"
+              className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 rounded-md py-2 md:flex-row md:gap-2"
+              onClick={() => setOpen(true)}
+            >
+              <Upload className="w-6 h-6" />
+              <span className="text-xs md:text-sm">Upload</span>
+            </button>
+          )}
         </SheetTrigger>
         <SheetContent
           side="bottom"
-          className="h-[75vh] rounded-t-xl overflow-y-auto"
+          className={`rounded-t-xl overflow-y-auto ${currentStep === UploadStep.INITIAL && !selectedFile ? 'h-[60vh]' : 'h-[85vh]'}`}
           onCloseAutoFocus={() => {
             if (currentStep !== UploadStep.UPLOADING && currentStep !== UploadStep.UPDATING) {
               handleCloseSheet();
@@ -927,7 +932,7 @@ export function UploadSheet({ onComplete, onCancel }: UploadSheetProps) {
           <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
             <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />
           </div>
-          <div className="pt-6 pb-20 px-6">
+          <div className="pt-6 pb-16 px-6">
             <div className="mx-auto max-w-md">
               {renderContent()}
             </div>

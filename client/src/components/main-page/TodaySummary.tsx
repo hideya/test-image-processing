@@ -24,49 +24,57 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
   formatTableDayPart,
 }) => {
   return (
-    <Link href="/upload">
-      <div className="bg-blue-50 p-4 rounded-full">
-        <div className="flex items-center justify-center gap-4">
-          <div className="flex flex-end gap-1">
-            <div className="text-xl font-medium text-blue-800 mt-1">
-              {format(new Date(today), "M月 d日")}
-            </div>
-            <div className="font-medium text-blue-800 mt-1.5">
-              ({formatTableDayPart(today.toISOString())})
+    <div>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-sm border border-blue-100 mb-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col items-center md:items-start">
+            <div className="text-sm text-blue-600 uppercase font-medium mb-1">Today</div>
+            <div className="flex items-baseline gap-2">
+              <div className="text-2xl font-bold text-gray-800">
+                {format(new Date(today), "M月 d日")}
+              </div>
+              <div className="text-lg font-medium text-gray-600">
+                ({formatTableDayPart(today.toISOString())}曜日)
+              </div>
             </div>
           </div>
-          {todayMeasurement ? (
-            <>
-              <div className="flex gap-2">
-                <div className="text-sm font-medium text-blue-600 mt-2">
-                  左足
+          <div className="flex gap-6 items-center">
+            {todayMeasurement ? (
+              <>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100 flex flex-col items-center transition-transform hover:scale-105">
+                  <div className="text-sm font-medium text-blue-600 mb-1">
+                    左足
+                  </div>
+                  <div className="text-3xl font-bold text-blue-700">
+                    {todayMeasurement.angle !== undefined
+                      ? todayMeasurement.angle.toFixed(1)
+                      : "--"}
+                    °
+                  </div>
                 </div>
-                <div className="text-2xl font-semibold text-blue-800">
-                  {todayMeasurement.angle !== undefined
-                    ? todayMeasurement.angle.toFixed(1)
-                    : "--"}
-                  °
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-purple-100 flex flex-col items-center transition-transform hover:scale-105">
+                  <div className="text-sm font-medium text-purple-600 mb-1">
+                    右足
+                  </div>
+                  <div className="text-3xl font-bold text-purple-700">
+                    {todayMeasurement.angle2 !== undefined
+                      ? todayMeasurement.angle2.toFixed(1)
+                      : "--"}
+                    °
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <div className="text-sm font-medium text-green-600 mt-2">
-                  右足
+              </>
+            ) : (
+              <Link href="/upload">
+                <div className="flex flex-col items-center bg-blue-50 hover:bg-blue-100 transition-colors p-4 rounded-xl border border-blue-200 cursor-pointer">
+                  <div className="text-blue-700 font-medium mb-1">No measurement today</div>
+                  <div className="text-blue-500 text-sm">Tap to upload a photo</div>
                 </div>
-                <div className="text-2xl font-semibold text-green-700">
-                  {todayMeasurement.angle2 !== undefined
-                    ? todayMeasurement.angle2.toFixed(1)
-                    : "--"}
-                  °
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-gray-500 mt-2 ml-4">
-              未測定
-            </div>
-          )}
+              </Link>
+            )}
+          </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 };

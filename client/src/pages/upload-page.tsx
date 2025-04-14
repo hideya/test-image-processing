@@ -20,5 +20,5 @@ export default function UploadPage() {
   }, [setLocation, toast]);
 
   // Return an empty div while redirecting
-  return <div className="bg-neutral-50 min-h-screen"></div>;
+  return <div className="bg-gray-50 min-h-screen"></div>; // Changed to gray-50 to match main page color
 }

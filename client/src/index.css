@@ -13,6 +13,23 @@
     background-color: #f5f5f5;
   }
   
+  /* Button pulse animation */
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+    }
+  }
+
+  .pulse-animation {
+    animation: pulse 2s infinite;
+  }
+  
   @keyframes pulse-dot {
     0% {
       r: 4;

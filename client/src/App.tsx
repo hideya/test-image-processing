@@ -8,22 +8,22 @@ import { ProtectedRoute } from "./lib/protected-route.tsx";
 import AuthPage from "./pages/auth-page";
 import MainPage from "./pages/main-page";
 import UploadPage from "./pages/upload-page";
-import SettingsPage from "./pages/settings-page";
+// Settings page now converted to a sheet component
 import NotFound from "./pages/not-found";
 import { Toaster } from "./components/ui/toaster";
-import { BottomNav } from "./components/ui/bottom-nav";
+// Bottom nav removed in favor of floating action buttons
 import { ThemeProvider } from '@/contexts/ThemeProvider.tsx';
 import { RouterDebugger } from './debug-router';
 
 export default function App() {
   const [location] = useLocation();
-  const showBottomNav = location !== "/auth";
+  // No longer need to track bottom nav visibility
 
   console.log('*** App rendering, current location:', location);
 
   const containerClass = location === "/auth" 
     ? "h-screen flex flex-col overflow-hidden" 
-    : "pb-16";
+    : ""; // Removed bottom padding since we no longer have bottom nav
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -35,10 +35,10 @@ export default function App() {
                 <Route path="/auth" component={AuthPage} />
                 <ProtectedRoute path="/" component={MainPage} />
                 <ProtectedRoute path="/upload" component={UploadPage} />
-                <ProtectedRoute path="/settings" component={SettingsPage} />
+                {/* Settings route removed as it's now a sheet component */}
                 <Route component={NotFound} />
               </Switch>
-              {showBottomNav && <BottomNav />}
+              {/* Bottom navigation bar removed */}
               <RouterDebugger />
               <Toaster />
             </div>

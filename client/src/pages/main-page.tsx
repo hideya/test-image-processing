@@ -5,13 +5,15 @@ import { useSettings } from "@/hooks/use-settings";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, Settings, Upload, Plus } from "lucide-react";
 import {
   TodaySummary,
   MonthNavigation,
   MeasurementChart,
   MeasurementTable
 } from "@/components/main-page";
+import { UploadSheet } from "@/components/upload-sheet";
+import { SettingsSheet } from "@/components/settings-sheet";
 
 interface Measurement {
   date: string;
@@ -252,12 +254,49 @@ export default function MainPage() {
 
 
 
+  const handleUploadComplete = () => {
+    toast({
+      title: "Upload Complete",
+      description: "Your image has been processed and saved.",
+      variant: "success",
+    });
+    refetch(); // Refresh the data after upload
+  };
+
   return (
-    <div className="bg-neutral-50">
+    <div className="bg-gray-50 min-h-screen">
+      {/* Custom buttons for both upload and settings - matching styles */}
+      {/* Fixed Upload Button (Center Bottom) */}
+      <div className="fixed bottom-8 left-0 right-0 z-50 flex justify-center">
+        <div className="relative inline-block group">
+          <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Upload</div>
+          <UploadSheet onComplete={handleUploadComplete}>
+            <button
+              aria-label="Upload new image"
+              className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
+              <Plus className="w-6 h-6" />
+            </button>
+          </UploadSheet>
+        </div>
+      </div>
 
+      {/* Fixed Settings Button (Bottom Right) */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <div className="relative inline-block group">
+          <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Settings</div>
+          <SettingsSheet>
+            <button
+              aria-label="Open settings"
+              className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
+              <Settings className="w-6 h-6" />
+            </button>
+          </SettingsSheet>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 gap-8">
-        <div className="bg-white p-4 rounded-lg shadow-sm">
+      <div className="max-w-6xl mx-auto px-4 py-6 pb-28"> {/* Increased padding bottom for floating buttons */}
+        <div className="grid grid-cols-1 gap-8">
+          <div className="bg-white p-6 rounded-xl shadow-md">
           <TodaySummary
             today={today}
             todayMeasurement={todayMeasurement}
@@ -289,9 +328,16 @@ export default function MainPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Section Title */}
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-gray-800">Measurement History</h2>
+                <p className="text-gray-500 text-sm">Track your progress over time</p>
+              </div>
+              
               {/* Chart view */}
-              <div>
+              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <h3 className="text-md font-medium text-gray-700 mb-3">Monthly Trend</h3>
                 <MeasurementChart
                   chartData={chartData}
                   chartDateRange={chartDateRange}
@@ -306,7 +352,8 @@ export default function MainPage() {
               </div>
 
               {/* Data Table */}
-              <div>
+              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <h3 className="text-md font-medium text-gray-700 mb-3">Daily Records</h3>
                 <MeasurementTable 
                   sortedMeasurements={sortedMeasurements}
                   selectedDate={selectedDate}
@@ -322,6 +369,7 @@ export default function MainPage() {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }
