@@ -4,8 +4,8 @@ A test web application for image analysis and angle measurements
 ## Features
 
 - **User Authentication**: Secure JWT-based authentication system
-- **Image Upload & Processing**: Automatic angle detection in uploaded images
-- **Data Visualization**: Interactive charts displaying angle measurements over time
+- **Image Upload & Processing**: Automatic angle detection in uploaded images with a two-step workflow
+- **Metadata Management**: Add notes and icons after seeing the processing results
 - **Responsive Design**: Optimized for desktop and mobile devices
 - **Image Management**: View, rotate, and analyze uploaded images
 - **Custom Date Selection**: Associate measurements with specific dates
@@ -71,6 +71,7 @@ netlify deploy --prod
 Detailed documentation can be found in the `docs/` directory (after following the reorganization plan):
 
 - [API Specifications](docs/SPECIFICATIONS.md): Database schema, API endpoints, and workflows
+- [Two-Step Workflow](docs/TWO_STEP_WORKFLOW.md): Details on the two-step upload and metadata workflow
 - [JWT Authentication](docs/JWT_USAGE.md): Guide for using JWT authentication
 - [JWT Migration](docs/JWT_MIGRATION.md): Migration from session-based to JWT auth
 - [Netlify Implementation](docs/NETLIFY_IMPLEMENTATION.md): Serverless architecture implementation

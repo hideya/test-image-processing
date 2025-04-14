@@ -126,7 +126,8 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 
 | Endpoint | Method | Description | Authentication Required | Request Body | Response |
 |----------|--------|-------------|-------------------------|--------------|----------|
-| `/api/images/upload` | POST | Upload and process an image | Yes | FormData with `image`, `customDate`, `rotation` | Processed image data (base64), angle measurements, and metadata |
+| `/api/images/upload` | POST | Upload and process an image | Yes | FormData with `image`, `customDate`, `rotation` | Processed image data (base64), angle measurements, and measurement ID |
+| `/api/measurements/:id/metadata` | PATCH | Update metadata for a measurement | Yes | JSON with `memo`, `iconIds` | Updated measurement object |
 | `/api/images/:hashKey` | GET | Get image by hash key | Yes | None | Redirects with message about direct image access |
 
 ### Data Endpoints
@@ -136,9 +137,11 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 | `/api/angle-data` | GET | Get angle measurements | Yes | `start`, `end` (ISO date strings) | Array of measurements with dates |
 | `/api/latest-angle` | GET | Get the latest angle measurement | Yes | None | Latest measurement object |
 
-## Client-Side Image Upload Flow
+## Client-Side Two-Step Upload Flow
 
-The client-side image upload process uses a streamlined approach:
+The client-side image upload process uses a streamlined two-step approach that allows users to see results before adding metadata:
+
+### Step 1: Image Upload and Processing
 
 1. **Image Selection**:
    - User selects an image file via file input
@@ -155,35 +158,53 @@ The client-side image upload process uses a streamlined approach:
    - Converted to JPEG format with 85% quality for bandwidth optimization
    - Rotation is applied before upload
 
-4. **Upload Process**:
+4. **Upload and Processing**:
    - FormData object is created with:
      - Processed image file
      - Custom date (ISO format with time set to noon to avoid timezone issues)
      - Rotation angle
    - JWT token is added to the Authorization header
    - Submitted to `/api/images/upload` endpoint
+   - No memo or iconIds are sent at this stage
    - Upload and processing progress is indicated with loading animation
 
-5. **Handling Server Response**:
-   - Server processes the image synchronously and returns in a single response:
-     - Processed image as base64 data
-     - Angle measurements
-     - Image metadata
-   - Client displays the processed image and angles immediately
-   - Updates UI with results
-   - Refreshes measurement list to include the new data
+5. **Receiving Results**:
+   - Server returns the processed image, angle measurements, and measurement ID
+   - Client displays the processed image, date, and angles immediately
+   - Client presents form for adding metadata below the results
 
-6. **Error Handling**:
+### Step 2: Adding Metadata
+
+1. **Metadata Input**:
+   - User views the processing results
+   - User can now make informed decisions about notes and icons
+   - User adds optional notes and selects icons based on the results
+
+2. **Metadata Submission**:
+   - Client sends a PATCH request to `/api/measurements/:id/metadata`
+   - Request includes the memo text and selected iconIds
+   - JWT token is added to the Authorization header
+   - UI shows loading state during submission
+
+3. **Completion**:
+   - Server confirms metadata update
+   - Client displays success message
+   - Data cache is invalidated to refresh chart data
+   - Process is complete
+
+4. **Error Handling**:
    - Client displays appropriate error messages for various failure cases
-   - Handles network errors, invalid files, and server processing failures
-   - Allows retry on failure
+   - Handles network errors, validation failures, and server errors
+   - Allows retry on failure for both steps
 
 ## Server-Side Image Processing
 
-The server employs a memory-based image processing pipeline:
+The server employs a memory-based image processing pipeline with a two-step workflow:
+
+### Step 1: Image Upload and Processing
 
 1. **Upload Handling**:
-   - Uses multer middleware for multipart/form-data parsing
+   - Uses busboy for multipart/form-data parsing (compatible with Netlify Functions)
    - Validates file type and size constraints
    - Generates a unique hash key for the image
 
@@ -197,16 +218,46 @@ The server employs a memory-based image processing pipeline:
    - Calculates two dominant angles in the image
    - Applies user-specified rotation before processing
 
-4. **Data Storage**:
+4. **Initial Data Storage**:
    - Stores image metadata in the database
-   - Creates angle measurement records linked to images and users
-   - Supports custom timestamp assignment for historical data
-   - Stores optional memo text and icon IDs for better categorization
+   - Creates angle measurement records with angles and custom timestamp
+   - Does not include memo or icon data at this stage
 
 5. **Response Generation**:
    - Returns processed image data as base64-encoded string
-   - Includes angle measurements and metadata in the same response
-   - Eliminates the need for subsequent API calls
+   - Includes angle measurements and measurement ID in the response
+   - Provides all necessary data for the client to display results
+
+### Step 2: Metadata Addition
+
+1. **Request Handling**:
+   - Receives PATCH request to `/api/measurements/:id/metadata`
+   - Extracts memo text and iconIds from request body
+   - Validates user ownership of the measurement
+
+2. **Metadata Update**:
+   - Updates the existing measurement record with memo and iconIds
+   - Maintains original measurement data (angles, timestamp, etc.)
+   - Ensures data integrity with transaction handling
+
+3. **Response**:
+   - Returns the updated measurement object
+   - Confirms successful metadata addition
+
+This two-step approach provides several benefits:
+
+1. **Improved User Experience**:
+   - Users can make informed decisions about metadata after seeing results
+   - Better context for adding meaningful notes and appropriate icons
+   - Clear separation of processing and annotation steps
+
+2. **Faster Initial Response**:
+   - Image upload and processing happens without waiting for metadata input
+   - Users see results quickly without needing to decide on metadata first
+
+3. **Flexible Workflow**:
+   - Metadata addition can happen immediately or later
+   - Better organization of user interactions
 
 ## Netlify Serverless Functions
 
@@ -215,6 +266,10 @@ The application is designed to run both as a traditional Node.js server and as a
 1. **Function Structure**:
    - Individual JavaScript functions in the `/netlify/functions` directory
    - Each function handles a specific API endpoint or related group of endpoints
+   - Key functions include:
+     - `images-upload.js`: Handles image upload and processing
+     - `update-metadata.js`: Handles metadata updates for measurements
+     - `angle-data.js`: Provides measurement data for charts
    - Configuration in `netlify.toml` maps API routes to functions
 
 2. **Authentication in Functions**:
@@ -243,8 +298,8 @@ The application requires the following environment variables:
 
 1. **Image Processing**:
    - In-memory processing with no filesystem I/O
-   - Single API call for upload, processing, and retrieval
-   - Response includes all necessary data without follow-up requests
+   - Two-step workflow for better user experience
+   - Base64 image data eliminates need for separate image retrieval
 
 2. **Response Time**:
    - Client-side image and data caching
