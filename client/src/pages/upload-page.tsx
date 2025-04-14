@@ -42,13 +42,22 @@ interface UploadResponse {
   };
 }
 
+// Define workflow steps
+enum UploadStep {
+  INITIAL = 'initial',             // Image selection and date selection
+  UPLOADING = 'uploading',         // Uploading and processing image
+  RESULTS = 'results',             // Showing results and metadata form
+  UPDATING = 'updating',           // Saving metadata
+  COMPLETE = 'complete'            // All done
+}
+
 export default function UploadPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewRotation, setPreviewRotation] = useState<number>(0);
-  const [isUploading, setIsUploading] = useState(false);
+  const [currentStep, setCurrentStep] = useState<UploadStep>(UploadStep.INITIAL);
   const [showDateConflictConfirmation, setShowDateConflictConfirmation] =
     useState(false);
   const [processedFileToUpload, setProcessedFileToUpload] =
@@ -68,8 +77,11 @@ export default function UploadPage() {
     angle: number;
     angle2: number;
   } | null>(null);
+  
+  // Track the currentMeasurementId for metadata updates
+  const [currentMeasurementId, setCurrentMeasurementId] = useState<number | null>(null);
 
-  // Upload mutation with updated implementation
+  // Upload mutation with updated implementation for Step 1
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -82,13 +94,8 @@ export default function UploadPage() {
       // Only sending for logging/debugging purposes
       formData.append("clientRotation", previewRotation.toString());
 
-      if (memo) {
-        formData.append("memo", memo);
-      }
-
-      if (selectedIcons.length > 0) {
-        formData.append("iconIds", selectedIcons.join(","));
-      }
+      // In the new two-step workflow, we don't send memo and iconIds at this stage
+      // They will be added in a separate API call after the user sees the results
 
       // Add authorization header for JWT authentication
       const token = getAuthToken();
@@ -119,8 +126,8 @@ export default function UploadPage() {
     onSuccess: (data) => {
       // Display success message
       toast({
-        title: "Image uploaded and processed",
-        description: "Your image has been analyzed successfully.",
+        title: "Image processed successfully",
+        description: "You can now add notes and icons to this measurement.",
         variant: "success",
       });
 
@@ -134,16 +141,17 @@ export default function UploadPage() {
       const processedImageSrc = `data:${data.processedImage.mimeType};base64,${data.processedImage.base64}`;
       setProcessedImageUrl(processedImageSrc);
 
-      // Invalidate angle data cache for the charts
-      queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });
+      // Store the measurement ID for metadata update
+      setCurrentMeasurementId(data.measurement.id);
+
+      // Move to the results step
+      setCurrentStep(UploadStep.RESULTS);
       
-      // Reset form state except for the results
+      // Reset form data except for the results
       setSelectedFile(null);
       setPreviewUrl(null);
       setPreviewRotation(0);
-      setMemo("");
-      setSelectedIcons([]);
-      setIsUploading(false);
+      // Don't reset memo and selectedIcons as we'll use them in the next step
     },
     onError: (error: Error) => {
       toast({
@@ -151,7 +159,72 @@ export default function UploadPage() {
         description: error.message,
         variant: "destructive",
       });
-      setIsUploading(false);
+      setCurrentStep(UploadStep.INITIAL);
+    },
+  });
+
+  // Metadata update mutation for Step 2
+  const updateMetadataMutation = useMutation({
+    mutationFn: async ({ measurementId, memo, iconIds }: { measurementId: number, memo: string, iconIds: number[] }) => {
+      // Add authorization header for JWT authentication
+      const token = getAuthToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log('*** Adding Authorization token to metadata update request');
+      } else {
+        console.log('*** WARNING: No token available for metadata update request');
+      }
+      
+      // Convert iconIds array to comma-separated string
+      const iconIdsString = iconIds.length > 0 ? iconIds.join(',') : undefined;
+      
+      const response = await fetch(`/api/measurements/${measurementId}/metadata`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          memo: memo || undefined,
+          iconIds: iconIdsString
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update metadata");
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      // Display success message
+      toast({
+        title: "Details saved",
+        description: "Your notes and icons have been saved successfully.",
+        variant: "success",
+      });
+
+      // Invalidate angle data cache for the charts
+      queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });
+      
+      // Move to complete step
+      setCurrentStep(UploadStep.COMPLETE);
+      
+      // Reset form completely
+      setMemo("");
+      setSelectedIcons([]);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to save details",
+        description: error.message,
+        variant: "destructive",
+      });
+      // Go back to results step to try again
+      setCurrentStep(UploadStep.RESULTS);
     },
   });
 
@@ -159,8 +232,12 @@ export default function UploadPage() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
+      
+      // When starting over, clear all previous data
       setSelectedIcons([]);
       setMemo("");
+      setCurrentMeasurementId(null);
+      setCurrentStep(UploadStep.INITIAL);
 
       const fileReader = new FileReader();
       fileReader.onload = () => {
@@ -274,10 +351,11 @@ export default function UploadPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Step 1: Handle file upload and processing
+  const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedFile) {
-      setIsUploading(true);
+      setCurrentStep(UploadStep.UPLOADING);
 
       try {
         const processedFile = await processImageBeforeUpload(
@@ -289,14 +367,14 @@ export default function UploadPage() {
         if (hasConflict) {
           setProcessedFileToUpload(processedFile);
           setShowDateConflictConfirmation(true);
-          setIsUploading(false);
+          setCurrentStep(UploadStep.INITIAL);
           return;
         }
 
         uploadMutation.mutate(processedFile);
       } catch (error) {
         console.error("Error processing image:", error);
-        setIsUploading(false);
+        setCurrentStep(UploadStep.INITIAL);
         toast({
           title: "Image processing failed",
           description:
@@ -313,19 +391,41 @@ export default function UploadPage() {
     }
   };
 
+  // Step 2: Submit metadata
+  const handleSubmitMetadata = () => {
+    if (!currentMeasurementId) {
+      toast({
+        title: "Error",
+        description: "Missing measurement information. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setCurrentStep(UploadStep.UPDATING);
+    updateMetadataMutation.mutate({
+      measurementId: currentMeasurementId,
+      memo,
+      iconIds: selectedIcons
+    });
+  };
+
+  // Reset the form to start over
   const resetForm = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
     setPreviewRotation(0);
     setMemo("");
     setSelectedIcons([]);
-    setIsUploading(false);
-    // Don't reset the processed results so they remain visible
+    setProcessedImageUrl(null);
+    setProcessedAngles(null);
+    setCurrentMeasurementId(null);
+    setCurrentStep(UploadStep.INITIAL);
   };
 
   const handleConfirmDateConflict = () => {
     if (processedFileToUpload) {
-      setIsUploading(true);
+      setCurrentStep(UploadStep.UPLOADING);
       uploadMutation.mutate(processedFileToUpload, {
         onSettled: () => {
           setProcessedFileToUpload(null);
@@ -345,11 +445,12 @@ export default function UploadPage() {
     };
   }, []);
 
-  return (
-    <div className="bg-neutral-50">
-      <div className="grid grid-cols-1 gap-8">
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-4">
+  // Render different content based on the current step
+  const renderContent = () => {
+    switch (currentStep) {
+      case UploadStep.INITIAL:
+        return (
+          <form onSubmit={handleUpload} className="space-y-4">
             <div className="space-y-2">
               <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
                 <PopoverTrigger asChild>
@@ -391,7 +492,7 @@ export default function UploadPage() {
                 {selectedFile ? (
                   <label
                     htmlFor="file-upload"
-                    className="py-2 w-full justify-center  border rounded-full shadow-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer inline-flex items-center"
+                    className="py-2 w-full justify-center border rounded-full shadow-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer inline-flex items-center"
                   >
                     <span className="truncate">
                       {selectedFile.name}
@@ -445,56 +546,19 @@ export default function UploadPage() {
             </div>
 
             {selectedFile && (
-              <div className="space-y-2">
-                <IconPicker
-                  selectedIcons={selectedIcons}
-                  onChange={setSelectedIcons}
-                  maxSelection={3}
-                />
-              </div>
-            )}
-
-            {selectedFile && (
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  id="memo"
-                  value={memo}
-                  onChange={(e) => setMemo(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault(); // Prevent form submission
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Memo..."
-                  maxLength={100}
-                />
-              </div>
-            )}
-
-            {selectedFile && (
               <button
                 type="submit"
-                disabled={isUploading}
                 className="w-full py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isUploading ? (
-                  <span className="flex items-center justify-center">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading & Processing...
-                  </span>
-                ) : (
-                  "Upload and Analyze"
-                )}
+                Upload and Analyze
               </button>
             )}
 
-            {/* Show processed image results */}
+            {/* Show processed image from previous uploads */}
             {processedImageUrl && processedAngles && !selectedFile && (
               <div className="mt-6 border p-4 rounded-lg">
                 <div className="flex flex-col items-center">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Processed Image</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Previous Results</h3>
                   <div className="relative h-[50vh] rounded-md overflow-hidden">
                     <img
                       src={processedImageUrl}
@@ -514,6 +578,130 @@ export default function UploadPage() {
               </div>
             )}
           </form>
+        );
+        
+      case UploadStep.UPLOADING:
+        return (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">Processing your image...</h3>
+            <p className="text-gray-500 mt-2">This might take a few seconds</p>
+          </div>
+        );
+        
+      case UploadStep.RESULTS:
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-col items-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-1">Image Analysis Results</h3>
+              <p className="text-gray-500 mb-4">{format(customDate, "yyyy年 M月 d日")}</p>
+              
+              {processedImageUrl && (
+                <div className="w-full max-w-md">
+                  <div className="relative h-[50vh] rounded-md overflow-hidden mb-4">
+                    <img
+                      src={processedImageUrl}
+                      alt="Processed image"
+                      className="object-contain h-full w-full"
+                    />
+                  </div>
+                  
+                  {processedAngles && (
+                    <div className="flex justify-between p-4 bg-gray-50 rounded-lg mb-6 text-center">
+                      <div>
+                        <p className="text-gray-500 text-sm">Primary Angle</p>
+                        <p className="text-2xl font-bold">{processedAngles.angle.toFixed(2)}°</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-sm">Secondary Angle</p>
+                        <p className="text-2xl font-bold">{processedAngles.angle2.toFixed(2)}°</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Add metadata fields directly on the results page */}
+                  <div className="space-y-4 mt-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Add Notes</label>
+                      <input
+                        type="text"
+                        id="memo"
+                        value={memo}
+                        onChange={(e) => setMemo(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault(); // Prevent form submission
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="Add notes about this measurement..."
+                        maxLength={100}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Icons (Optional)</label>
+                      <IconPicker
+                        selectedIcons={selectedIcons}
+                        onChange={setSelectedIcons}
+                        maxSelection={3}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="w-full max-w-md flex flex-col gap-3 mt-6">
+                <Button 
+                  onClick={handleSubmitMetadata}
+                  className="w-full py-2 px-4"
+                >
+                  Save Details
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case UploadStep.UPDATING:
+        return (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">Saving your details...</h3>
+          </div>
+        );
+        
+      case UploadStep.COMPLETE:
+        return (
+          <div className="text-center py-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <h3 className="text-xl font-medium text-gray-900 mb-2">Measurement Complete!</h3>
+            <p className="text-gray-500 mb-8">Your image has been processed and all details saved successfully.</p>
+            
+            <Button 
+              onClick={resetForm}
+              className="px-6 py-2"
+            >
+              Upload Another Photo
+            </Button>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="bg-neutral-50">
+      <div className="grid grid-cols-1 gap-8">
+        <div className="bg-white p-4 rounded-lg shadow-sm">
+          {renderContent()}
         </div>
       </div>
 
@@ -539,7 +727,7 @@ export default function UploadPage() {
               onClick={() => {
                 setShowDateConflictConfirmation(false);
                 setProcessedFileToUpload(null);
-                setIsUploading(false);
+                setCurrentStep(UploadStep.INITIAL);
               }}
             >
               Cancel

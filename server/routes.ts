@@ -189,6 +189,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         // Create angle measurement record with mandatory client-provided timestamp
+        // In the updated workflow, memo and iconIds are not required at upload time
+        // They will be added in the second step via the metadata update endpoint
         const measurementData: InsertAngleMeasurement & {
           customTimestamp: Date;
         } = {
@@ -197,8 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           angle: processingResult.angle,
           angle2: processingResult.angle2,
           customTimestamp: customDate, // Always use client-provided date
-          memo: formData.fields.memo || undefined, // Add memo if provided
-          iconIds: formData.fields.iconIds || undefined, // Add icon IDs if provided
+          // Note: memo and iconIds are now optional and can be updated later
         };
 
         // Check if there are existing measurements for this date
@@ -376,6 +377,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Thumbnail endpoint removed - no longer needed
+
+  // New endpoint to add/update metadata for an existing measurement
+  app.patch("/api/measurements/:id/metadata", isAuthenticated, async (req, res) => {
+    try {
+      const measurementId = parseInt(req.params.id);
+      const { memo, iconIds } = req.body;
+      
+      if (isNaN(measurementId)) {
+        return res.status(400).json({ message: "Invalid measurement ID" });
+      }
+      
+      // Get the existing measurement to verify ownership
+      const existingMeasurement = await storage.getMeasurementById(measurementId);
+      
+      if (!existingMeasurement) {
+        return res.status(404).json({ message: "Measurement not found" });
+      }
+      
+      // Verify the user owns this measurement
+      if (existingMeasurement.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      // Update the measurement with new metadata
+      const updatedMeasurement = await storage.updateMeasurementMetadata(
+        measurementId, 
+        { memo, iconIds }
+      );
+      
+      res.status(200).json({
+        success: true,
+        measurement: updatedMeasurement
+      });
+    } catch (error) {
+      console.error("Error updating measurement metadata:", error);
+      res.status(500).json({ message: "Failed to update measurement metadata" });
+    }
+  });
 
   // Get the latest calculated angle
   app.get("/api/latest-angle", isAuthenticated, async (req, res) => {

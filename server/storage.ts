@@ -45,6 +45,8 @@ export interface IStorage {
   createAngleMeasurement(measurement: InsertAngleMeasurement): Promise<AngleMeasurement>;
   findMeasurementsByUserIdAndDate(userId: number, date: Date): Promise<AngleMeasurement[]>;
   deleteMeasurementById(id: number): Promise<void>;
+  updateMeasurementMetadata(measurementId: number, metadata: { memo?: string; iconIds?: string }): Promise<AngleMeasurement | undefined>;
+  getMeasurementById(id: number): Promise<AngleMeasurement | undefined>;
   getAngleMeasurementsByUserIdAndDateRange(
     userId: number, 
     startDate: Date, 
@@ -189,6 +191,24 @@ export class MemStorage implements IStorage {
 
   async deleteMeasurementById(id: number): Promise<void> {
     this.angleMeasurements.delete(id);
+  }
+
+  async getMeasurementById(id: number): Promise<AngleMeasurement | undefined> {
+    return this.angleMeasurements.get(id);
+  }
+
+  async updateMeasurementMetadata(measurementId: number, metadata: { memo?: string; iconIds?: string }): Promise<AngleMeasurement | undefined> {
+    const measurement = this.angleMeasurements.get(measurementId);
+    if (!measurement) return undefined;
+
+    const updatedMeasurement: AngleMeasurement = {
+      ...measurement,
+      memo: metadata.memo !== undefined ? metadata.memo : measurement.memo,
+      iconIds: metadata.iconIds !== undefined ? metadata.iconIds : measurement.iconIds
+    };
+
+    this.angleMeasurements.set(measurementId, updatedMeasurement);
+    return updatedMeasurement;
   }
 
   async getAngleMeasurementsByUserIdAndDateRange(
@@ -382,6 +402,42 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(angleMeasurements)
       .where(eq(angleMeasurements.id, id));
+  }
+
+  async getMeasurementById(id: number): Promise<AngleMeasurement | undefined> {
+    const [measurement] = await db
+      .select()
+      .from(angleMeasurements)
+      .where(eq(angleMeasurements.id, id));
+    return measurement;
+  }
+
+  async updateMeasurementMetadata(measurementId: number, metadata: { memo?: string; iconIds?: string }): Promise<AngleMeasurement | undefined> {
+    // Prepare update data - only include fields that are provided
+    const updateData: Record<string, any> = {};
+    
+    if (metadata.memo !== undefined) {
+      updateData.memo = metadata.memo;
+    }
+    
+    if (metadata.iconIds !== undefined) {
+      updateData.iconIds = metadata.iconIds;
+    }
+    
+    // Only proceed if there's something to update
+    if (Object.keys(updateData).length === 0) {
+      // Nothing to update, just return the current measurement
+      return this.getMeasurementById(measurementId);
+    }
+    
+    // Update the record
+    const [updatedMeasurement] = await db
+      .update(angleMeasurements)
+      .set(updateData)
+      .where(eq(angleMeasurements.id, measurementId))
+      .returning();
+      
+    return updatedMeasurement;
   }
 
   async getAngleMeasurementsByUserIdAndDateRange(

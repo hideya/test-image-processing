@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two-Step Upload Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .step {
+            display: none;
+        }
+        .step.active {
+            display: block;
+        }
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #357ac1;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .icon-option {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .icon-option.selected {
+            border-color: #4a90e2;
+            background-color: #e6f0fa;
+        }
+        .flex {
+            display: flex;
+            gap: 10px;
+        }
+        .ml-auto {
+            margin-left: auto;
+        }
+        #processedImage {
+            max-width: 100%;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .measurement-result {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .angle-display {
+            text-align: center;
+            flex: 1;
+        }
+        .angle-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .angle-label {
+            color: #666;
+            font-size: 14px;
+        }
+        #errorMessage {
+            color: #e53935;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+        #successMessage {
+            color: #43a047;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <h1>Two-Step Upload Test</h1>
+    
+    <div class="card step active" id="step1">
+        <h2>Step 1: Upload Image</h2>
+        
+        <div>
+            <label for="imageFile">Select Image</label>
+            <input type="file" id="imageFile" accept="image/jpeg,image/png,image/jpg">
+        </div>
+        
+        <div>
+            <label for="measurementDate">Measurement Date</label>
+            <input type="date" id="measurementDate">
+        </div>
+        
+        <div id="errorMessage"></div>
+        
+        <div class="flex" style="margin-top: 20px;">
+            <button id="uploadButton">Upload Image</button>
+        </div>
+    </div>
+    
+    <div class="card step" id="step2">
+        <h2>Step 2: View Results</h2>
+        
+        <div class="measurement-result">
+            <div class="angle-display">
+                <div class="angle-value" id="primaryAngle">0°</div>
+                <div class="angle-label">Primary Angle</div>
+            </div>
+            <div class="angle-display">
+                <div class="angle-value" id="secondaryAngle">0°</div>
+                <div class="angle-label">Secondary Angle</div>
+            </div>
+        </div>
+        
+        <div>
+            <img id="processedImage" alt="Processed image">
+        </div>
+        
+        <div class="flex" style="margin-top: 20px;">
+            <button id="addMetadataButton">Add Notes & Icons</button>
+        </div>
+    </div>
+    
+    <div class="card step" id="step3">
+        <h2>Step 3: Add Details</h2>
+        
+        <div>
+            <label for="memo">Notes</label>
+            <textarea id="memo" rows="3" placeholder="Add notes about this measurement..."></textarea>
+        </div>
+        
+        <div>
+            <label>Select Icons</label>
+            <div class="icon-grid" id="iconGrid">
+                <div class="icon-option" data-icon-id="icon1">😊</div>
+                <div class="icon-option" data-icon-id="icon2">⭐</div>
+                <div class="icon-option" data-icon-id="icon3">🏃</div>
+                <div class="icon-option" data-icon-id="icon4">🔥</div>
+                <div class="icon-option" data-icon-id="icon5">👍</div>
+                <div class="icon-option" data-icon-id="icon6">💪</div>
+                <div class="icon-option" data-icon-id="icon7">🎯</div>
+                <div class="icon-option" data-icon-id="icon8">⚡</div>
+                <div class="icon-option" data-icon-id="icon9">🌟</div>
+                <div class="icon-option" data-icon-id="icon10">👏</div>
+            </div>
+        </div>
+        
+        <div id="saveErrorMessage"></div>
+        
+        <div class="flex" style="margin-top: 20px;">
+            <button id="backButton">Back</button>
+            <button id="saveButton" class="ml-auto">Save Details</button>
+        </div>
+    </div>
+    
+    <div class="card step" id="step4">
+        <h2>Complete!</h2>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#43a047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            
+            <h3 style="margin-top: 15px;">Measurement Complete!</h3>
+            <p>Your image has been processed and all data saved successfully.</p>
+        </div>
+        
+        <div class="flex">
+            <button id="resetButton">Upload Another Image</button>
+        </div>
+    </div>
+    
+    <script>
+        // Set today's date as default
+        document.getElementById('measurementDate').valueAsDate = new Date();
+        
+        // Global variable to store measurement ID for the second API call
+        let currentMeasurementId = null;
+        
+        // Step 1: Upload the image
+        document.getElementById('uploadButton').addEventListener('click', async function() {
+            const imageFile = document.getElementById('imageFile').files[0];
+            const dateValue = document.getElementById('measurementDate').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Validate inputs
+            if (!imageFile) {
+                errorMessage.textContent = 'Please select an image file';
+                return;
+            }
+            
+            if (!dateValue) {
+                errorMessage.textContent = 'Please select a date';
+                return;
+            }
+            
+            // Clear previous error
+            errorMessage.textContent = '';
+            
+            // Disable upload button
+            document.getElementById('uploadButton').disabled = true;
+            document.getElementById('uploadButton').textContent = 'Uploading...';
+            
+            try {
+                // Create form data
+                const formData = new FormData();
+                formData.append('image', imageFile);
+                formData.append('customDate', new Date(dateValue).toISOString());
+                
+                // Make API request
+                const response = await fetch('/api/images/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to upload image');
+                }
+                
+                const data = await response.json();
+                
+                // Store measurement ID for later use
+                currentMeasurementId = data.measurement.id;
+                
+                // Update the UI with results
+                document.getElementById('primaryAngle').textContent = `${data.measurement.angle}°`;
+                document.getElementById('secondaryAngle').textContent = `${data.measurement.angle2}°`;
+                
+                // Display the processed image
+                if (data.processedImage && data.processedImage.base64) {
+                    document.getElementById('processedImage').src = 
+                        `data:${data.processedImage.mimeType};base64,${data.processedImage.base64}`;
+                }
+                
+                // Move to step 2
+                showStep(2);
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                errorMessage.textContent = error.message || 'An error occurred during upload';
+                
+                // Re-enable upload button
+                document.getElementById('uploadButton').disabled = false;
+                document.getElementById('uploadButton').textContent = 'Upload Image';
+            }
+        });
+        
+        // Move to step 3 for adding metadata
+        document.getElementById('addMetadataButton').addEventListener('click', function() {
+            showStep(3);
+        });
+        
+        // Handle icon selection
+        document.querySelectorAll('.icon-option').forEach(icon => {
+            icon.addEventListener('click', function() {
+                this.classList.toggle('selected');
+            });
+        });
+        
+        // Go back to results
+        document.getElementById('backButton').addEventListener('click', function() {
+            showStep(2);
+        });
+        
+        // Step 2: Save metadata
+        document.getElementById('saveButton').addEventListener('click', async function() {
+            if (!currentMeasurementId) {
+                document.getElementById('saveErrorMessage').textContent = 'No measurement found';
+                return;
+            }
+            
+            const memo = document.getElementById('memo').value;
+            const selectedIcons = Array.from(document.querySelectorAll('.icon-option.selected'))
+                .map(el => el.getAttribute('data-icon-id'))
+                .join(',');
+                
+            // Disable save button
+            document.getElementById('saveButton').disabled = true;
+            document.getElementById('saveButton').textContent = 'Saving...';
+            
+            try {
+                // Make API request to update metadata
+                const response = await fetch(`/api/measurements/${currentMeasurementId}/metadata`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        memo,
+                        iconIds: selectedIcons || undefined
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to save metadata');
+                }
+                
+                // Move to completion step
+                showStep(4);
+                
+            } catch (error) {
+                console.error('Save error:', error);
+                document.getElementById('saveErrorMessage').textContent = 
+                    error.message || 'An error occurred while saving';
+                    
+                // Re-enable save button
+                document.getElementById('saveButton').disabled = false;
+                document.getElementById('saveButton').textContent = 'Save Details';
+            }
+        });
+        
+        // Reset the form for a new upload
+        document.getElementById('resetButton').addEventListener('click', function() {
+            // Clear form values
+            document.getElementById('imageFile').value = '';
+            document.getElementById('memo').value = '';
+            document.getElementById('measurementDate').valueAsDate = new Date();
+            document.getElementById('errorMessage').textContent = '';
+            document.getElementById('saveErrorMessage').textContent = '';
+            
+            // Reset buttons
+            document.getElementById('uploadButton').disabled = false;
+            document.getElementById('uploadButton').textContent = 'Upload Image';
+            document.getElementById('saveButton').disabled = false;
+            document.getElementById('saveButton').textContent = 'Save Details';
+            
+            // Clear icon selections
+            document.querySelectorAll('.icon-option.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // Reset currentMeasurementId
+            currentMeasurementId = null;
+            
+            // Return to step 1
+            showStep(1);
+        });
+        
+        // Helper function to show a specific step
+        function showStep(stepNumber) {
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            
+            // Show the requested step
+            document.getElementById(`step${stepNumber}`).classList.add('active');
+        }
+    </script>
+</body>
+</html>
