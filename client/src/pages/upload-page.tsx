@@ -1,35 +1,24 @@
-import React from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { UploadSheet } from "@/components/upload-sheet";
-import { useToast } from "@/hooks/use-toast";
+import React, { useEffect } from "react";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
-// This is our new simplified upload page that just re-uses the UploadSheet component
+// Simplified upload page that just redirects to home
 export default function UploadPage() {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const [location, setLocation] = useLocation();
+  const { toast } = useToast();
 
-  const handleUploadComplete = () => {
-    // Navigate to home page when upload is complete
+  useEffect(() => {
+    // Redirect to home page
     setLocation("/");
     
-    // Optional: Show success message
+    // Show an informative toast about the new upload functionality
     toast({
-      title: "Upload Complete",
-      description: "Your image has been processed and saved.",
-      variant: "success",
+      title: "Using new upload interface",
+      description: "Use the upload button in the bottom bar to access the new upload experience.",
+      variant: "default",
     });
-  };
+  }, [setLocation, toast]);
 
-  return (
-    <div className="bg-neutral-50 min-h-screen pt-4 pb-20">
-      <div className="max-w-md mx-auto">
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          {/* Render the upload sheet's internal content directly */}
-          <UploadSheet onComplete={handleUploadComplete} onCancel={() => setLocation("/")} />
-        </div>
-      </div>
-    </div>
-  );
+  // Return an empty div while redirecting
+  return <div className="bg-neutral-50 min-h-screen"></div>;
 }
