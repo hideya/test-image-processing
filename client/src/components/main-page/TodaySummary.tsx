@@ -15,14 +15,21 @@ interface Measurement {
 interface TodaySummaryProps {
   today: Date;
   todayMeasurement: Measurement | undefined;
+  isLoading?: boolean;
   formatTableDayPart: (dateStr: string) => string;
 }
 
 export const TodaySummary: React.FC<TodaySummaryProps> = ({
   today,
   todayMeasurement,
+  isLoading = false,
   formatTableDayPart,
 }) => {
+  console.log('Debug - TodaySummary props:', { 
+    today: today.toISOString(), 
+    todayMeasurement, 
+    isLoading 
+  });
   return (
     <div>
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-sm border border-blue-100 mb-6">
@@ -39,7 +46,12 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
             </div>
           </div>
           <div className="flex gap-6 items-center">
-            {todayMeasurement ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center bg-blue-50 p-4 rounded-xl border border-blue-200">
+                <div className="text-blue-700 font-medium mb-1">Loading today's data...</div>
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : todayMeasurement ? (
               <>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100 flex flex-col items-center transition-transform hover:scale-105">
                   <div className="text-sm font-medium text-blue-600 mb-1">

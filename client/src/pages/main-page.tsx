@@ -42,6 +42,17 @@ export default function MainPage() {
   // For highlighting a dot in the chart with a pulse animation
   const [pulsingDot, setPulsingDot] = useState<string | null>(null);
 
+  // Get today's date in the same format as measurements' date - MOVED UP TO FIX THE REFERENCE ERROR
+  const today = useMemo(() => {
+    const day = new Date();
+    day.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
+    return day;
+  }, []);
+  
+  const todayDate = useMemo(() => {
+    return today.toISOString().split("T")[0];
+  }, [today]);
+
   // Clear pulsing effect after animation completes
   useEffect(() => {
     if (pulsingDot) {
@@ -55,17 +66,17 @@ export default function MainPage() {
   // Initialize with current date by default to avoid server/client time inconsistencies
   // Initialize customDate with today's date set to noon to avoid timezone issues
   const [customDate, setCustomDate] = useState<Date>(() => {
-    const today = new Date();
-    today.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
-    return today;
+    const date = new Date();
+    date.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
+    return date;
   });
 
   // Current month to show in chart/table
   const [currentViewMonth, setCurrentViewMonth] = useState<Date>(() => {
-    const today = new Date();
-    today.setDate(1); // Set to first of month
-    today.setHours(12, 0, 0, 0);
-    return today;
+    const date = new Date();
+    date.setDate(1); // Set to first of month
+    date.setHours(12, 0, 0, 0);
+    return date;
   });
 
   // Format for the table view (M/D DDD) - without leading zeros and day of week
@@ -115,22 +126,53 @@ export default function MainPage() {
   const {
     data: measurements = [],
     isLoading,
-    refetch,
+    refetch: refetchMonthData,
   } = useQuery<Measurement[]>({
-    queryKey: ["/api/angle-data", currentViewMonth.toISOString()],
+    queryKey: ["/api/angle-data", currentViewMonth.toISOString(), todayDate],
     queryFn: async () => {
       // Get first and last day of the month
       const year = currentViewMonth.getFullYear();
       const month = currentViewMonth.getMonth();
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
-
-      // Use apiRequest function to ensure auth token is included
-      const res = await apiRequest(
-        'GET',
-        `/api/angle-data?start=${firstDay.toISOString()}&end=${lastDay.toISOString()}`
-      );
-      return res.json();
+      
+      // Convert to ISO strings for the API
+      const startDate = firstDay.toISOString();
+      const endDate = lastDay.toISOString();
+      
+      // Get the current date
+      const currentDate = new Date();
+      
+      // Make two API requests
+      const [monthDataRes, todayDataRes] = await Promise.all([
+        // First request: Get data for the selected month
+        apiRequest('GET', `/api/angle-data?start=${startDate}&end=${endDate}`),
+        
+        // Second request: Get data for today (only if today is not in the current month)
+        currentDate.getMonth() !== currentViewMonth.getMonth() || 
+        currentDate.getFullYear() !== currentViewMonth.getFullYear() ?
+          apiRequest('GET', `/api/angle-data?start=${todayDate}&end=${todayDate}`) : 
+          Promise.resolve({ json: () => [] })
+      ]);
+      
+      // Parse both responses
+      const [monthData, todayData] = await Promise.all([
+        monthDataRes.json(),
+        todayDataRes.json ? todayDataRes.json() : []
+      ]);
+      
+      // Combine the data, but avoid duplicates
+      const combinedData = [...monthData];
+      
+      // Only add today's data if it's not already in the month data
+      if (Array.isArray(todayData) && todayData.length > 0) {
+        const todayItem = todayData[0];
+        if (todayItem && !combinedData.some(item => item.date === todayItem.date)) {
+          combinedData.push(todayItem);
+        }
+      }
+      
+      return combinedData;
     },
   });
 
@@ -178,15 +220,18 @@ export default function MainPage() {
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
   }, [measurements]);
-
-  // Get today's date in the same format as measurements' date
-  const today = new Date();
-  today.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
-  const todayDate = today.toISOString().split("T")[0];
-  // Find today's measurement
-  const todayMeasurement = measurements.find(
-    (measurement) => measurement.date === todayDate,
-  );
+  
+  // Fetch today's measurement directly from the measurements array
+  // This is more reliable than making a separate API call
+  const todayMeasurement = useMemo(() => {
+    return measurements.find(m => m.date === todayDate);
+  }, [measurements, todayDate]);
+  
+  // We don't need a separate loading state for today's measurement
+  const isTodayLoading = isLoading;
+  
+  // Create a function to refresh today's data that just refreshes all data
+  const refetchTodayData = refetchMonthData;
 
   const { chartDateRange, chartData } = useMemo(() => {
     // Get all dates in current month
@@ -252,15 +297,14 @@ export default function MainPage() {
     };
   }, [measurements]);
 
-
-
   const handleUploadComplete = () => {
     toast({
       title: "Upload Complete",
       description: "Your image has been processed and saved.",
       variant: "success",
     });
-    refetch(); // Refresh the data after upload
+    refetchMonthData(); // Refresh the month data after upload
+    refetchTodayData(); // Refresh today's data after upload
   };
 
   return (
@@ -300,6 +344,7 @@ export default function MainPage() {
           <TodaySummary
             today={today}
             todayMeasurement={todayMeasurement}
+            isLoading={isTodayLoading}
             formatTableDayPart={formatTableDayPart}
           />
 
