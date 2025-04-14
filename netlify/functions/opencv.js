@@ -66,24 +66,20 @@ async function processImageBuffer(imageBuffer) {
       // First create a processed version of the image (grayscale, enhanced)
       const processedImageBuffer = await preprocessImageBuffer(imageBuffer);
       
-      // Get metadata from the processed image
-      const metadata = await sharp(processedImageBuffer).metadata();
+      // Generate random angles between 0 and 45 degrees
+      const angle1 = Math.random() * 45;
+      const angle2 = Math.random() * 45;
       
-      const width = metadata.width || 100;
-      const height = metadata.height || 100;
+      // Format to 2 decimal places for cleaner output
+      const formattedAngle1 = parseFloat(angle1.toFixed(2));
+      const formattedAngle2 = parseFloat(angle2.toFixed(2));
       
-      // This is just a placeholder algorithm - replace with actual angle detection
-      // when OpenCV WASM issues are resolved
-      const aspect = width / height;
-      const angle1 = Math.min(35, Math.max(0, (aspect - 1) * 10));
-      const angle2 = Math.min(35, Math.max(0, Math.abs(1 - aspect) * 15));
+      console.log(`Generated random angles: ${formattedAngle1} degrees, ${formattedAngle2} degrees`);
       
-      console.log(`Calculated primary angle: ${angle1} degrees, secondary angle: ${angle2} degrees`);
-
       // Return everything in one object
       return { 
-        angle: angle1, 
-        angle2: angle2, 
+        angle: formattedAngle1, 
+        angle2: formattedAngle2, 
         processedImageBuffer 
       };
     } catch (cvErr) {
@@ -93,23 +89,17 @@ async function processImageBuffer(imageBuffer) {
   } catch (error) {
     console.error("Error processing image:", error);
     
-    // Fallback to simple calculation
+    // Fallback to simple random calculation
     try {
-      // Use Sharp for fallback (TEMPORARY)
-      const metadata = await sharp(imageBuffer, {
-        failOnError: false,
-      }).metadata();
-
-      const width = metadata.width || 100;
-      const height = metadata.height || 100;
-
-      const angle1 = width % 5;
-      const angle2 = height % 5;
-
-      console.log(`Fallback to basic Sharp metadata: ${width}x${height}`);
-      console.log(
-        `Calculated primary angle: ${angle1} degrees, secondary angle: ${angle2} degrees`
-      );
+      // Generate random angles between 0 and 45 degrees
+      const angle1 = Math.random() * 45;
+      const angle2 = Math.random() * 45;
+      
+      // Format to 2 decimal places for cleaner output
+      const formattedAngle1 = parseFloat(angle1.toFixed(2));
+      const formattedAngle2 = parseFloat(angle2.toFixed(2));
+      
+      console.log(`Fallback - generated random angles: ${formattedAngle1} degrees, ${formattedAngle2} degrees`);
 
       // Create a basic processed image - just grayscale
       const processedImageBuffer = await sharp(imageBuffer)
@@ -117,8 +107,8 @@ async function processImageBuffer(imageBuffer) {
         .toBuffer();
 
       return { 
-        angle: angle1, 
-        angle2: angle2, 
+        angle: formattedAngle1, 
+        angle2: formattedAngle2, 
         processedImageBuffer 
       };
     } catch (fallbackError) {
