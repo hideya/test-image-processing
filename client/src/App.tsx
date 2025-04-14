@@ -7,7 +7,6 @@ import { SettingsProvider } from "./hooks/use-settings";
 import { ProtectedRoute } from "./lib/protected-route.tsx";
 import AuthPage from "./pages/auth-page";
 import MainPage from "./pages/main-page";
-import UploadPage from "./pages/upload-page";
 // Settings page now converted to a sheet component
 import NotFound from "./pages/not-found";
 import { Toaster } from "./components/ui/toaster";
@@ -34,7 +33,7 @@ export default function App() {
               <Switch>
                 <Route path="/auth" component={AuthPage} />
                 <ProtectedRoute path="/" component={MainPage} />
-                <ProtectedRoute path="/upload" component={UploadPage} />
+                {/* Upload route removed as it's now a upload component */}
                 {/* Settings route removed as it's now a sheet component */}
                 <Route component={NotFound} />
               </Switch>
