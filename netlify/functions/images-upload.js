@@ -5,7 +5,18 @@ const { processImageBuffer } = require("./opencv");
 const { Buffer } = require("buffer");
 const busboy = require('busboy');
 
-// Parse multipart form data using busboy
+/**
+ * Parse multipart form data using busboy
+ * 
+ * We're using busboy instead of multer for several reasons:
+ * 1. Better compatibility with serverless environments like Netlify Functions
+ * 2. Direct control over the parsing process (important in serverless)
+ * 3. Stream processing capabilities (memory efficient)
+ * 4. Fewer dependencies (better for cold start times)
+ * 
+ * @param {Object} event - The Netlify Functions event object
+ * @returns {Promise<Object>} Parsed form data with files and fields
+ */
 function parseMultipartForm(event) {
   return new Promise((resolve, reject) => {
     try {
@@ -18,6 +29,7 @@ function parseMultipartForm(event) {
       }
       
       // Create busboy instance (using the proper import)
+      // Busboy accepts headers and limits as configuration
       const bb = busboy({ 
         headers: headers,
         limits: {
@@ -27,21 +39,26 @@ function parseMultipartForm(event) {
       
       const formData = {};
       
+      // Handle regular form fields
       bb.on('field', (fieldname, val) => {
         console.log(`*** Field received: ${fieldname}`);
         formData[fieldname] = val;
       });
       
+      // Handle file uploads
+      // Note: In newer busboy versions, file callback has a fileInfo object parameter
       bb.on('file', (fieldname, fileStream, fileInfo) => {
         const { filename, encoding, mimeType } = fileInfo;
         console.log(`*** File received: ${fieldname}, filename: ${filename}, mimetype: ${mimeType}`);
         
         const chunks = [];
         
+        // Process file data as it comes in chunks (streaming)
         fileStream.on('data', (chunk) => {
           chunks.push(chunk);
         });
         
+        // Once all chunks are received, create a complete buffer
         fileStream.on('end', () => {
           if (chunks.length > 0) {
             const buffer = Buffer.concat(chunks);
@@ -58,17 +75,19 @@ function parseMultipartForm(event) {
         });
       });
       
+      // Form parsing is complete
       bb.on('finish', () => {
         console.log('*** Form data parsed. Fields:', Object.keys(formData));
         resolve(formData);
       });
       
+      // Handle any parsing errors
       bb.on('error', (error) => {
         console.log('*** Busboy error:', error.message);
         reject(error);
       });
       
-      // Handle Base64 encoded bodies
+      // Handle Base64 encoded bodies (common in Netlify Functions)
       if (event.isBase64Encoded) {
         console.log('*** Processing base64 encoded body');
         const buffer = Buffer.from(event.body, 'base64');

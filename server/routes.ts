@@ -4,7 +4,7 @@ import { storage } from "./storage";
 // Import JWT auth instead of session auth
 import { isAuthenticated } from "./auth-jwt";
 import { processImageBuffer } from "./opencv";
-import multer from "multer";
+import busboy from "busboy";
 import path from "path";
 import fs from "fs";
 import {
@@ -18,32 +18,107 @@ import { db } from "./db";
 import { angleMeasurements } from "@shared/schema";
 import { createImageWithoutPath } from "./createImageWithoutPath";
 
-// Set up multer for file uploads
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-  fileFilter: (
-    req: Express.Request,
-    file: Express.Multer.File,
-    cb: multer.FileFilterCallback,
-  ) => {
-    // Only accept image files
-    const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-    if (allowedMimeTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(
-        new Error(
-          "File type not supported. Please upload a JPEG or PNG image.",
-        ),
-      );
+/**
+ * Handle multipart form data using busboy
+ * 
+ * Busboy vs Multer:
+ * - Busboy provides lower-level control over the parsing process
+ * - Busboy processes data as streams, which is more memory efficient
+ * - Busboy has fewer dependencies, making it lighter weight
+ * - Busboy works better in serverless environments (consistent with our Netlify implementation)
+ * - Multer would be simpler for standard Express apps, but busboy gives us more flexibility
+ *
+ * @param {Request} req - Express request object
+ * @returns {Promise<Object>} Parsed form data with file and fields
+ */
+function handleFileUpload(req: Request): Promise<{
+  file?: {
+    buffer: Buffer;
+    originalname: string;
+    mimetype: string;
+  };
+  fields: Record<string, string>;
+}> {
+  return new Promise((resolve, reject) => {
+    // Check if content-type header exists and includes multipart/form-data
+    if (!req.headers['content-type']?.includes('multipart/form-data')) {
+      return reject(new Error('Expected multipart/form-data'));
     }
-  },
-});
 
-// Authentication middleware is now imported from auth-jwt.ts
+    // Normalize headers to lowercase
+    const headers: Record<string, string> = {};
+    for (const [key, value] of Object.entries(req.headers)) {
+      headers[key.toLowerCase()] = Array.isArray(value) ? value[0] : value || '';
+    }
+
+    // Initialize busboy instance with configuration
+    const bb = busboy({ 
+      headers,
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB limit
+      }
+    });
+    
+    // Result object to store parsed data
+    const result: {
+      file?: {
+        buffer: Buffer;
+        originalname: string;
+        mimetype: string;
+      };
+      fields: Record<string, string>;
+    } = {
+      fields: {}
+    };
+
+    // Handle file field - busboy processes files as streams for efficiency
+    bb.on('file', (fieldname, fileStream, fileInfo) => {
+      const { filename, encoding, mimeType } = fileInfo;
+      
+      // Only accept certain file types
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+      if (!allowedMimeTypes.includes(mimeType)) {
+        fileStream.resume(); // Skip this file
+        return reject(new Error("File type not supported. Please upload a JPEG or PNG image."));
+      }
+      
+      // Collect file data in chunks (stream processing)
+      const chunks: Buffer[] = [];
+      
+      fileStream.on('data', (chunk) => {
+        chunks.push(chunk);
+      });
+      
+      fileStream.on('end', () => {
+        if (chunks.length > 0) {
+          result.file = {
+            buffer: Buffer.concat(chunks),
+            originalname: filename,
+            mimetype: mimeType
+          };
+        }
+      });
+    });
+    
+    // Handle regular fields
+    bb.on('field', (fieldname, value) => {
+      result.fields[fieldname] = value;
+    });
+    
+    // Handle completion of parsing
+    bb.on('finish', () => {
+      resolve(result);
+    });
+    
+    // Handle errors during parsing
+    bb.on('error', (error) => {
+      reject(error);
+    });
+    
+    // Pipe request to busboy - this is how busboy gets the data
+    req.pipe(bb);
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes are now set up in index.ts with setupJWTAuth
@@ -54,20 +129,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/images/upload",
     isAuthenticated,
-    upload.single("image"),
     async (req, res) => {
       try {
-        if (!req.file) {
+        // Parse multipart form data using busboy instead of multer
+        // This gives us consistency with our Netlify Functions implementation
+        const formData = await handleFileUpload(req);
+        
+        if (!formData.file) {
           return res.status(400).json({ message: "No image file provided" });
         }
 
         const userId = req.user.id;
         const hashKey = storage.generateHashKey();
-        const fileExt = path.extname(req.file.originalname);
+        const fileExt = path.extname(formData.file.originalname);
         const filename = `${hashKey}${fileExt}`;
 
         // A timestamp is now mandatory for all uploads
-        if (!req.body.customDate) {
+        if (!formData.fields.customDate) {
           return res.status(400).json({
             message:
               "Measurement date is required. Please provide a customDate field.",
@@ -77,7 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let customDate: Date;
         try {
           // Parse the provided date string
-          customDate = new Date(req.body.customDate);
+          customDate = new Date(formData.fields.customDate);
 
           // Validate the date - it shouldn't be in the future
           const currentDate = new Date();
@@ -93,12 +171,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Log client rotation value if provided (for debugging only)
-        if (req.body.clientRotation) {
-          console.log(`Client applied rotation of ${req.body.clientRotation} degrees before upload`);
+        if (formData.fields.clientRotation) {
+          console.log(`Client applied rotation of ${formData.fields.clientRotation} degrees before upload`);
         }
         
         // Process the image directly in memory
-        const processingResult = await processImageBuffer(req.file.buffer);
+        const processingResult = await processImageBuffer(formData.file.buffer);
         
         // Create a single image record with angle data
         const image = await createImageWithoutPath(
@@ -119,8 +197,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           angle: processingResult.angle,
           angle2: processingResult.angle2,
           customTimestamp: customDate, // Always use client-provided date
-          memo: req.body.memo || undefined, // Add memo if provided
-          iconIds: req.body.iconIds || undefined, // Add icon IDs if provided
+          memo: formData.fields.memo || undefined, // Add memo if provided
+          iconIds: formData.fields.iconIds || undefined, // Add icon IDs if provided
         };
 
         // Check if there are existing measurements for this date
