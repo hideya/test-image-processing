@@ -266,9 +266,9 @@ exports.handler = async (event, context) => {
       userId: user.id,
       angle: processingResult.angle,
       angle2: processingResult.angle2,
-      customTimestamp: customDate,
-      memo: formData.memo || undefined,
-      iconIds: formData.iconIds || undefined
+      customTimestamp: customDate
+      // Note: In the new two-step workflow, memo and iconIds are not required at upload time
+      // They will be added via a separate API call after the user sees the results
     };
     
     // Check if there are existing measurements for this date

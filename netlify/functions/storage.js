@@ -171,6 +171,42 @@ class DatabaseStorage {
       .where(eq(angleMeasurements.id, id));
   }
 
+  async getMeasurementById(id) {
+    const [measurement] = await db
+      .select()
+      .from(angleMeasurements)
+      .where(eq(angleMeasurements.id, id));
+    return measurement;
+  }
+
+  async updateMeasurementMetadata(measurementId, metadata) {
+    // Prepare update data - only include fields that are provided
+    const updateData = {};
+    
+    if (metadata.memo !== undefined) {
+      updateData.memo = metadata.memo;
+    }
+    
+    if (metadata.iconIds !== undefined) {
+      updateData.iconIds = metadata.iconIds;
+    }
+    
+    // Only proceed if there's something to update
+    if (Object.keys(updateData).length === 0) {
+      // Nothing to update, just return the current measurement
+      return this.getMeasurementById(measurementId);
+    }
+    
+    // Update the record
+    const [updatedMeasurement] = await db
+      .update(angleMeasurements)
+      .set(updateData)
+      .where(eq(angleMeasurements.id, measurementId))
+      .returning();
+      
+    return updatedMeasurement;
+  }
+
   async getAngleMeasurementsByUserIdAndDateRange(userId, startDate, endDate) {
     return await db
       .select()

@@ -13,6 +13,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/measurements/:id/metadata"
+  to = "/.netlify/functions/update-metadata"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/angle-data"
   to = "/.netlify/functions/angle-data"
   status = 200
