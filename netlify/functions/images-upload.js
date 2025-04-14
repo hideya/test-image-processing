@@ -3,7 +3,7 @@ const { formatResponse, getUserFromToken, handleOptions } = require("./auth-util
 const { storage } = require("./storage");
 const { processImageBuffer } = require("./opencv");
 const { Buffer } = require("buffer");
-const Busboy = require('busboy');
+const busboy = require('busboy');
 
 // Parse multipart form data using busboy
 function parseMultipartForm(event) {
@@ -17,7 +17,8 @@ function parseMultipartForm(event) {
         headers[key.toLowerCase()] = event.headers[key];
       }
       
-      const busboy = new Busboy({ 
+      // Create busboy instance (using the proper import)
+      const bb = busboy({ 
         headers: headers,
         limits: {
           fileSize: 10 * 1024 * 1024 // 10MB limit
@@ -26,13 +27,14 @@ function parseMultipartForm(event) {
       
       const formData = {};
       
-      busboy.on('field', (fieldname, val) => {
+      bb.on('field', (fieldname, val) => {
         console.log(`*** Field received: ${fieldname}`);
         formData[fieldname] = val;
       });
       
-      busboy.on('file', (fieldname, fileStream, filename, encoding, mimetype) => {
-        console.log(`*** File received: ${fieldname}, filename: ${filename}, mimetype: ${mimetype}`);
+      bb.on('file', (fieldname, fileStream, fileInfo) => {
+        const { filename, encoding, mimeType } = fileInfo;
+        console.log(`*** File received: ${fieldname}, filename: ${filename}, mimetype: ${mimeType}`);
         
         const chunks = [];
         
@@ -48,7 +50,7 @@ function parseMultipartForm(event) {
             formData[fieldname] = {
               buffer: buffer,
               originalname: filename,
-              mimetype: mimetype
+              mimetype: mimeType
             };
           } else {
             console.log(`*** Warning: Empty file received for ${fieldname}`);
@@ -56,12 +58,12 @@ function parseMultipartForm(event) {
         });
       });
       
-      busboy.on('finish', () => {
+      bb.on('finish', () => {
         console.log('*** Form data parsed. Fields:', Object.keys(formData));
         resolve(formData);
       });
       
-      busboy.on('error', (error) => {
+      bb.on('error', (error) => {
         console.log('*** Busboy error:', error.message);
         reject(error);
       });
@@ -70,13 +72,13 @@ function parseMultipartForm(event) {
       if (event.isBase64Encoded) {
         console.log('*** Processing base64 encoded body');
         const buffer = Buffer.from(event.body, 'base64');
-        busboy.write(buffer);
+        bb.write(buffer);
       } else {
         console.log('*** Processing regular body');
-        busboy.write(Buffer.from(event.body, 'binary'));
+        bb.write(Buffer.from(event.body, 'binary'));
       }
       
-      busboy.end();
+      bb.end();
     } catch (error) {
       console.log('*** Error setting up busboy:', error.message);
       console.log('*** Error stack:', error.stack);
