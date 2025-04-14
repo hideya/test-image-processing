@@ -918,6 +918,9 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
             </button>
           )}
         </SheetTrigger>
+        <SheetDescription>
+          Upload image to analyze
+        </SheetDescription>
         <SheetContent
           side="bottom"
           className={`rounded-t-xl overflow-y-auto ${currentStep === UploadStep.INITIAL && !selectedFile ? 'h-[60vh]' : 'h-[85vh]'}`}

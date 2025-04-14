@@ -2,38 +2,16 @@ import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Save, CheckCircle, LogOut, Settings as SettingsIcon, X } from "lucide-react";
+import { CheckCircle, LogOut, Settings as SettingsIcon, X } from "lucide-react";
 
-import { useSettings, timezones, dateFormats } from "@/hooks/use-settings";
+import { useSettings } from "@/hooks/use-settings";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import ColorPicker from '@/components/ColorPicker.tsx';
 
 // Form schema
@@ -123,6 +101,9 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
           </button>
         )}
       </SheetTrigger>
+      <SheetDescription>
+        Manage your account settings and preferences
+      </SheetDescription>
       <SheetContent
         side="bottom"
         className="h-[85vh] rounded-t-xl overflow-y-auto"
