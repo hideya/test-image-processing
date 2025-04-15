@@ -58,7 +58,9 @@ export const MeasurementActionToolbar: React.FC<MeasurementActionToolbarProps> =
   // Format date to display month/day
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return `${date.getMonth() + 1}/${date.getDate()}`;
+    const dayOfWeek = date.getDay();
+    const weekDayJP = ["日", "月", "火", "水", "木", "金", "土"];
+    return `${date.getDate()}日  (${weekDayJP[dayOfWeek]})`;
   };
 
   return (

@@ -32,9 +32,10 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
   const [activeActionRow, setActiveActionRow] = useState<string | null>(null);
   const [editMeasurement, setEditMeasurement] = useState<BaseMeasurement | null>(null);
   const [showEditSheet, setShowEditSheet] = useState(false);
+  const [activeRowPosition, setActiveRowPosition] = useState<{top: number, left: number, width: number} | null>(null);
   
   // Handle row click
-  const handleRowClick = (measurement: BaseMeasurement) => {
+  const handleRowClick = (measurement: BaseMeasurement, e: React.MouseEvent<HTMLTableRowElement>) => {
     // Only show action toolbar for measurements that have data
     if (measurement.angle !== undefined) {
       // If clicking same row that has active actions, clear the selection
@@ -42,8 +43,23 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
         setActiveActionRow(null);
         setSelectedDate(null);
         setPulsingDot(null);
+        setActiveRowPosition(null);
       } else {
         // Otherwise set this row as active
+        const row = e.currentTarget;
+        const rect = row.getBoundingClientRect();
+        const tableContainer = row.closest('.max-h-\\[64rem\\]');
+        
+        if (tableContainer) {
+          const tableRect = tableContainer.getBoundingClientRect();
+          // Calculate position relative to the table container
+          setActiveRowPosition({
+            top: rect.top - tableRect.top + tableContainer.scrollTop,
+            left: rect.left,
+            width: rect.width
+          });
+        }
+        
         setActiveActionRow(measurement.date);
         setSelectedDate(measurement.date);
         setPulsingDot(measurement.date);
@@ -59,23 +75,37 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
   };
   return (
     <div className="relative">
-      {/* Position action toolbar outside of the table structure */}
-      {activeActionRow && (
-        <div className="sticky top-0 z-50 flex justify-center w-full mb-2">
-          {sortedMeasurements.map((measurement) => {
-            if (activeActionRow === measurement.date && measurement.angle !== undefined && measurement.id) {
-              return (
-                <MeasurementActionToolbar
-                  key={`toolbar-${measurement.date}`}
-                  measurementId={measurement.id}
-                  date={measurement.date}
-                  onEdit={() => handleEditMeasurement(measurement)}
-                  onClose={() => setActiveActionRow(null)}
-                />
-              );
-            }
-            return null;
-          })}
+      {/* Position action toolbar as absolute to float above the selected row */}
+      {activeActionRow && activeRowPosition && (
+        <div 
+          className="absolute z-50 pointer-events-none"
+          style={{
+            top: `${activeRowPosition.top - 10}px`, // Position slightly above the row
+            left: 0,
+            right: 0,
+            width: '100%'
+          }}
+        >
+          <div className="flex justify-center">
+            {sortedMeasurements.map((measurement) => {
+              if (activeActionRow === measurement.date && measurement.angle !== undefined && measurement.id) {
+                return (
+                  <MeasurementActionToolbar
+                    key={`toolbar-${measurement.date}`}
+                    measurementId={measurement.id}
+                    date={measurement.date}
+                    onEdit={() => handleEditMeasurement(measurement)}
+                    onClose={() => {
+                      setActiveActionRow(null);
+                      setActiveRowPosition(null);
+                    }}
+                    className="pointer-events-auto transform -translate-y-full"
+                  />
+                );
+              }
+              return null;
+            })}
+          </div>
         </div>
       )}
 
@@ -124,7 +154,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                           ? "bg-gradient-to-b from-white to-[var(--theme-color-light)] hover:opacity-75"
                           : "bg-gray-0 hover:opacity-75"
                     }`}
-                  onClick={() => handleRowClick(measurement)}
+                  onClick={(e) => handleRowClick(measurement, e)}
                 >
                   {/* Action toolbar moved outside of the tr element */}
                   <td
