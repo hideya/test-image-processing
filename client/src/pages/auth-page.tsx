@@ -15,6 +15,10 @@ const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  passwordConfirm: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "Passwords do not match",
+  path: ["passwordConfirm"],
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -51,6 +55,7 @@ export default function AuthPage() {
       username: "",
       email: "",
       password: "",
+      passwordConfirm: "",
     },
   });
 
@@ -61,7 +66,9 @@ export default function AuthPage() {
 
   const onRegisterSubmit = (data: RegisterFormValues) => {
     console.log('*** AuthPage: Register form submitted with username:', data.username);
-    registerMutation.mutate(data);
+    // We don't need to send passwordConfirm to the API
+    const { passwordConfirm, ...submitData } = data;
+    registerMutation.mutate(submitData);
   };
 
   return (
@@ -176,12 +183,30 @@ export default function AuthPage() {
                     type="password"
                     autoComplete="new-password"
                     {...registerForm.register("password")}
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                     placeholder="Password"
                   />
                   {registerForm.formState.errors.password && (
                     <p className="mt-1 text-xs text-red-600">
                       {registerForm.formState.errors.password.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="register-password-confirm" className="sr-only">
+                    Confirm Password
+                  </label>
+                  <input
+                    id="register-password-confirm"
+                    type="password"
+                    autoComplete="new-password"
+                    {...registerForm.register("passwordConfirm")}
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    placeholder="Confirm Password"
+                  />
+                  {registerForm.formState.errors.passwordConfirm && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {registerForm.formState.errors.passwordConfirm.message}
                     </p>
                   )}
                 </div>
