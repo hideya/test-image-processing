@@ -928,6 +928,9 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
           }}
         >
           <SheetTitle className="">Upload Image</SheetTitle>
+          <SheetDescription>
+            Upload
+          </SheetDescription>
           {/* Removed custom close button - using the built-in one from SheetContent */}
           <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
             <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />

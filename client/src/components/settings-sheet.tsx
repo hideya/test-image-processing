@@ -106,6 +106,9 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
         className="h-[85vh] rounded-t-xl overflow-y-auto"
       >
         <SheetTitle className="">Settings</SheetTitle>
+        <SheetDescription>
+          Settings
+        </SheetDescription>
         <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
           <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />
         </div>
