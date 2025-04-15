@@ -112,7 +112,7 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
         <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
           <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />
         </div>
-        <div className="pt-6 pb-16 px-6">
+        <div className="pt-6 pb-20 px-6">
           <div className="mx-auto max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">Settings</h2>

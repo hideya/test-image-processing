@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/use-auth";
 import { queryClient, apiRequest, getAuthToken } from "../lib/queryClient";
 import { useSettings } from "@/hooks/use-settings";
 import { useToast } from "@/hooks/use-toast";
+import { useLoadingState } from "@/hooks/use-loading-state";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Loader2, Settings, Upload, Plus } from "lucide-react";
@@ -14,6 +15,7 @@ import {
 } from "@/components/main-page";
 import { UploadSheet } from "@/components/upload-sheet";
 import { SettingsSheet } from "@/components/settings-sheet";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 interface Measurement {
   date: string;
@@ -38,6 +40,13 @@ export default function MainPage() {
   const { settings } = useSettings();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // Get unified loading state with minimum display time to avoid flicker
+  const { showLoading } = useLoadingState({
+    minimumLoadingTime: 1000, // Show loading for at least 1 second to avoid jarring transitions
+    queryKeys: ["/api/angle-data"], // Only track the main data loading state
+    forceInitialLoading: true, // Always show splash screen on initial load
+  });
 
   // For highlighting a dot in the chart with a pulse animation
   const [pulsingDot, setPulsingDot] = useState<string | null>(null);
@@ -309,110 +318,118 @@ export default function MainPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* Custom buttons for both upload and settings - matching styles */}
-      {/* Fixed Upload Button (Center Bottom) */}
-      <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center">
-        <div className="relative inline-block group">
-          <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Upload</div>
-          <UploadSheet onComplete={handleUploadComplete}>
-            <button
-              aria-label="Upload new image"
-              className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
-              <Plus className="w-6 h-6" />
-            </button>
-          </UploadSheet>
-        </div>
-      </div>
-
-      {/* Fixed Settings Button (Bottom Right) */}
-      <div className="fixed bottom-4 right-8 z-50">
-        <div className="relative inline-block group">
-          <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Settings</div>
-          <SettingsSheet>
-            <button
-              aria-label="Open settings"
-              className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
-              <Settings className="w-6 h-6" />
-            </button>
-          </SettingsSheet>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto pb-20"> {/* Increased padding bottom for floating buttons */}
-        <div className="grid grid-cols-1 gap-2">
-          <TodaySummary
-            today={today}
-            todayMeasurement={todayMeasurement}
-            isLoading={isTodayLoading}
-            formatTableDayPart={formatTableDayPart}
-          />
-          
-          <div className="bg-white p-0 rounded-xl shadow-md">
-          <MonthNavigation
-            currentViewMonth={currentViewMonth}
-            setCurrentViewMonth={setCurrentViewMonth}
-          />
-          {isLoading ? (
-            <div className="py-10 flex justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-                <p className="text-sm text-gray-500">
-                  Loading measurement data...
-                </p>
-              </div>
+      {/* Global Loading Screen */}
+      <LoadingScreen show={showLoading} text="Loading your measurements" />
+      
+      {/* Only show UI elements when not in loading state */}
+      {!showLoading && (
+        <>
+          {/* Custom buttons for both upload and settings - matching styles */}
+          {/* Fixed Upload Button (Center Bottom) */}
+          <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center">
+            <div className="relative inline-block group">
+              <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Upload</div>
+              <UploadSheet onComplete={handleUploadComplete}>
+                <button
+                  aria-label="Upload new image"
+                  className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
+                  <Plus className="w-6 h-6" />
+                </button>
+              </UploadSheet>
             </div>
-          ) : measurements.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">
-                No measurement data available yet.
-              </p>
-              <p className="text-gray-500 text-sm mt-1">
-                Upload an image to see results.
-              </p>
+          </div>
+
+          {/* Fixed Settings Button (Bottom Right) */}
+          <div className="fixed bottom-4 right-8 z-50">
+            <div className="relative inline-block group">
+              <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Settings</div>
+              <SettingsSheet>
+                <button
+                  aria-label="Open settings"
+                  className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
+                  <Settings className="w-6 h-6" />
+                </button>
+              </SettingsSheet>
             </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Section Title */}
-              <div className="mb-4 px-4">
-                <h2 className="text-xl font-bold text-gray-800">Measurement History</h2>
-                <p className="text-gray-500 text-sm">Track your progress over time</p>
-              </div>
+          </div>
+
+          <div className="max-w-6xl mx-auto pb-20"> {/* Increased padding bottom for floating buttons */}
+            <div className="grid grid-cols-1 gap-2">
+              <TodaySummary
+                today={today}
+                todayMeasurement={todayMeasurement}
+                isLoading={isTodayLoading}
+                formatTableDayPart={formatTableDayPart}
+              />
               
-              {/* Chart view */}
-              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <h3 className="text-md font-medium text-gray-700 mb-3">Monthly Trend</h3>
-                <MeasurementChart
-                  chartData={chartData}
-                  chartDateRange={chartDateRange}
-                  selectedDate={selectedDate}
-                  setSelectedDate={setSelectedDate}
-                  pulsingDot={pulsingDot}
-                  setPulsingDot={setPulsingDot}
-                  formatSimpleDate={formatSimpleDate}
-                  isSunday={isSunday}
-                  isSaturday={isSaturday}
+              <div className="bg-white p-0 rounded-xl shadow-md">
+                <MonthNavigation
+                  currentViewMonth={currentViewMonth}
+                  setCurrentViewMonth={setCurrentViewMonth}
                 />
-              </div>
+                {isLoading ? (
+                  <div className="py-10 flex justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+                      <p className="text-sm text-gray-500">
+                        Loading measurement data...
+                      </p>
+                    </div>
+                  </div>
+                ) : measurements.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">
+                      No measurement data available yet.
+                    </p>
+                    <p className="text-gray-500 text-sm mt-1">
+                      Upload an image to see results.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Section Title */}
+                    <div className="mb-4 px-4">
+                      <h2 className="text-xl font-bold text-gray-800">Measurement History</h2>
+                      <p className="text-gray-500 text-sm">Track your progress over time</p>
+                    </div>
+                    
+                    {/* Chart view */}
+                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                      <h3 className="text-md font-medium text-gray-700 mb-3">Monthly Trend</h3>
+                      <MeasurementChart
+                        chartData={chartData}
+                        chartDateRange={chartDateRange}
+                        selectedDate={selectedDate}
+                        setSelectedDate={setSelectedDate}
+                        pulsingDot={pulsingDot}
+                        setPulsingDot={setPulsingDot}
+                        formatSimpleDate={formatSimpleDate}
+                        isSunday={isSunday}
+                        isSaturday={isSaturday}
+                      />
+                    </div>
 
-              {/* Data Table */}
-              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <h3 className="text-md font-medium text-gray-700 mb-3">Daily Records</h3>
-                <MeasurementTable 
-                  sortedMeasurements={sortedMeasurements}
-                  selectedDate={selectedDate}
-                  setSelectedDate={setSelectedDate}
-                  setPulsingDot={setPulsingDot}
-                  isSunday={isSunday}
-                  isSaturday={isSaturday}
-                  formatTableDatePart={formatTableDatePart}
-                  formatTableDayPart={formatTableDayPart}
-                />
+                    {/* Data Table */}
+                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                      <h3 className="text-md font-medium text-gray-700 mb-3">Daily Records</h3>
+                      <MeasurementTable 
+                        sortedMeasurements={sortedMeasurements}
+                        selectedDate={selectedDate}
+                        setSelectedDate={setSelectedDate}
+                        setPulsingDot={setPulsingDot}
+                        isSunday={isSunday}
+                        isSaturday={isSaturday}
+                        formatTableDatePart={formatTableDatePart}
+                        formatTableDayPart={formatTableDayPart}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
