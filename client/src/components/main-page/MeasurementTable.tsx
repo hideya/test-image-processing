@@ -144,10 +144,10 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
       )}
 
       <div className="max-h-[64rem] overflow-y-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-stone-200">
         <thead className="bg-gradient-to-b from-white to-[var(--theme-color-light)]">
           <tr>
-            <th className="w-10 pl-2 pr-0 py-1 text-center text-xs font-medium text-gray-500 uppercase">
+            <th className="w-10 pl-2 pr-0 py-1 text-center text-xs font-medium text-stone-500 uppercase">
               日付
             </th>
             <th className="w-9 pl-2 py-1 text-center text-xs font-medium text-blue-600 uppercase">
@@ -156,23 +156,23 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
             <th className="w-9 pl-1 py-1 text-center text-xs font-medium text-emerald-600 uppercase">
               右
             </th>
-            <th className="px-0 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-0 py-1 text-center text-xs font-medium text-stone-500 uppercase tracking-wider">
               メ モ
             </th>
             <th className="w-20 text-center">
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white divide-y divide-stone-200">
           {sortedMeasurements.map((measurement, index) => {
             const isSun = isSunday(measurement.date);
             const isSat = isSaturday(measurement.date);
-            let textColor = "#6b7280"; // Default gray
+            let dateTextColor = "text-stone-500"; // Default gray
 
             if (isSun) {
-              textColor = "#ef4444"; // Red for Sunday
+              dateTextColor = "text-red-500"; // Red for Sunday
             } else if (isSat) {
-              textColor = "#3b82f6"; // Blue for Saturday
+              dateTextColor = "text-blue-500"; // Blue for Saturday
             }
             const isSelected = selectedDate === measurement.date;
             const isToday = measurement.date === todayDate;
@@ -186,7 +186,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                         ? "bg-yellow-50 hover:bg-yellow-100" 
                         : index % 2 === 1
                           ? "bg-gradient-to-b from-white to-[var(--theme-color-light)] hover:opacity-75"
-                          : "bg-gray-0 hover:opacity-75"
+                          : "bg-stone-0 hover:opacity-75"
                     }`}
                   onClick={(e) => handleRowClick(measurement, e)}
                   data-date={measurement.date}
@@ -196,8 +196,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                     className={`pl-1 pr-2 whitespace-nowrap text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-gray-900"}`}
                   >
                     <div 
-                      className={`text-right leading-tight flex items-center justify-end`}
-                      style={{ color: textColor }}
+                      className={`text-right leading-tight flex items-center justify-end ${dateTextColor}`}
                     >
                       <span
                         className={`${isToday ? "bg-amber-200 rounded font-medium" : ""}`}
@@ -225,7 +224,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                       : ""}
                   </td>
                   <td
-                    className={`pl-2 pr-0 text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-gray-900"}`}
+                    className={`pl-2 pr-0 text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-stone-600"}`}
                   >
                     <span
                       className={`transition-all duration-200`}
@@ -234,7 +233,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                     </span>
                   </td>
                   <td
-                    className={`pl-1 pr-0 text-center text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-gray-900"}`}
+                    className={`pl-1 pr-0 text-center text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium opacity-100" : "opacity-75"}`}
                   >
                     {measurement.iconIds ? (
                       <span className="whitespace-nowrap">

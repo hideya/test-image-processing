@@ -1,34 +1,35 @@
 // Define explicit theme colors with light and dark variants
+// Ref: https://tailwindcss.com/docs/colors
 export const THEME_COLORS = {
-  CORAL: {
-    name: 'Coral',
-    light: 'rgb(252, 239, 240)',
-    DEFAULT: 'rgb(231, 187, 190)',
-    dark: 'rgb(229, 137, 143)',
+  RED: {
+    name: 'Red',
+    light: 'oklch(97.1% 0.013 17.38)',
+    DEFAULT: 'oklch(80.8% 0.114 19.571)',
+    dark: 'oklch(70.4% 0.191 22.216)',
   },
-  GOLD: {
-    name: 'Gold',
-    light: 'rgb(251, 244, 232)',
-    DEFAULT: 'rgb(252, 218, 152)',
-    dark: 'rgb(254, 176, 18)',
+  ORANGE: {
+    name: 'Orange',
+    light: 'oklch(95.4% 0.038 75.164)',
+    DEFAULT: 'oklch(90.1% 0.076 70.697)',
+    dark: 'oklch(75% 0.183 55.934)',
   },
-  TEAL: {
-    name: 'Teal',
-    light: 'rgb(237, 249, 241)',
-    DEFAULT: 'rgb(141, 220, 169)',
-    dark: 'rgb(70, 186, 110)',
+  EMERALD: {
+    name: 'Emerald',
+    light: 'oklch(97.9% 0.021 166.113)',
+    DEFAULT: 'oklch(90.5% 0.093 164.15)',
+    dark: 'oklch(76.5% 0.177 163.223)',
   },
-  BLUE: {
-    name: 'Blue',
-    light: 'rgb(232, 238, 249)',
-    DEFAULT: 'rgb(159, 187, 235)',
-    dark: 'rgb(78, 134, 230)',
+  SKY: {
+    name: 'Sky',
+    light: 'oklch(95.1% 0.026 236.824)',
+    DEFAULT: 'oklch(82.8% 0.111 230.318)',
+    dark: 'oklch(74.6% 0.16 232.661)',
   },
   PURPLE: {
     name: 'Purple',
-    light: 'rgb(247, 237, 250)',
-    DEFAULT: 'rgb(213, 154, 234)',
-    dark: 'rgb(181, 85, 216)',
+    light: 'oklch(94.6% 0.033 307.174)',
+    DEFAULT: 'oklch(82.7% 0.119 306.383)',
+    dark: 'oklch(71.4% 0.203 305.504)',
   }
 };
 

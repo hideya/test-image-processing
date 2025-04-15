@@ -11,4 +11,4 @@ export interface ThemeContextType {
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 // Using the DEFAULT value from our themed colors
-export const DEFAULT_COLOR = THEME_COLORS.BLUE.DEFAULT;
+export const DEFAULT_COLOR = THEME_COLORS.RED.DEFAULT;
