@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeContext, DEFAULT_COLOR } from './ThemeContext';
-import { adjustBrightness, generateColorVariants } from './themeUtils';
+import { getColorVariants } from '@/lib/theme-colors';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeColor, setThemeColor] = useState(() => {
@@ -11,7 +11,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem('themeColor', themeColor);
     
-    const variants = generateColorVariants(themeColor);
+    const variants = getColorVariants(themeColor);
     document.documentElement.style.setProperty('--theme-color', variants.DEFAULT);
     document.documentElement.style.setProperty('--theme-color-light', variants.light);
     document.documentElement.style.setProperty('--theme-color-dark', variants.dark);
