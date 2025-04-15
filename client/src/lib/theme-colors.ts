@@ -2,33 +2,33 @@
 export const THEME_COLORS = {
   CORAL: {
     name: 'Coral',
-    light: '#f5b1b1',
-    DEFAULT: '#ee8c8c',
-    dark: '#d26262'
+    light: 'rgb(255, 228, 230)',
+    DEFAULT: 'rgb(231, 187, 190)',
+    dark: 'rgb(229, 137, 143)',
   },
   GOLD: {
     name: 'Gold',
-    light: '#f5d792',
-    DEFAULT: '#eec500', 
-    dark: '#d5a83a'
+    light: 'rgb(255, 235, 194)',
+    DEFAULT: 'rgb(233, 205, 149)',
+    dark: 'rgb(254, 176, 18)',
   },
   TEAL: {
     name: 'Teal',
-    light: '#9edfd3',
-    DEFAULT: '#6ed0b4',
-    dark: '#4a9e8f'
+    light: 'rgb(227, 255, 236)',
+    DEFAULT: 'rgb(141, 220, 169)',
+    dark: 'rgb(70, 186, 110)',
   },
   BLUE: {
     name: 'Blue',
-    light: '#9cc7e3',
-    DEFAULT: '#80b0ff',
-    dark: '#4781a7'
+    light: 'rgb(216, 230, 255)',
+    DEFAULT: 'rgb(159, 187, 235)',
+    dark: 'rgb(78, 134, 230)',
   },
   PURPLE: {
     name: 'Purple',
-    light: '#c9a8f7',
-    DEFAULT: '#a77bf3',
-    dark: '#8152d0'
+    light: 'rgb(240, 208, 252)',
+    DEFAULT: 'rgb(213, 154, 234)',
+    dark: 'rgb(181, 85, 216)',
   }
 };
 
