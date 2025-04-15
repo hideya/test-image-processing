@@ -114,10 +114,6 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
         </div>
         <div className="pt-6 pb-20 px-6">
           <div className="mx-auto max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Settings</h2>
-            </div>
-
             <div className="space-y-4">
               <Card className="shadow-md rounded-xl border border-gray-200">
                 <CardHeader className="py-3 px-4">

@@ -70,7 +70,7 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
               </>
             ) : (
               <Link href="/upload">
-                <div className="flex flex-col items-center bg-white hover:bg-theme-light transition-colors p-4 rounded-xl cursor-pointer">
+                <div className="flex flex-col items-center bg-white hover:opacity-75 transition-colors p-4 rounded-xl cursor-pointer">
                   <div className="text-theme-dark font-medium mb-1">No measurement today</div>
                   <div className="text-theme-dark text-sm">Tap to upload a photo</div>
                 </div>

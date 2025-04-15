@@ -408,11 +408,11 @@ export default function MainPage() {
             {/* Fixed Upload Button (Center Bottom) */}
             <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center">
               <div className="relative inline-block group">
-                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Upload</div>
+                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-theme-dark px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Upload</div>
                 <UploadSheet onComplete={handleUploadComplete}>
                   <button
                     aria-label="Upload new image"
-                    className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
+                    className="flex items-center justify-center w-14 h-14 bg-gradient-to-b from-[var(--theme-color-light)] to-[var(--theme-color-dark)] hover:opacity-75 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
                     <Plus className="w-6 h-6" />
                   </button>
                 </UploadSheet>
@@ -422,11 +422,11 @@ export default function MainPage() {
             {/* Fixed Settings Button (Bottom Right) */}
             <div className="fixed bottom-4 right-8 z-50">
               <div className="relative inline-block group">
-                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Settings</div>
+                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-theme-dark px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Settings</div>
                 <SettingsSheet>
                   <button
                     aria-label="Open settings"
-                    className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
+                    className="flex items-center justify-center w-14 h-14 bg-gradient-to-b from-[var(--theme-color-light)] to-[var(--theme-color-dark)] hover:opacity-75 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
                     <Settings className="w-6 h-6" />
                   </button>
                 </SettingsSheet>

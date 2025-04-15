@@ -120,7 +120,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                       ? "bg-blue-50 hover:bg-blue-100"
                       : isToday
                         ? "bg-yellow-50 hover:bg-yellow-100" 
-                        : index % 2 === 0
+                        : index % 2 === 1
                           ? "bg-gradient-to-b from-white to-[var(--theme-color-light)] hover:opacity-75"
                           : "bg-gray-0 hover:opacity-75"
                     }`}

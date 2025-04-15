@@ -585,7 +585,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
             </div>
 
             {/* File Selection Area */}
-            <Card className="border-dashed border-2 border-blue-200 bg-blue-50/30 hover:bg-blue-50 transition-colors rounded-xl">
+            <Card className="border-dashed border-2 border-theme bg-theme-light hover:opacity-75 transition-colors rounded-xl">
             <CardContent className="pt-4 pb-4 flex flex-col items-center justify-center">
                 <input
                   type="file"
@@ -600,11 +600,11 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                     htmlFor="file-upload-sheet"
                     className="w-full flex flex-col items-center justify-center cursor-pointer"
                   >
-                    <div className="bg-blue-100 text-blue-600 rounded-full p-4 mb-4 shadow-md">
-                      <Camera className="h-10 w-10 text-blue-500" />
+                    <div className="bg-white text-theme rounded-full p-4 mb-4 shadow-md">
+                      <Camera className="h-10 w-10" />
                     </div>
-                    <p className="text-blue-700 mb-2 font-medium">Click to select a photo</p>
-                    <p className="text-blue-500 text-sm text-center max-w-xs">
+                    <p className="text-theme-dark mb-2 font-medium">Click to select a photo</p>
+                    <p className="text-theme-dark text-sm text-center max-w-xs">
                       Upload a clear image to measure angles accurately
                     </p>
                   </label>
@@ -927,10 +927,8 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
             }
           }}
         >
-          <SheetTitle className="">Upload Image</SheetTitle>
-          <SheetDescription>
-            Upload
-          </SheetDescription>
+          <SheetTitle className="text-theme-dark">Upload Image</SheetTitle>
+          <SheetDescription />
           {/* Removed custom close button - using the built-in one from SheetContent */}
           <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
             <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />
