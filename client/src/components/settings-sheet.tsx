@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/themed-sheet";
 import ColorPicker from '@/components/ColorPicker.tsx';
 
 // Form schema
@@ -107,7 +107,6 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
       >
         <SheetTitle className="">Settings</SheetTitle>
         <SheetDescription>
-          Settings
         </SheetDescription>
         <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
           <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />
@@ -115,10 +114,22 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
         <div className="pt-6 pb-20 px-6">
           <div className="mx-auto max-w-md">
             <div className="space-y-4">
+
+             <div className="mt-4 space-y-2">
+                <Button
+                  variant="destructive"
+                  className="w-full py-3 rounded-xl shadow-md hover:shadow-lg text-sm"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
+
               <Card className="shadow-md rounded-xl border border-gray-200">
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-base">Account Information</CardTitle>
-                  <CardDescription className="text-xs">Your current account details.</CardDescription>
+                  <CardDescription className="text-xs"></CardDescription>
                 </CardHeader>
                 <CardContent className="py-2 px-4">
                   <div className="space-y-2">
@@ -140,21 +151,10 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
                 </CardContent>
               </Card>
 
-              <div className="mt-4 space-y-2">
-                <Button
-                  variant="destructive"
-                  className="w-full py-3 rounded-xl shadow-md hover:shadow-lg text-sm"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </Button>
-              </div>
-
               <Card className="shadow-md rounded-xl border border-gray-200">
                 <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-base">Appearance Settings</CardTitle>
-                  <CardDescription className="text-xs">Customize the app's appearance</CardDescription>
+                  <CardTitle className="text-base text-theme-dark">Appearance Settings</CardTitle>
+                  <CardDescription className="text-xs"></CardDescription>
                 </CardHeader>
                 <CardContent className="py-2 px-4">
                   <ColorPicker />
@@ -178,9 +178,9 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
           <Button 
             variant="outline"
             onClick={handleCloseSheet}
-            className="rounded-full w-12 h-12 p-0 border-gray-300 shadow-md flex items-center justify-center bg-white hover:bg-gray-50"
+            className="rounded-full w-12 h-12 p-0 border-theme shadow-md flex items-center justify-center bg-white hover:bg-gray-50"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="h-5 w-5 text-theme-dark" />
           </Button>
         </div>
       </SheetContent>

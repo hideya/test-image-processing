@@ -12,10 +12,6 @@ function ColorPicker(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-theme-dark">
-        Choose theme color:
-      </label>
-      
       <div className="flex gap-3 flex-wrap">
         {Object.values(THEME_COLORS).map((colorObj) => (
           <ColorOption 
