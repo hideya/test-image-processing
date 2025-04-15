@@ -8,19 +8,12 @@ import {
   ResponsiveContainer,
   ReferenceArea,
 } from "recharts";
+import { BaseMeasurement } from "@/types/measurements";
 
-interface Measurement {
-  date: string;
-  angle?: number;
-  angle2?: number;
-  imageId?: number;
-  hashKey?: string;
-  memo?: string;
-  iconIds?: string;
-}
+
 
 interface MeasurementChartProps {
-  chartData: Measurement[];
+  chartData: BaseMeasurement[];
   chartDateRange: string[];
   selectedDate: string | null;
   setSelectedDate: (date: string | null) => void;

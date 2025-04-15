@@ -1,4 +1,5 @@
 import { createContext, useContext, ReactNode } from 'react';
+import { MeasurementDeletionParams } from '@/types/measurements';
 
 interface MeasurementDeletionContextType {
   onMeasurementDeleted: (measurementId: number, date: string) => void;

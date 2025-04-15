@@ -1,20 +1,13 @@
 import React from "react";
 import { format } from "date-fns";
 import { Link } from "wouter";
+import { BaseMeasurement } from "@/types/measurements";
 
-interface Measurement {
-  date: string;
-  angle: number;
-  angle2: number;
-  imageId: number;
-  hashKey: string;
-  memo?: string;
-  iconIds?: string;
-}
+
 
 interface TodaySummaryProps {
   today: Date;
-  todayMeasurement: Measurement | undefined;
+  todayMeasurement: BaseMeasurement | undefined;
   isLoading?: boolean;
   formatTableDayPart: (dateStr: string) => string;
 }

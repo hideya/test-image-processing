@@ -17,25 +17,9 @@ import {
 import { UploadSheet } from "@/components/upload-sheet";
 import { SettingsSheet } from "@/components/settings-sheet";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { BaseMeasurement, UploadResponse } from "@/types/measurements";
 
-interface Measurement {
-  date: string;
-  angle: number;
-  angle2: number;
-  imageId: number;
-  hashKey: string;
-  memo?: string;
-  iconIds?: string;
-  id?: number; // Added for edit/delete functionality
-}
 
-interface UploadResponse {
-  id: number;
-  hashKey: string;
-  angle: number;
-  angle2: number;
-  message: string;
-}
 
 export default function MainPage() {
   const { user, logoutMutation } = useAuth();
@@ -74,14 +58,14 @@ export default function MainPage() {
   });
 
   // State to store the initial today measurement (won't change when navigating months)
-  const [cachedTodayMeasurement, setCachedTodayMeasurement] = useState<Measurement | undefined>(undefined);
+  const [cachedTodayMeasurement, setCachedTodayMeasurement] = useState<BaseMeasurement | undefined>(undefined);
 
   // Fetch today's measurement data - independent of month navigation
   const {
     data: todayData = [],
     isLoading: isTodayLoading,
     refetch: refetchTodayData
-  } = useQuery<Measurement[]>({
+  } = useQuery<BaseMeasurement[]>({
     queryKey: ["/api/angle-data", "today", todayDate],
     queryFn: async () => {
       console.log('Fetching today data for:', todayDate);
@@ -98,7 +82,7 @@ export default function MainPage() {
     data: monthData = [],
     isLoading: isMonthLoading,
     refetch: refetchMonthData,
-  } = useQuery<Measurement[]>({
+  } = useQuery<BaseMeasurement[]>({
     queryKey: ["/api/angle-data", "month", currentViewMonth.toISOString()],
     queryFn: async () => {
       // Get first and last day of the month

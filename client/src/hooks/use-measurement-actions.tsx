@@ -2,6 +2,11 @@ import { useState, createContext, useContext } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest, getAuthToken } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  ApiMeasurement, 
+  MeasurementMetadataUpdate, 
+  MeasurementDeletionParams 
+} from '@/types/measurements';
 
 // Create a context for measurement actions to communicate with the main page
 interface MeasurementActionsContextProps {
@@ -21,27 +26,7 @@ export const MeasurementActionsProvider = ({ children, onMeasurementDeleted }: {
   );
 };
 
-interface Measurement {
-  id: number;
-  userId: number;
-  imageId: number;
-  angle: number;
-  angle2: number;
-  timestamp: Date;
-  memo: string | null;
-  iconIds: string | null;
-}
 
-interface MeasurementData {
-  date: string;
-  angle: number;
-  angle2: number;
-  imageId: number;
-  hashKey: string;
-  memo?: string;
-  iconIds?: string;
-  id: number; // Added id for direct API actions
-}
 
 export function useMeasurementActions() {
   const { toast } = useToast();
@@ -56,11 +41,7 @@ export function useMeasurementActions() {
       measurementId, 
       memo, 
       iconIds 
-    }: { 
-      measurementId: number; 
-      memo?: string; 
-      iconIds?: number[] 
-    }) => {
+    }: MeasurementMetadataUpdate) => {
       setIsUpdating(true);
       
       const token = getAuthToken();
@@ -119,7 +100,7 @@ export function useMeasurementActions() {
 
   // Mutation for deleting a measurement
   const deleteMeasurementMutation = useMutation({
-    mutationFn: async ({ measurementId, date }: { measurementId: number, date: string }) => {
+    mutationFn: async ({ measurementId, date }: MeasurementDeletionParams) => {
       setIsDeleting(true);
       
       const token = getAuthToken();
