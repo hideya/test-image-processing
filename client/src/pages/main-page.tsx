@@ -451,17 +451,17 @@ export default function MainPage() {
                     <div className="py-10 flex justify-center">
                       <div className="flex flex-col items-center gap-3">
                       <div className="h-10 w-10 rounded-full border-4 border-theme border-t-transparent animate-spin"></div>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-theme-dark">
                           Loading measurement data for {format(currentViewMonth, 'MMMM yyyy')}...
                         </p>
                       </div>
                     </div>
                   ) : measurements.length === 0 ? (
                     <div className="text-center py-8">
-                      <p className="text-gray-500">
+                      <p className="text-theme-dark">
                         No measurement data available yet.
                       </p>
-                      <p className="text-gray-500 text-sm mt-1">
+                      <p className="text-theme-dark text-sm mt-1">
                         Upload an image to see results.
                       </p>
                     </div>
