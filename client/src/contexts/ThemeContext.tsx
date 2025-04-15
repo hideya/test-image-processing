@@ -1,4 +1,5 @@
 import { createContext } from 'react';
+import { THEME_COLORS } from '@/lib/theme-colors';
 
 // Define the shape of your context
 export interface ThemeContextType {
@@ -9,4 +10,5 @@ export interface ThemeContextType {
 // Create context with default values
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const DEFAULT_COLOR = '#3b82f6';
+// Using the DEFAULT value from our themed colors
+export const DEFAULT_COLOR = THEME_COLORS.BLUE.DEFAULT;

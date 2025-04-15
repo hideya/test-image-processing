@@ -1,13 +1,6 @@
 import { useTheme } from '@/contexts';
 import React from 'react';
-
-// Define the four theme colors from the image
-const THEME_COLORS = {
-  CORAL: '#ee8c8c',    // Coral/Salmon pink
-  GOLD: '#eec500',     // Golden yellow
-  TEAL: '#6ed0b4',     // Teal/Mint green
-  BLUE: '#80b0ff'      // Light blue
-};
+import { THEME_COLORS } from '@/lib/theme-colors';
 
 function ColorPicker(): JSX.Element {
   const { themeColor, setThemeColor } = useTheme();
@@ -24,13 +17,13 @@ function ColorPicker(): JSX.Element {
       </label>
       
       <div className="flex gap-3 flex-wrap">
-        {Object.entries(THEME_COLORS).map(([name, color]) => (
+        {Object.values(THEME_COLORS).map((colorObj) => (
           <ColorOption 
-            key={name}
-            color={color}
-            isSelected={themeColor === color}
-            onClick={() => handleColorChange(color)}
-            name={name}
+            key={colorObj.name}
+            color={colorObj.DEFAULT}
+            isSelected={themeColor === colorObj.DEFAULT}
+            onClick={() => handleColorChange(colorObj.DEFAULT)}
+            name={colorObj.name}
           />
         ))}
       </div>
