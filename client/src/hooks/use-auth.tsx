@@ -131,17 +131,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Register mutation
   const register = useMutation({
     mutationFn: async (userData: { username: string, email: string, password: string }) => {
-      const res = await apiRequest('POST', '/api/register', userData);
-      const data = await res.json();
-      
-      // Save JWT token when registration is successful
-      if (data.token) {
-        setAuthToken(data.token);
+      console.log("*** Register mutation started for user:", userData.username);
+      try {
+        const res = await apiRequest('POST', '/api/register', userData);
+        const data = await res.json();
+        
+        console.log('*** Registration response received:', data);
+        
+        // Save JWT token when registration is successful
+        if (data.token) {
+          console.log('*** Saving JWT token after registration');
+          setAuthToken(data.token);
+        }
+        
+        return data.user || data;
+      } catch (error) {
+        console.error('*** Registration error:', error);
+        throw error; // Re-throw to be caught by onError
       }
-      
-      return data.user || data;
     },
     onSuccess: () => {
+      console.log('*** Registration successful');
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
       setLocation('/');
       toast({
@@ -151,9 +161,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error('*** Registration error in onError handler:', error.message);
+      // Handle specific error cases
+      const errorMessage = error.message.includes('Username already exists')
+        ? "This username is already taken. Please choose another username."
+        : error.message || "Please try again with different information";
+      
       toast({
         title: "Registration failed",
-        description: error.message || "Please try again with different information",
+        description: errorMessage,
         variant: "destructive",
       });
     }

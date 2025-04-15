@@ -15,6 +15,10 @@ const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(1, "Password confirmation is required"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -23,6 +27,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [, setLocation] = useLocation();
 
   // Redirect to home if already logged in
@@ -51,17 +56,33 @@ export default function AuthPage() {
       username: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
   const onLoginSubmit = (data: LoginFormValues) => {
     console.log('*** AuthPage: Login form submitted with username:', data.username);
-    loginMutation.mutate(data);
+    // Clear any previous server errors
+    setServerError(null);
+    loginMutation.mutate(data, {
+      onError: (error) => {
+        // Save server error to display it in the form
+        setServerError(error.message);
+        console.log('*** Login error captured in form handler:', error.message);
+      }
+    });
   };
 
   const onRegisterSubmit = (data: RegisterFormValues) => {
     console.log('*** AuthPage: Register form submitted with username:', data.username);
-    registerMutation.mutate(data);
+    // Clear any previous server errors
+    setServerError(null);
+    registerMutation.mutate(data, {
+      onError: (error) => {
+        // Save server error to display it in the form
+        setServerError(error.message);
+      }
+    });
   };
 
   return (
@@ -77,6 +98,11 @@ export default function AuthPage() {
 
           {isLogin ? (
             <form className="mt-8 space-y-6" onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
+              {serverError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+                  <span className="block sm:inline">{serverError}</span>
+                </div>
+              )}
               <div className="rounded-md shadow-sm -space-y-px">
                 <div>
                   <label htmlFor="username" className="sr-only">
@@ -130,6 +156,11 @@ export default function AuthPage() {
               className="mt-8 space-y-6"
               onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
             >
+              {serverError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+                  <span className="block sm:inline">{serverError}</span>
+                </div>
+              )}
               <div className="rounded-md shadow-sm -space-y-px">
                 <div>
                   <label htmlFor="register-username" className="sr-only">
@@ -176,12 +207,30 @@ export default function AuthPage() {
                     type="password"
                     autoComplete="new-password"
                     {...registerForm.register("password")}
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                     placeholder="Password"
                   />
                   {registerForm.formState.errors.password && (
                     <p className="mt-1 text-xs text-red-600">
                       {registerForm.formState.errors.password.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="confirm-password" className="sr-only">
+                    Confirm Password
+                  </label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    {...registerForm.register("confirmPassword")}
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    placeholder="Confirm Password"
+                  />
+                  {registerForm.formState.errors.confirmPassword && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {registerForm.formState.errors.confirmPassword.message}
                     </p>
                   )}
                 </div>
