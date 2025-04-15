@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { IconDisplay } from "@/components/icon-picker";
 import { MeasurementActionToolbar } from "./MeasurementActionToolbar";
 import { EditDetailsSheet } from "@/components/edit-details-sheet";
@@ -33,6 +33,40 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
   const [editMeasurement, setEditMeasurement] = useState<BaseMeasurement | null>(null);
   const [showEditSheet, setShowEditSheet] = useState(false);
   const [activeRowPosition, setActiveRowPosition] = useState<{top: number, left: number, width: number} | null>(null);
+  
+  // Ref for the toolbar element
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  
+  // Handle clicks outside the toolbar
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      // Skip if toolbar is not shown
+      if (!activeActionRow || !toolbarRef.current) return;
+      
+      // Check if the click is outside the toolbar
+      // AND also not on a table row that has the active toolbar
+      if (!toolbarRef.current.contains(e.target as Node)) {
+        const clickedRow = (e.target as Element).closest('tr');
+        const activeRowElement = document.querySelector(`tr[data-date="${activeActionRow}"]`);
+        
+        // If clicked outside toolbar and not on the active row
+        if (!clickedRow || clickedRow !== activeRowElement) {
+          setActiveActionRow(null);
+          setActiveRowPosition(null);
+          setSelectedDate(null);
+          setPulsingDot(null);
+        }
+      }
+    };
+    
+    // Add event listener
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Clean up
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeActionRow, setSelectedDate, setPulsingDot]);
   
   // Handle row click
   const handleRowClick = (measurement: BaseMeasurement, e: React.MouseEvent<HTMLTableRowElement>) => {
@@ -86,7 +120,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
             width: '100%'
           }}
         >
-          <div className="flex justify-center">
+          <div className="flex justify-center" ref={toolbarRef}>
             {sortedMeasurements.map((measurement) => {
               if (activeActionRow === measurement.date && measurement.angle !== undefined && measurement.id) {
                 return (
@@ -155,6 +189,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                           : "bg-gray-0 hover:opacity-75"
                     }`}
                   onClick={(e) => handleRowClick(measurement, e)}
+                  data-date={measurement.date}
                 >
                   {/* Action toolbar moved outside of the tr element */}
                   <td
