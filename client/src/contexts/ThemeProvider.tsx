@@ -15,6 +15,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.style.setProperty('--theme-color', variants.DEFAULT);
     document.documentElement.style.setProperty('--theme-color-light', variants.light);
     document.documentElement.style.setProperty('--theme-color-dark', variants.dark);
+    
+    document.body.style.backgroundColor = variants.light;
   }, [themeColor]);
   
   return (

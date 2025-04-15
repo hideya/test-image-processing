@@ -2,31 +2,31 @@
 export const THEME_COLORS = {
   CORAL: {
     name: 'Coral',
-    light: 'rgb(255, 228, 230)',
+    light: 'rgb(252, 239, 240)',
     DEFAULT: 'rgb(231, 187, 190)',
     dark: 'rgb(229, 137, 143)',
   },
   GOLD: {
     name: 'Gold',
-    light: 'rgb(255, 235, 194)',
+    light: 'rgb(251, 244, 232)',
     DEFAULT: 'rgb(233, 205, 149)',
     dark: 'rgb(254, 176, 18)',
   },
   TEAL: {
     name: 'Teal',
-    light: 'rgb(227, 255, 236)',
+    light: 'rgb(237, 249, 241)',
     DEFAULT: 'rgb(141, 220, 169)',
     dark: 'rgb(70, 186, 110)',
   },
   BLUE: {
     name: 'Blue',
-    light: 'rgb(216, 230, 255)',
+    light: 'rgb(232, 238, 249)',
     DEFAULT: 'rgb(159, 187, 235)',
     dark: 'rgb(78, 134, 230)',
   },
   PURPLE: {
     name: 'Purple',
-    light: 'rgb(240, 208, 252)',
+    light: 'rgb(247, 237, 250)',
     DEFAULT: 'rgb(213, 154, 234)',
     dark: 'rgb(181, 85, 216)',
   }

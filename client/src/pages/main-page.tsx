@@ -397,7 +397,7 @@ export default function MainPage() {
 
   return (
     <MeasurementDeletionProvider onMeasurementDeleted={handleMeasurementDeleted}>
-      <div className="bg-gray-50 min-h-screen">
+      <div className="bg-transparent min-h-screen">
         {/* Global Loading Screen - only shown on initial page load */}
         <LoadingScreen show={showSplashScreen} text="Loading your measurements" />
         
@@ -450,7 +450,7 @@ export default function MainPage() {
                   {isLoading ? (
                     <div className="py-10 flex justify-center">
                       <div className="flex flex-col items-center gap-3">
-                        <div className="h-10 w-10 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+                      <div className="h-10 w-10 rounded-full border-4 border-theme border-t-transparent animate-spin"></div>
                         <p className="text-sm text-gray-500">
                           Loading measurement data for {format(currentViewMonth, 'MMMM yyyy')}...
                         </p>
@@ -501,7 +501,6 @@ export default function MainPage() {
                           isSaturday={isSaturday}
                           formatTableDatePart={formatTableDatePart}
                           formatTableDayPart={formatTableDayPart}
-                          todayDate={todayDate}
                         />
                       </div>
                     </div>

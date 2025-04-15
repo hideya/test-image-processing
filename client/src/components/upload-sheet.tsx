@@ -718,8 +718,8 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
       case UploadStep.UPLOADING:
         return (
           <div className="flex flex-col items-center justify-center py-8 space-y-5">
-            <div className="bg-blue-100 rounded-full p-4 shadow-md">
-              <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+            <div className="bg-theme-light rounded-full p-4 shadow-md">
+              <Loader2 className="h-10 w-10 animate-spin text-theme" />
             </div>
             
             <div className="text-center">
@@ -732,7 +732,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
             <div className="w-full max-w-md space-y-2">
               <div className="relative h-3 w-full overflow-hidden rounded-full bg-gray-200">
                 <div 
-                  className="h-full bg-blue-600 transition-all" 
+                  className="h-full bg-theme transition-all" 
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
@@ -856,7 +856,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
       case UploadStep.UPDATING:
         return (
           <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-4" />
+            <Loader2 className="h-12 w-12 animate-spin text-theme mb-4" />
             <h3 className="text-lg font-medium text-gray-900">Saving your details...</h3>
           </div>
         );

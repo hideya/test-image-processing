@@ -36,12 +36,12 @@ export function LoadingScreen({
             />
           </div>
         ) : (
-          <div className="mb-4 text-3xl font-bold text-blue-600 animate-fade-in">
+          <div className="mb-4 text-3xl font-bold text-theme animate-fade-in">
             Photo Analyzer
           </div>
         )}
         
-        <div className="h-14 w-14 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+        <div className="h-14 w-14 rounded-full border-4 border-theme border-t-transparent animate-spin"></div>
         
         <div className="text-center animate-fade-in">
           <h2 className="text-xl font-medium text-gray-800 dark:text-gray-200">

@@ -121,8 +121,8 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                       : isToday
                         ? "bg-yellow-50 hover:bg-yellow-100" 
                         : index % 2 === 0
-                          ? "bg-white hover:bg-gray-50"
-                          : "bg-gray-50 hover:bg-gray-100"
+                          ? "bg-theme-light hover:bg-theme-light hover:opacity-75"
+                          : "bg-gray-0 hover:bg-gray-100"
                     }`}
                   onClick={() => handleRowClick(measurement)}
                 >

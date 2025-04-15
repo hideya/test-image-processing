@@ -25,16 +25,15 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
   });
   return (
     <div>
-      <div className="bg-gradient-to-b from-[var(--theme-color-light)] to-[var(--theme-color-dark)] p-6 rounded-2xl shadow-sm border border-blue-100 mb-6">
+      <div className="bg-gradient-to-b from-white to-[var(--theme-color)] p-4 rounded-2xl shadow-sm border border-blue-100 mb-2">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col items-center md:items-start">
-            <div className="text-sm text-blue-600 uppercase font-medium mb-1">Today</div>
             <div className="flex items-baseline gap-2">
-              <div className="text-2xl font-bold text-gray-800">
+              <div className="text-2xl font-bold text-theme-dark">
                 {format(new Date(today), "M月 d日")}
               </div>
-              <div className="text-lg font-medium text-gray-600">
-                ({formatTableDayPart(today.toISOString())}曜日)
+              <div className="text-lg font-medium text-theme-dark">
+                {formatTableDayPart(today.toISOString())}曜日
               </div>
             </div>
           </div>
@@ -46,7 +45,7 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
               </div>
             ) : todayMeasurement ? (
               <>
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100 flex flex-col items-center transition-transform hover:scale-105">
+                <div className="bg-gradient-to-b from-white to-[var(--theme-color-light)] p-4 rounded-xl shadow-sm border border-white flex flex-col items-center transition-transform hover:scale-105">
                   <div className="text-sm font-medium text-blue-600 mb-1">
                     左足
                   </div>
@@ -57,7 +56,7 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
                     °
                   </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-purple-100 flex flex-col items-center transition-transform hover:scale-105">
+                <div className="bg-gradient-to-b from-white to-[var(--theme-color-light)] p-4 rounded-xl shadow-sm border border-white flex flex-col items-center transition-transform hover:scale-105">
                   <div className="text-sm font-medium text-green-600 mb-1">
                     右足
                   </div>
@@ -71,9 +70,9 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
               </>
             ) : (
               <Link href="/upload">
-                <div className="flex flex-col items-center bg-blue-50 hover:bg-blue-100 transition-colors p-4 rounded-xl border border-blue-200 cursor-pointer">
-                  <div className="text-blue-700 font-medium mb-1">No measurement today</div>
-                  <div className="text-blue-500 text-sm">Tap to upload a photo</div>
+                <div className="flex flex-col items-center bg-white hover:bg-theme-light transition-colors p-4 rounded-xl cursor-pointer">
+                  <div className="text-theme-dark font-medium mb-1">No measurement today</div>
+                  <div className="text-theme-dark text-sm">Tap to upload a photo</div>
                 </div>
               </Link>
             )}

@@ -11,6 +11,7 @@
     @apply font-sans antialiased bg-background text-foreground;
     font-family: 'Roboto', sans-serif;
     background-color: #f5f5f5;
+    /* Theme-aware background will be controlled by ThemeProvider.tsx */
   }
   
   /* Theme color utility classes for text and backgrounds */
