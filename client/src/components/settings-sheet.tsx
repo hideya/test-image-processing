@@ -178,7 +178,7 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
           <Button 
             variant="outline"
             onClick={handleCloseSheet}
-            className="rounded-full w-12 h-12 p-0 border-theme shadow-md flex items-center justify-center bg-white hover:bg-gray-50"
+            className="rounded-full w-12 h-12 p-0 border-theme shadow-md flex items-center justify-center bg-white hover:bg-theme-light"
           >
             <X className="h-5 w-5 text-theme-dark" />
           </Button>

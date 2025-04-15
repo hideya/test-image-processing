@@ -9,7 +9,7 @@ export const THEME_COLORS = {
   GOLD: {
     name: 'Gold',
     light: 'rgb(251, 244, 232)',
-    DEFAULT: 'rgb(233, 205, 149)',
+    DEFAULT: 'rgb(252, 218, 152)',
     dark: 'rgb(254, 176, 18)',
   },
   TEAL: {
