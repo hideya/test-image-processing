@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { MeasurementDeletionProvider } from "@/context/measurement-deletion-context";
 import { useAuth } from "../hooks/use-auth";
 import { queryClient, apiRequest, getAuthToken } from "../lib/queryClient";
@@ -42,6 +42,7 @@ export default function MainPage() {
   const { settings } = useSettings();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const deletionPerformedRef = useRef(false);
 
   // For highlighting a dot in the chart with a pulse animation
   const [pulsingDot, setPulsingDot] = useState<string | null>(null);
@@ -71,6 +72,9 @@ export default function MainPage() {
     date.setHours(12, 0, 0, 0);
     return date;
   });
+
+  // State to store the initial today measurement (won't change when navigating months)
+  const [cachedTodayMeasurement, setCachedTodayMeasurement] = useState<Measurement | undefined>(undefined);
 
   // Fetch today's measurement data - independent of month navigation
   const {
@@ -114,6 +118,55 @@ export default function MainPage() {
       return data;
     },
   });
+  
+  // Get today's measurement from the today data query
+  const todayMeasurement = useMemo(() => {
+    // If deletion was performed and todayData is empty, don't use cached data
+    if (deletionPerformedRef.current && todayData.length === 0) {
+      return undefined;
+    }
+    
+    // Use the cached data if it exists
+    if (cachedTodayMeasurement) {
+      return cachedTodayMeasurement; 
+    }
+    
+    // Primary source: Check if we have data in todayData
+    if (todayData.length > 0) {
+      return todayData[0];
+    }
+    
+    // Fallback source: Check if there's matching data in monthData
+    const todayInMonthData = monthData.find(item => item.date === todayDate);
+    
+    return todayInMonthData;
+  }, [todayData, monthData, todayDate, cachedTodayMeasurement, deletionPerformedRef.current]);
+  
+  // Update cached measurement when data first loads (only if we don't already have a cached value)
+  useEffect(() => {
+    // Only cache the measurement if:
+    // 1. We don't already have a cached value 
+    // 2. We have a valid measurement to cache
+    // 3. No deletion was performed
+    if (!cachedTodayMeasurement && todayMeasurement && !deletionPerformedRef.current) {
+      console.log('Caching today measurement:', todayMeasurement);
+      setCachedTodayMeasurement(todayMeasurement);
+    }
+  }, [todayMeasurement, cachedTodayMeasurement]);
+
+  // Clear cached measurement when today's data is empty (likely after deletion)
+  useEffect(() => {
+    // Only clear if:
+    // 1. We currently have a cached value
+    // 2. The today's data is empty (after a successful deletion)
+    // 3. A deletion was performed
+    if (cachedTodayMeasurement && todayData.length === 0 && deletionPerformedRef.current) {
+      console.log('Today data is empty after deletion, clearing cached measurement');
+      setCachedTodayMeasurement(undefined);
+      // Reset the deletion flag after handling
+      deletionPerformedRef.current = false;
+    }
+  }, [todayData, cachedTodayMeasurement]);
   
   // Combine month data and today's data for display
   const measurements = useMemo(() => {
@@ -250,60 +303,35 @@ export default function MainPage() {
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
   }, [measurements]);
-  
-  // State to store the initial today measurement (won't change when navigating months)
-  const [cachedTodayMeasurement, setCachedTodayMeasurement] = useState<Measurement | undefined>(undefined);
-
-  // Get today's measurement from the today data query
-  const todayMeasurement = useMemo(() => {
-    // Use the cached data if it exists
-    if (cachedTodayMeasurement) {
-      return cachedTodayMeasurement; 
-    }
-    
-    // Primary source: Check if we have data in todayData
-    if (todayData.length > 0) {
-      return todayData[0];
-    }
-    
-    // Fallback source: Check if there's matching data in monthData
-    const todayInMonthData = monthData.find(item => item.date === todayDate);
-    
-    return todayInMonthData;
-  }, [todayData, monthData, todayDate, cachedTodayMeasurement]);
-
-  // Effect to cache the today measurement when it first loads
-  useEffect(() => {
-    if (todayMeasurement && !cachedTodayMeasurement) {
-      console.log('Caching today measurement:', todayMeasurement);
-      setCachedTodayMeasurement(todayMeasurement);
-    }
-  }, [todayMeasurement, cachedTodayMeasurement]);
-
-  // Update cached today measurement when todayData changes (e.g., after a new upload)
-  useEffect(() => {
-    if (todayData.length > 0 && todayData[0].date === todayDate) {
-      console.log('Updating cached today measurement after data change');
-      setCachedTodayMeasurement(todayData[0]);
-    }
-  }, [todayData, todayDate]);
 
   // Function to handle when a measurement is deleted
   const handleMeasurementDeleted = useCallback((measurementId: number, date: string) => {
     console.log(`Measurement deleted: ID ${measurementId}, date ${date}`);
     
     // If today's measurement was deleted, we need to clear the cached value
-    if (date === todayDate && cachedTodayMeasurement?.id === measurementId) {
-      console.log('Today\'s measurement was deleted, clearing cached measurement');
+    if (date === todayDate) {
+      console.log('Today\'s measurement was deleted');
+      
+      // Set the deletion flag to true
+      deletionPerformedRef.current = true;
+      
+      // Force clear the cache
       setCachedTodayMeasurement(undefined);
       
-      // Force refresh today's data to ensure it's properly cleared
-      refetchTodayData();
+      // Immediately invalidate the cache
+      queryClient.invalidateQueries({ queryKey: ["/api/angle-data", "today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/angle-data", "month"] });
+      
+      // Force refresh today's data
+      setTimeout(() => {
+        refetchTodayData();
+        refetchMonthData();
+      }, 100);
+    } else {
+      // Always refresh month data for non-today measurements
+      refetchMonthData();
     }
-    
-    // Always refresh month data
-    refetchMonthData();
-  }, [todayDate, cachedTodayMeasurement, refetchTodayData, refetchMonthData]);
+  }, [todayDate, refetchTodayData, refetchMonthData, queryClient]);
 
   const { chartDateRange, chartData } = useMemo(() => {
     // Get all dates in current month
@@ -379,12 +407,8 @@ export default function MainPage() {
     refetchMonthData(); 
     refetchTodayData();
     
-    // Set a small timeout to ensure the latest data is fetched and processed
-    setTimeout(() => {
-      if (todayData.length > 0) {
-        setCachedTodayMeasurement(todayData[0]);
-      }
-    }, 500);
+    // Reset the deletion flag since we're uploading new data
+    deletionPerformedRef.current = false;
   };
 
   return (

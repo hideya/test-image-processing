@@ -99,8 +99,10 @@ export function useMeasurementActions() {
         variant: "success",
       });
 
-      // Invalidate the relevant queries to refresh data
+      // Invalidate the relevant queries to refresh data - use more specific invalidation
       queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/angle-data", "today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/angle-data", "month"] });
       
       setIsUpdating(false);
     },
@@ -158,8 +160,10 @@ export function useMeasurementActions() {
         onMeasurementDeleted(result.measurementId, result.date);
       }
 
-      // Invalidate the relevant queries to refresh data
+      // Invalidate the relevant queries to refresh data - use more specific invalidation
       queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/angle-data", "today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/angle-data", "month"] });
       
       setIsDeleting(false);
     },

@@ -46,7 +46,10 @@ export const MeasurementActionToolbar: React.FC<MeasurementActionToolbarProps> =
   };
 
   const confirmDelete = () => {
-    deleteMeasurement(measurementId);
+    console.log('Deleting measurement:', { measurementId, date });
+    console.log('Calling deleteMeasurement with:', { measurementId, date });
+    deleteMeasurement({ measurementId, date });
+    console.log('Calling onMeasurementDeleted with:', measurementId, date);
     onMeasurementDeleted(measurementId, date);
     setShowDeleteConfirm(false);
     onClose();
