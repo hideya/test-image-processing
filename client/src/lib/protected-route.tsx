@@ -17,8 +17,11 @@ export function ProtectedRoute({
     console.log(`*** ProtectedRoute (${path}): Showing loading state`);
     return (
       <Route path={path}>
-        <div className="flex items-center justify-center">
-          <div className="h-8 w-8 animate-spin text-border">Loading...</div>
+        <div className="flex items-center justify-center h-screen w-full">
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+            <p className="text-gray-600 font-medium">Loading...</p>
+          </div>
         </div>
       </Route>
     );
