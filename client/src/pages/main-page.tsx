@@ -468,14 +468,14 @@ export default function MainPage() {
                   ) : (
                     <div className="space-y-6">
                       {/* Section Title */}
-                      <div className="mb-4 px-4">
+                      {/* <div className="mb-4 px-4">
                         <h2 className="text-xl font-bold text-gray-800">Measurement History</h2>
                         <p className="text-gray-500 text-sm">Track your progress over time</p>
-                      </div>
+                      </div> */}
                       
                       {/* Chart view */}
                       <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <h3 className="text-md font-medium text-gray-700 mb-3">Monthly Trend</h3>
+                        {/* <h3 className="text-md font-medium text-gray-700 mb-3">Monthly Trend</h3> */}
                         <MeasurementChart
                           chartData={chartData}
                           chartDateRange={chartDateRange}
@@ -491,7 +491,7 @@ export default function MainPage() {
 
                       {/* Data Table */}
                       <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <h3 className="text-md font-medium text-gray-700 mb-3">Daily Records</h3>
+                        {/* <h3 className="text-md font-medium text-gray-700 mb-3">Daily Records</h3> */}
                         <MeasurementTable 
                           sortedMeasurements={sortedMeasurements}
                           selectedDate={selectedDate}

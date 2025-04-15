@@ -19,7 +19,7 @@ export const MonthNavigation: React.FC<MonthNavigationProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between py-2 px-4 mb-4 border-b border-theme">
+    <div className="flex items-center justify-between py-2 px-4 mb-4 border-b border-theme bg-gradient-to-b from-white to-[var(--theme-color-light)] rounded-t-3xl">
       <button
         onClick={() => {
           const newDate = new Date(currentViewMonth);
@@ -31,7 +31,7 @@ export const MonthNavigation: React.FC<MonthNavigationProps> = ({
         <span className="text-theme-dark">◀︎</span>
       </button>
       <div className="flex items-center gap-1.5">
-        <span className="text-lg font-bold text-gray-800">
+        <span className="text-lg font-bold text-theme-dark">
           {format(currentViewMonth, "yyyy年")}
         </span>
         <span className="text-2xl font-bold text-theme-dark">

@@ -25,7 +25,7 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
   });
   return (
     <div>
-      <div className="bg-gradient-to-b from-white to-[var(--theme-color)] p-4 rounded-2xl shadow-sm border border-blue-100 mb-2">
+      <div className="bg-gradient-to-b from-white to-[var(--theme-color)] p-4 rounded-2xl shadow-sm mb-2">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col items-center md:items-start">
             <div className="flex items-baseline gap-2">

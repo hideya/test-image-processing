@@ -81,7 +81,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
 
       <div className="max-h-[64rem] overflow-y-auto">
         <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+        <thead className="bg-gradient-to-b from-white to-[var(--theme-color-light)]">
           <tr>
             <th className="w-10 pl-2 pr-0 py-1 text-center text-xs font-medium text-gray-500 uppercase">
               日付
@@ -121,8 +121,8 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                       : isToday
                         ? "bg-yellow-50 hover:bg-yellow-100" 
                         : index % 2 === 0
-                          ? "bg-theme-light hover:bg-theme-light hover:opacity-75"
-                          : "bg-gray-0 hover:bg-gray-100"
+                          ? "bg-gradient-to-b from-white to-[var(--theme-color-light)] hover:opacity-75"
+                          : "bg-gray-0 hover:opacity-75"
                     }`}
                   onClick={() => handleRowClick(measurement)}
                 >
