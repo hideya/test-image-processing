@@ -70,13 +70,27 @@ export default function MainPage() {
     return date;
   });
 
-  // Fetch angle measurements
+  // Fetch today's measurement data - independent of month navigation
   const {
-    data: measurements = [],
-    isLoading,
+    data: todayData = [],
+    isLoading: isTodayLoading,
+    refetch: refetchTodayData
+  } = useQuery<Measurement[]>({
+    queryKey: ["/api/angle-data", "today", todayDate],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/angle-data?start=${todayDate}&end=${todayDate}`);
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+  });
+
+  // Fetch monthly angle measurements - changes when month changes
+  const {
+    data: monthData = [],
+    isLoading: isMonthLoading,
     refetch: refetchMonthData,
   } = useQuery<Measurement[]>({
-    queryKey: ["/api/angle-data", currentViewMonth.toISOString(), todayDate],
+    queryKey: ["/api/angle-data", "month", currentViewMonth.toISOString()],
     queryFn: async () => {
       // Get first and last day of the month
       const year = currentViewMonth.getFullYear();
@@ -88,41 +102,27 @@ export default function MainPage() {
       const startDate = firstDay.toISOString();
       const endDate = lastDay.toISOString();
       
-      // Get the current date
-      const currentDate = new Date();
-      
-      // Make two API requests
-      const [monthDataRes, todayDataRes] = await Promise.all([
-        // First request: Get data for the selected month
-        apiRequest('GET', `/api/angle-data?start=${startDate}&end=${endDate}`),
-        
-        // Second request: Get data for today (only if today is not in the current month)
-        currentDate.getMonth() !== currentViewMonth.getMonth() || 
-        currentDate.getFullYear() !== currentViewMonth.getFullYear() ?
-          apiRequest('GET', `/api/angle-data?start=${todayDate}&end=${todayDate}`) : 
-          Promise.resolve({ json: () => [] })
-      ]);
-      
-      // Parse both responses
-      const [monthData, todayData] = await Promise.all([
-        monthDataRes.json(),
-        todayDataRes.json ? todayDataRes.json() : []
-      ]);
-      
-      // Combine the data, but avoid duplicates
-      const combinedData = [...monthData];
-      
-      // Only add today's data if it's not already in the month data
-      if (Array.isArray(todayData) && todayData.length > 0) {
-        const todayItem = todayData[0];
-        if (todayItem && !combinedData.some(item => item.date === todayItem.date)) {
-          combinedData.push(todayItem);
-        }
-      }
-      
-      return combinedData;
+      const res = await apiRequest('GET', `/api/angle-data?start=${startDate}&end=${endDate}`);
+      return res.json();
     },
   });
+  
+  // Combine month data and today's data for display
+  const measurements = useMemo(() => {
+    // Create a map of all month data for easy lookup
+    const dataMap = new Map(monthData.map(item => [item.date, item]));
+    
+    // Add today's data if it exists and isn't already in the month data
+    if (todayData.length > 0 && !dataMap.has(todayDate)) {
+      dataMap.set(todayDate, todayData[0]);
+    }
+    
+    // Convert back to array
+    return Array.from(dataMap.values());
+  }, [monthData, todayData, todayDate]);
+  
+  // Combined loading state
+  const isLoading = isMonthLoading;
 
   // Track if this is the first load of the page
   const [isFirstLoad, setIsFirstLoad] = useState(true);
@@ -131,7 +131,7 @@ export default function MainPage() {
   // Only use this for initial page load
   const { showLoading: showInitialLoading } = useLoadingState({
     minimumLoadingTime: 1000, // Show loading for at least 1 second to avoid jarring transitions
-    queryKeys: ["/api/angle-data"], // Only track the main data loading state
+    queryKeys: ["/api/angle-data/month", "/api/angle-data/today"], // Track both data loading states
     forceInitialLoading: true, // Always show splash screen on initial load
   });
   
@@ -140,10 +140,10 @@ export default function MainPage() {
   
   // After data loads for the first time, mark first load as complete
   useEffect(() => {
-    if (!isLoading && isFirstLoad) {
+    if (!isMonthLoading && !isTodayLoading && isFirstLoad) {
       setIsFirstLoad(false);
     }
-  }, [isLoading, isFirstLoad]);
+  }, [isMonthLoading, isTodayLoading, isFirstLoad]);
   
   // Clear pulsing effect after animation completes
   useEffect(() => {
@@ -243,17 +243,10 @@ export default function MainPage() {
     );
   }, [measurements]);
   
-  // Fetch today's measurement directly from the measurements array
-  // This is more reliable than making a separate API call
+  // Get today's measurement from the today data query
   const todayMeasurement = useMemo(() => {
-    return measurements.find(m => m.date === todayDate);
-  }, [measurements, todayDate]);
-  
-  // We don't need a separate loading state for today's measurement
-  const isTodayLoading = isLoading;
-  
-  // Create a function to refresh today's data that just refreshes all data
-  const refetchTodayData = refetchMonthData;
+    return todayData.length > 0 ? todayData[0] : undefined;
+  }, [todayData]);
 
   const { chartDateRange, chartData } = useMemo(() => {
     // Get all dates in current month
