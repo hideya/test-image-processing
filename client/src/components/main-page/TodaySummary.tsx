@@ -58,10 +58,10 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
                   </div>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-purple-100 flex flex-col items-center transition-transform hover:scale-105">
-                  <div className="text-sm font-medium text-purple-600 mb-1">
+                  <div className="text-sm font-medium text-green-600 mb-1">
                     右足
                   </div>
-                  <div className="text-3xl font-bold text-purple-700">
+                  <div className="text-3xl font-bold text-green-700">
                     {todayMeasurement.angle2 !== undefined
                       ? todayMeasurement.angle2.toFixed(1)
                       : "--"}

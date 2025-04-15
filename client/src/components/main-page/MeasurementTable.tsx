@@ -15,6 +15,7 @@ interface MeasurementTableProps {
   isSaturday: (dateStr: string) => boolean;
   formatTableDatePart: (dateStr: string) => string;
   formatTableDayPart: (dateStr: string) => string;
+  todayDate: string; // Today's date in ISO format (YYYY-MM-DD)
 }
 
 export const MeasurementTable: React.FC<MeasurementTableProps> = ({
@@ -26,6 +27,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
   isSaturday,
   formatTableDatePart,
   formatTableDayPart,
+  todayDate,
 }) => {
   const [activeActionRow, setActiveActionRow] = useState<string | null>(null);
   const [editMeasurement, setEditMeasurement] = useState<BaseMeasurement | null>(null);
@@ -109,13 +111,15 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
               textColor = "#3b82f6"; // Blue for Saturday
             }
             const isSelected = selectedDate === measurement.date;
+            const isToday = measurement.date === todayDate;
             return (
               <React.Fragment key={index}>
                 <tr
-                  className={`cursor-pointer transition-colors duration-150
-                    ${
-                      isSelected
-                        ? "bg-blue-50 hover:bg-blue-100"
+                  className={`cursor-pointer transition-colors duration-150 relative
+                    ${isSelected
+                      ? "bg-blue-50 hover:bg-blue-100"
+                      : isToday
+                        ? "bg-yellow-50 hover:bg-yellow-100" 
                         : index % 2 === 0
                           ? "bg-white hover:bg-gray-50"
                           : "bg-gray-50 hover:bg-gray-100"
@@ -124,35 +128,39 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                 >
                   {/* Action toolbar moved outside of the tr element */}
                   <td
-                    className={`pl-1 pr-2 whitespace-nowrap text-sm ${isSelected ? "font-medium text-blue-900" : "text-gray-900"}`}
+                    className={`pl-1 pr-2 whitespace-nowrap text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-gray-900"}`}
                   >
-                    <div
-                      className="text-right leading-tight"
+                    <div 
+                      className={`text-right leading-tight flex items-center justify-end`}
                       style={{ color: textColor }}
                     >
-                      {formatTableDatePart(measurement.date)}
-                      &nbsp;
-                      <span className={"text-xs font-mono"}>
-                        {formatTableDayPart(measurement.date)}
+                      <span
+                        className={`${isToday ? "bg-amber-200 rounded font-medium" : ""}`}
+                      >
+                        {formatTableDatePart(measurement.date)}
+                        &nbsp;
+                        <span className="text-xs font-mono">
+                          {formatTableDayPart(measurement.date)}
+                        </span>
                       </span>
                     </div>
                   </td>
                   <td
-                    className={`px-1 whitespace-nowrap text-sm text-right ${isSelected ? "font-medium text-blue-700" : "text-blue-600"}`}
+                    className={`px-1 whitespace-nowrap text-sm text-right ${isSelected ? "font-medium text-blue-700" : isToday ? "font-medium text-blue-600" : "text-blue-600"}`}
                   >
                     {measurement.angle !== undefined
                       ? measurement.angle.toFixed(1)
                       : ""}
                   </td>
                   <td
-                    className={`px-1 whitespace-nowrap text-sm text-right ${isSelected ? "font-medium text-emerald-700" : "text-emerald-600"}`}
+                    className={`px-1 whitespace-nowrap text-sm text-right ${isSelected ? "font-medium text-emerald-700" : isToday ? "font-medium text-emerald-600" : "text-emerald-600"}`}
                   >
                     {measurement.angle2 !== undefined
                       ? measurement.angle2.toFixed(1)
                       : ""}
                   </td>
                   <td
-                    className={`pl-2 pr-0 text-sm ${isSelected ? "font-medium text-blue-900" : "text-gray-900"}`}
+                    className={`pl-2 pr-0 text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-gray-900"}`}
                   >
                     <span
                       className={`transition-all duration-200`}
@@ -161,7 +169,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                     </span>
                   </td>
                   <td
-                    className={`pl-1 pr-0 text-center text-sm ${isSelected ? "font-medium text-blue-900" : "text-gray-900"}`}
+                    className={`pl-1 pr-0 text-center text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-gray-900"}`}
                   >
                     {measurement.iconIds ? (
                       <span className="whitespace-nowrap">
