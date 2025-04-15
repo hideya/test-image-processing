@@ -44,10 +44,10 @@ export function LoadingScreen({
         <div className="h-14 w-14 rounded-full border-4 border-theme border-t-transparent animate-spin"></div>
         
         <div className="text-center animate-fade-in">
-          <h2 className="text-xl font-medium text-gray-800 dark:text-gray-200">
+          <h2 className="text-xl font-medium text-theme-dark dark:text-gray-200">
             {text}
           </h2>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-2 text-sm text-theme-dark dark:text-gray-400">
             Please wait while we prepare everything for you
           </p>
         </div>

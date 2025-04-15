@@ -16,7 +16,7 @@ import {
   X
 } from "lucide-react";
 import { IconPicker } from "@/components/icon-picker";
-import { Calendar } from "@/components/ui/calendar";
+import { ThemedCalendar } from "@/components/ui/themed-calendar";
 import { format } from "date-fns";
 import {
   Popover,
@@ -540,21 +540,21 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full flex justify-between items-center text-left rounded-lg font-normal"
+                    className="w-full flex justify-between items-center text-left rounded-lg font-normal text-theme-dark border-theme-light"
                   >
                     <div className="flex items-center">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-2 h-4 w-4 text-theme-dark font-medium" />
                       {customDate
                         ? format(customDate, "yyyy年 M月 d日")
                         : "Select date"}
                     </div>
-                    <span className="bg-gray-100 px-2 py-1 rounded-md text-xs">
+                    <span className="bg-theme-light/30 px-2 py-1 rounded-md text-xs text-theme-dark font-medium">
                       {customDate && formatTableDayPart(customDate.toISOString())}曜日
                     </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
+                  <ThemedCalendar
                     mode="single"
                     selected={customDate}
                     onSelect={(date) => {
@@ -628,14 +628,14 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                           className="p-2 hover:bg-gray-100 rounded-full"
                           onClick={() => setPreviewRotation((prev) => (prev - 90) % 360)}
                         >
-                          <RotateCcw className="h-5 w-5 text-gray-700" />
+                          <RotateCcw className="h-5 w-5 text-theme-dark" />
                         </button>
                         <button
                           type="button"
                           className="p-2 hover:bg-gray-100 rounded-full"
                           onClick={() => setPreviewRotation((prev) => (prev + 90) % 360)}
                         >
-                          <RotateCw className="h-5 w-5 text-gray-700" />
+                          <RotateCw className="h-5 w-5 text-theme-dark" />
                         </button>
                       </div>
                       
@@ -706,9 +706,9 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                 <Button 
                   variant="outline"
                   onClick={handleCloseSheet}
-                  className="rounded-full w-12 h-12 p-0 border-gray-300 shadow-md flex items-center justify-center bg-white hover:bg-gray-50"
+                  className="rounded-full w-12 h-12 p-0 border-theme shadow-md flex items-center justify-center bg-white hover:bg-gray-50"
                 >
-                  <X className="h-5 w-5 text-gray-500" />
+                  <X className="h-5 w-5 text-theme-dark" />
                 </Button>
               </div>
             )}
