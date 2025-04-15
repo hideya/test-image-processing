@@ -8,22 +8,14 @@ import { useMeasurementActions } from '@/hooks/use-measurement-actions';
 import { format } from 'date-fns';
 import { Check, Calendar, X } from 'lucide-react';
 import { getIconsFromIds } from '@/lib/icons';
+import { BaseMeasurement, CompleteMeasurement, isCompleteMeasurement } from '@/types/measurements';
 
-interface Measurement {
-  id: number;
-  date: string;
-  angle: number;
-  angle2: number;
-  imageId: number;
-  hashKey: string;
-  memo?: string;
-  iconIds?: string;
-}
+
 
 interface EditDetailsSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  measurement: Measurement | null;
+  measurement: BaseMeasurement | null;
 }
 
 export function EditDetailsSheet({ open, onOpenChange, measurement }: EditDetailsSheetProps) {
@@ -49,7 +41,7 @@ export function EditDetailsSheet({ open, onOpenChange, measurement }: EditDetail
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (measurement?.id) {
+    if (measurement && isCompleteMeasurement(measurement)) {
       updateMetadata({
         measurementId: measurement.id,
         memo: memo.trim() || undefined,
@@ -107,11 +99,11 @@ export function EditDetailsSheet({ open, onOpenChange, measurement }: EditDetail
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white p-3 rounded-lg text-center shadow-sm">
                   <p className="text-sm text-gray-500">Left Angle</p>
-                  <p className="text-2xl font-semibold text-blue-700">{measurement.angle.toFixed(1)}°</p>
+                  <p className="text-2xl font-semibold text-blue-700">{measurement.angle !== undefined ? measurement.angle.toFixed(1) : '-'}°</p>
                 </div>
                 <div className="bg-white p-3 rounded-lg text-center shadow-sm">
                   <p className="text-sm text-gray-500">Right Angle</p>
-                  <p className="text-2xl font-semibold text-purple-700">{measurement.angle2.toFixed(1)}°</p>
+                  <p className="text-2xl font-semibold text-purple-700">{measurement.angle2 !== undefined ? measurement.angle2.toFixed(1) : '-'}°</p>
                 </div>
               </div>
             </div>

@@ -2,20 +2,12 @@ import React, { useState } from "react";
 import { IconDisplay } from "@/components/icon-picker";
 import { MeasurementActionToolbar } from "./MeasurementActionToolbar";
 import { EditDetailsSheet } from "@/components/edit-details-sheet";
+import { BaseMeasurement } from "@/types/measurements";
 
-interface Measurement {
-  date: string;
-  angle?: number;
-  angle2?: number;
-  imageId?: number;
-  hashKey?: string;
-  memo?: string;
-  iconIds?: string;
-  id?: number; // We'll need the ID for API calls
-}
+// Using the BaseMeasurement type imported from shared types file
 
 interface MeasurementTableProps {
-  sortedMeasurements: Measurement[];
+  sortedMeasurements: BaseMeasurement[];
   selectedDate: string | null;
   setSelectedDate: (date: string | null) => void;
   setPulsingDot: (date: string | null) => void;
@@ -36,11 +28,11 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
   formatTableDayPart,
 }) => {
   const [activeActionRow, setActiveActionRow] = useState<string | null>(null);
-  const [editMeasurement, setEditMeasurement] = useState<Measurement | null>(null);
+  const [editMeasurement, setEditMeasurement] = useState<BaseMeasurement | null>(null);
   const [showEditSheet, setShowEditSheet] = useState(false);
   
   // Handle row click
-  const handleRowClick = (measurement: Measurement) => {
+  const handleRowClick = (measurement: BaseMeasurement) => {
     // Only show action toolbar for measurements that have data
     if (measurement.angle !== undefined) {
       // If clicking same row that has active actions, clear the selection
@@ -58,7 +50,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
   };
   
   // Open edit sheet for a measurement
-  const handleEditMeasurement = (measurement: Measurement) => {
+  const handleEditMeasurement = (measurement: BaseMeasurement) => {
     setEditMeasurement(measurement);
     setShowEditSheet(true);
     setActiveActionRow(null); // Hide the action toolbar
