@@ -641,12 +641,12 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                       
                       {/* Image Info & Change Button */}
                       <div className="flex items-center justify-between mt-4">
-                        <p className="text-sm text-gray-500 truncate max-w-[60%]">
+                        <p className="text-sm text-theme-dark truncate max-w-[60%]">
                           {selectedFile?.name}
                         </p>
                         <label
                           htmlFor="file-upload-sheet"
-                          className="text-sm text-blue-600 cursor-pointer"
+                          className="text-sm text-theme-dark cursor-pointer"
                         >
                           Change
                         </label>
@@ -661,7 +661,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
             {selectedFile && (
               <Button
                 onClick={handleUpload}
-                className="w-full py-6 rounded-xl text-base font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                className="w-full py-6 rounded-xl text-base font-medium bg-theme-dark hover:bg-theme text-white shadow-md hover:shadow-lg transition-all duration-200"
                 size="lg"
               >
                 <Upload className="mr-2 h-5 w-5" />
