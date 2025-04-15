@@ -378,7 +378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Thumbnail endpoint removed - no longer needed
 
-  // New endpoint to add/update metadata for an existing measurement
+  // Endpoint to add/update metadata for an existing measurement
   app.patch("/api/measurements/:id/metadata", isAuthenticated, async (req, res) => {
     try {
       const measurementId = parseInt(req.params.id);
@@ -413,6 +413,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating measurement metadata:", error);
       res.status(500).json({ message: "Failed to update measurement metadata" });
+    }
+  });
+
+  // Endpoint to delete a measurement
+  app.delete("/api/measurements/:id", isAuthenticated, async (req, res) => {
+    try {
+      const measurementId = parseInt(req.params.id);
+      
+      if (isNaN(measurementId)) {
+        return res.status(400).json({ message: "Invalid measurement ID" });
+      }
+      
+      // Get the existing measurement to verify ownership
+      const existingMeasurement = await storage.getMeasurementById(measurementId);
+      
+      if (!existingMeasurement) {
+        return res.status(404).json({ message: "Measurement not found" });
+      }
+      
+      // Verify the user owns this measurement
+      if (existingMeasurement.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      // Delete the measurement
+      await storage.deleteMeasurementById(measurementId);
+      
+      res.status(200).json({
+        success: true,
+        message: "Measurement deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting measurement:", error);
+      res.status(500).json({ message: "Failed to delete measurement" });
     }
   });
 

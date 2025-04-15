@@ -71,11 +71,21 @@ exports.handler = async (event, context) => {
     
     console.log('*** Request body fields:', { memo, iconIds });
     
-    // Normalize iconIds if needed
+    // Normalize iconIds - handle both empty arrays and strings properly
     let normalizedIconIds = iconIds;
-    if (Array.isArray(iconIds)) {
-      normalizedIconIds = iconIds.join(',');
-      console.log('*** Normalized iconIds from array:', normalizedIconIds);
+    if (iconIds === "") {
+      // Empty string should clear icons
+      normalizedIconIds = "";
+      console.log('*** Received empty string for iconIds, will clear icons');
+    } else if (Array.isArray(iconIds)) {
+      if (iconIds.length === 0) {
+        // Empty array should also clear icons
+        normalizedIconIds = "";
+        console.log('*** Received empty array for iconIds, will clear icons');
+      } else {
+        normalizedIconIds = iconIds.join(',');
+        console.log('*** Normalized iconIds from array:', normalizedIconIds);
+      }
     }
     
     // Get existing measurement to verify ownership

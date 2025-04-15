@@ -7,6 +7,12 @@
 # API redirects - these must come BEFORE the catch-all redirect
 # Specific API endpoint redirects
 [[redirects]]
+  from = "/api/measurements/:id"
+  to = "/.netlify/functions/delete-measurement/:id"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/images/upload"
   to = "/.netlify/functions/images-upload"
   status = 200

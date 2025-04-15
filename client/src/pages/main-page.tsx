@@ -25,6 +25,7 @@ interface Measurement {
   hashKey: string;
   memo?: string;
   iconIds?: string;
+  id?: number; // Added for edit/delete functionality
 }
 
 interface UploadResponse {

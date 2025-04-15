@@ -223,6 +223,7 @@ class DatabaseStorage {
     const result = await db.execute(sql`
       WITH daily_measurements AS (
         SELECT 
+          am.id,
           TO_CHAR(am.timestamp, 'YYYY-MM-DD') as date,
           am.angle,
           am.angle2,
@@ -241,7 +242,7 @@ class DatabaseStorage {
           am.timestamp >= ${startDate} AND
           am.timestamp <= ${endDate}
       )
-      SELECT date, angle, angle2, "imageId", "hashKey", memo, "iconIds"
+      SELECT id, date, angle, angle2, "imageId", "hashKey", memo, "iconIds"
       FROM daily_measurements
       WHERE rn = 1
       ORDER BY date
@@ -249,6 +250,7 @@ class DatabaseStorage {
 
     // Process results
     return result.rows.map(row => ({
+      id: row.id,
       date: row.date,
       angle: row.angle,
       angle2: row.angle2,
@@ -268,6 +270,7 @@ class DatabaseStorage {
     const result = await db.execute(sql`
       WITH daily_measurements AS (
         SELECT 
+          am.id,
           TO_CHAR(am.timestamp, 'YYYY-MM-DD') as date,
           am.angle,
           am.angle2,
@@ -286,7 +289,7 @@ class DatabaseStorage {
           am.timestamp >= ${startDate} AND
           am.timestamp <= ${endDate}
       )
-      SELECT date, angle, angle2, "imageId", "hashKey", memo, "iconIds"
+      SELECT id, date, angle, angle2, "imageId", "hashKey", memo, "iconIds"
       FROM daily_measurements
       WHERE rn = 1
       ORDER BY date
@@ -294,6 +297,7 @@ class DatabaseStorage {
 
     // Process results
     return result.rows.map(row => ({
+      id: row.id,
       date: row.date,
       angle: row.angle,
       angle2: row.angle2,

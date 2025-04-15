@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { IconDisplay } from "@/components/icon-picker";
+import { MeasurementActionToolbar } from "./MeasurementActionToolbar";
+import { EditDetailsSheet } from "@/components/edit-details-sheet";
 
 interface Measurement {
   date: string;
@@ -9,6 +11,7 @@ interface Measurement {
   hashKey?: string;
   memo?: string;
   iconIds?: string;
+  id?: number; // We'll need the ID for API calls
 }
 
 interface MeasurementTableProps {
@@ -32,9 +35,58 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
   formatTableDatePart,
   formatTableDayPart,
 }) => {
+  const [activeActionRow, setActiveActionRow] = useState<string | null>(null);
+  const [editMeasurement, setEditMeasurement] = useState<Measurement | null>(null);
+  const [showEditSheet, setShowEditSheet] = useState(false);
+  
+  // Handle row click
+  const handleRowClick = (measurement: Measurement) => {
+    // Only show action toolbar for measurements that have data
+    if (measurement.angle !== undefined) {
+      // If clicking same row that has active actions, clear the selection
+      if (activeActionRow === measurement.date) {
+        setActiveActionRow(null);
+        setSelectedDate(null);
+        setPulsingDot(null);
+      } else {
+        // Otherwise set this row as active
+        setActiveActionRow(measurement.date);
+        setSelectedDate(measurement.date);
+        setPulsingDot(measurement.date);
+      }
+    }
+  };
+  
+  // Open edit sheet for a measurement
+  const handleEditMeasurement = (measurement: Measurement) => {
+    setEditMeasurement(measurement);
+    setShowEditSheet(true);
+    setActiveActionRow(null); // Hide the action toolbar
+  };
   return (
-    <div className="max-h-[64rem] overflow-y-auto">
-      <table className="min-w-full divide-y divide-gray-200">
+    <div className="relative">
+      {/* Position action toolbar outside of the table structure */}
+      {activeActionRow && (
+        <div className="sticky top-0 z-50 flex justify-center w-full mb-2">
+          {sortedMeasurements.map((measurement) => {
+            if (activeActionRow === measurement.date && measurement.angle !== undefined && measurement.id) {
+              return (
+                <MeasurementActionToolbar
+                  key={`toolbar-${measurement.date}`}
+                  measurementId={measurement.id}
+                  date={measurement.date}
+                  onEdit={() => handleEditMeasurement(measurement)}
+                  onClose={() => setActiveActionRow(null)}
+                />
+              );
+            }
+            return null;
+          })}
+        </div>
+      )}
+
+      <div className="max-h-[64rem] overflow-y-auto">
+        <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
             <th className="w-10 pl-2 pr-0 py-1 text-center text-xs font-medium text-gray-500 uppercase">
@@ -76,16 +128,9 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                           ? "bg-white hover:bg-gray-50"
                           : "bg-gray-50 hover:bg-gray-100"
                     }`}
-                  onClick={() => {
-                    if (selectedDate === measurement.date) {
-                      setSelectedDate(null);
-                      setPulsingDot(null);
-                    } else {
-                      setPulsingDot(measurement.date);
-                      setSelectedDate(measurement.date);
-                    }
-                  }}
+                  onClick={() => handleRowClick(measurement)}
                 >
+                  {/* Action toolbar moved outside of the tr element */}
                   <td
                     className={`pl-1 pr-2 whitespace-nowrap text-sm ${isSelected ? "font-medium text-blue-900" : "text-gray-900"}`}
                   >
@@ -142,7 +187,21 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
             );
           })}
         </tbody>
-      </table>
+        </table>
+      </div>
+      
+      {/* Edit Details Sheet */}
+      <EditDetailsSheet
+        open={showEditSheet}
+        onOpenChange={(open) => {
+          setShowEditSheet(open);
+          if (!open) {
+            // When closing, clear the selected measurement
+            setEditMeasurement(null);
+          }
+        }}
+        measurement={editMeasurement}
+      />
     </div>
   );
 };

@@ -54,8 +54,8 @@ export interface IStorage {
   ): Promise<AngleMeasurement[]>;
   getLatestAngleMeasurementByDay(
     userId: number,
-    days: number
-  ): Promise<{date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo?: string, iconIds?: string}[]>;
+    days?: number
+  ): Promise<{id: number, date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo?: string, iconIds?: string}[]>;
 
   sessionStore: session.Store;
 
@@ -223,7 +223,7 @@ export class MemStorage implements IStorage {
   async getLatestAngleMeasurementByDay(
     userId: number,
     days: number = 30
-  ): Promise<{date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo?: string, iconIds?: string}[]> {
+  ): Promise<{id: number, date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo?: string, iconIds?: string}[]> {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
@@ -242,13 +242,14 @@ export class MemStorage implements IStorage {
       }
     }
 
-    // Convert to array of {date, angle, angle2, imageId, hashKey, memo, iconIds} objects
+    // Convert to array of {id, date, angle, angle2, imageId, hashKey, memo, iconIds} objects
     return Promise.all(
       Array.from(measurementsByDay.entries())
         .map(async ([date, measurement]) => {
           // Get the corresponding image information
           const image = await this.getImage(measurement.imageId);
           return {
+            id: measurement.id,
             date,
             angle: measurement.angle,
             angle2: measurement.angle2,
@@ -448,17 +449,17 @@ export class DatabaseStorage implements IStorage {
       .orderBy(angleMeasurements.timestamp);
   }
   
-  // New function to get angle measurements by date range in the same format as getLatestAngleMeasurementByDay
   async getAngleMeasurementsByDateRange(
     userId: number,
     startDate: Date,
     endDate: Date
-  ): Promise<{date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo?: string, iconIds?: string}[]> {
+  ): Promise<{id: number, date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo?: string, iconIds?: string}[]> {
     // Using SQL directly to get properly formatted results with image information
     // and one measurement per day (latest for each day)
-    const result = await db.execute<{date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo: string | null, iconIds: string | null}>(sql`
+    const result = await db.execute<{id: number, date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo: string | null, iconIds: string | null}>(sql`
       WITH daily_measurements AS (
         SELECT 
+          am.id,
           TO_CHAR(am.timestamp, 'YYYY-MM-DD') as date,
           am.angle,
           am.angle2,
@@ -477,7 +478,7 @@ export class DatabaseStorage implements IStorage {
           am.timestamp >= ${startDate} AND
           am.timestamp <= ${endDate}
       )
-      SELECT date, angle, angle2, "imageId", "hashKey", memo, "iconIds"
+      SELECT id, date, angle, angle2, "imageId", "hashKey", memo, "iconIds"
       FROM daily_measurements
       WHERE rn = 1
       ORDER BY date
@@ -485,6 +486,7 @@ export class DatabaseStorage implements IStorage {
 
     // Process results
     return result.rows.map(row => ({
+      id: row.id,
       date: row.date,
       angle: row.angle,
       angle2: row.angle2,
@@ -498,15 +500,16 @@ export class DatabaseStorage implements IStorage {
   async getLatestAngleMeasurementByDay(
     userId: number,
     days: number = 30
-  ): Promise<{date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo?: string, iconIds?: string}[]> {
+  ): Promise<{id: number, date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo?: string, iconIds?: string}[]> {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
     // Using SQL directly for this complex query with image information
-    const result = await db.execute<{date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo: string | null, iconIds: string | null}>(sql`
+    const result = await db.execute<{id: number, date: string, angle: number, angle2: number, imageId: number, hashKey: string, memo: string | null, iconIds: string | null}>(sql`
       WITH daily_measurements AS (
         SELECT 
+          am.id,
           TO_CHAR(am.timestamp, 'YYYY-MM-DD') as date,
           am.angle,
           am.angle2,
@@ -525,7 +528,7 @@ export class DatabaseStorage implements IStorage {
           am.timestamp >= ${startDate} AND
           am.timestamp <= ${endDate}
       )
-      SELECT date, angle, angle2, "imageId", "hashKey", memo, "iconIds"
+      SELECT id, date, angle, angle2, "imageId", "hashKey", memo, "iconIds"
       FROM daily_measurements
       WHERE rn = 1
       ORDER BY date
@@ -533,6 +536,7 @@ export class DatabaseStorage implements IStorage {
 
     // Process results
     return result.rows.map(row => ({
+      id: row.id,
       date: row.date,
       angle: row.angle,
       angle2: row.angle2,
