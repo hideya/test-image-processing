@@ -13,6 +13,47 @@
     background-color: #f5f5f5;
   }
   
+  /* Theme color utility classes for text and backgrounds */
+  .text-theme {
+    color: var(--theme-color);
+  }
+  
+  .text-theme-light {
+    color: var(--theme-color-light);
+  }
+  
+  .text-theme-dark {
+    color: var(--theme-color-dark);
+  }
+  
+  .bg-theme {
+    background-color: var(--theme-color);
+  }
+  
+  .bg-theme-light {
+    background-color: var(--theme-color-light);
+  }
+  
+  .bg-theme-dark {
+    background-color: var(--theme-color-dark);
+  }
+  
+  .border-theme {
+    border-color: var(--theme-color);
+  }
+  
+  .border-theme-light {
+    border-color: var(--theme-color-light);
+  }
+  
+  .border-theme-dark {
+    border-color: var(--theme-color-dark);
+  }
+  
+  .ring-theme {
+    --tw-ring-color: var(--theme-color);
+  }
+  
   /* Button pulse animation */
   @keyframes pulse {
     0% {
