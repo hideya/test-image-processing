@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
-import { Link } from "wouter";
 import { BaseMeasurement } from "@/types/measurements";
+import { UploadSheet } from "@/components/upload-sheet";
 
 
 
@@ -10,6 +10,7 @@ interface TodaySummaryProps {
   todayMeasurement: BaseMeasurement | undefined;
   isLoading?: boolean;
   formatTableDayPart: (dateStr: string) => string;
+  onUploadComplete?: () => void;
 }
 
 export const TodaySummary: React.FC<TodaySummaryProps> = ({
@@ -17,6 +18,7 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
   todayMeasurement,
   isLoading = false,
   formatTableDayPart,
+  onUploadComplete,
 }) => {
   console.log('Debug - TodaySummary props:', { 
     today: today.toISOString(), 
@@ -69,12 +71,12 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
                 </div>
               </>
             ) : (
-              <Link href="/upload">
+              <UploadSheet onComplete={onUploadComplete}>
                 <div className="flex flex-col items-center bg-white hover:opacity-75 transition-colors p-4 rounded-xl cursor-pointer">
                   <div className="text-theme-dark font-medium mb-1">No measurement today</div>
                   <div className="text-theme-dark text-sm">Tap to upload a photo</div>
                 </div>
-              </Link>
+              </UploadSheet>
             )}
           </div>
         </div>

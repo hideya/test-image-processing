@@ -3,11 +3,10 @@ import { MeasurementDeletionProvider } from "@/context/measurement-deletion-cont
 import { useAuth } from "../hooks/use-auth";
 import { queryClient, apiRequest, getAuthToken } from "../lib/queryClient";
 import { useSettings } from "@/hooks/use-settings";
-import { useToast } from "@/hooks/use-toast";
 import { useLoadingState } from "@/hooks/use-loading-state";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Settings, Upload, Plus } from "lucide-react";
+import { Loader2, Settings, Upload, Plus, CheckCircle } from "lucide-react";
 import {
   TodaySummary,
   MonthNavigation,
@@ -19,12 +18,23 @@ import { SettingsSheet } from "@/components/settings-sheet";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { BaseMeasurement, UploadResponse } from "@/types/measurements";
 
-
-
 export default function MainPage() {
   const { user, logoutMutation } = useAuth();
   const { settings } = useSettings();
-  const { toast } = useToast();
+  
+  // Success message state
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Clear success message after a delay
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000); // Hide message after 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const deletionPerformedRef = useRef(false);
 
@@ -382,11 +392,9 @@ export default function MainPage() {
   }, [measurements]);
 
   const handleUploadComplete = () => {
-    toast({
-      title: "Upload Complete",
-      description: "Your image has been processed and saved.",
-      variant: "success",
-    });
+    // Show success message directly in the UI
+    setSuccessMessage("Upload complete! Your image has been processed and saved.");
+
     // Refresh both data sources
     refetchMonthData(); 
     refetchTodayData();
@@ -404,6 +412,16 @@ export default function MainPage() {
         {/* Only hide UI elements during initial load */}
         {!showSplashScreen && (
           <>
+            {/* Success message banner - higher z-index to appear above sheet overlay */}
+            {successMessage && (
+              <div className="fixed top-4 left-0 right-0 z-[1000] flex justify-center">
+                <div className="bg-green-100 border-2 border-green-500 rounded-lg px-5 py-4 text-green-700 shadow-2xl flex items-center gap-3 animate-in fade-in-50 slide-in-from-top-10 duration-300 max-w-md backdrop-blur-sm">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <span className="font-semibold text-lg">{successMessage}</span>
+                </div>
+              </div>
+            )}
+            
             {/* Custom buttons for both upload and settings - matching styles */}
             {/* Fixed Upload Button (Center Bottom) */}
             <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center">
@@ -440,6 +458,7 @@ export default function MainPage() {
                   todayMeasurement={todayMeasurement}
                   isLoading={isTodayLoading}
                   formatTableDayPart={formatTableDayPart}
+                  onUploadComplete={handleUploadComplete}
                 />
                 
                 <div className="bg-white p-0 rounded-xl shadow-md">
@@ -467,15 +486,8 @@ export default function MainPage() {
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      {/* Section Title */}
-                      {/* <div className="mb-4 px-4">
-                        <h2 className="text-xl font-bold text-gray-800">Measurement History</h2>
-                        <p className="text-gray-500 text-sm">Track your progress over time</p>
-                      </div> */}
-                      
                       {/* Chart view */}
                       <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        {/* <h3 className="text-md font-medium text-gray-700 mb-3">Monthly Trend</h3> */}
                         <MeasurementChart
                           chartData={chartData}
                           chartDateRange={chartDateRange}
@@ -491,7 +503,6 @@ export default function MainPage() {
 
                       {/* Data Table */}
                       <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        {/* <h3 className="text-md font-medium text-gray-700 mb-3">Daily Records</h3> */}
                         <MeasurementTable 
                           sortedMeasurements={sortedMeasurements}
                           selectedDate={selectedDate}

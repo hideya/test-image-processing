@@ -49,8 +49,16 @@ export function useToast() {
       action: options.action,
     };
 
+    console.log('Toast created:', { 
+      id, 
+      title: options.title, 
+      variant: options.variant,
+      duration: options.duration
+    });
+
     setToasts((prevToasts) => {
       const nextToasts = [...prevToasts, newToast].slice(-TOAST_LIMIT);
+      console.log('Toast state updated:', nextToasts.length, 'toasts in queue');
       return nextToasts;
     });
 

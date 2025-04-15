@@ -4,7 +4,6 @@ import { Sheet, SheetContent } from "@/components/ui/themed-sheet";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient, getAuthToken } from "../lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { 
   Loader2, 
   RotateCw, 
@@ -84,7 +83,6 @@ interface UploadSheetProps {
 
 export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps) {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -193,11 +191,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
       return (await response.json()) as UploadResponse;
     },
     onSuccess: (data) => {
-      toast({
-        title: "Image processed successfully",
-        description: "You can now add notes and icons to this measurement.",
-        variant: "success",
-      });
+      // Success feedback handled by parent component through onComplete callback
 
       setProcessedAngles({
         angle: data.measurement.angle,
@@ -216,11 +210,8 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
       setPreviewRotation(0);
     },
     onError: (error: Error) => {
-      toast({
-        title: "Upload failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      // Display error message directly in UI instead of toast
+      alert("Upload failed: " + error.message);
       setCurrentStep(UploadStep.INITIAL);
     },
   });
@@ -260,34 +251,30 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
       return await response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Details saved",
-        description: "Your notes and icons have been saved successfully.",
-        variant: "success",
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });
+    // Update status in UI
+    setCurrentStep(UploadStep.COMPLETE);
+    
+    setMemo("");
+    setSelectedIcons([]);
+    
+      // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });
+    
+    // If onComplete callback is provided, call it
+    if (onComplete) {
+      // Call it immediately but keep the sheet open to show the success animation
+      onComplete();
       
-      setCurrentStep(UploadStep.COMPLETE);
-      
-      setMemo("");
-      setSelectedIcons([]);
-      
-      // If onComplete callback is provided, call it
-      if (onComplete) {
-        setTimeout(() => {
-          onComplete();
-          setOpen(false);
-        }, 1500); // Wait for the user to see the success message
-      }
+      // Close the sheet after a short delay
+      setTimeout(() => {
+        setOpen(false);
+      }, 1500); // Wait for the user to see the success message
+    }
     },
     onError: (error: Error) => {
-      toast({
-        title: "Failed to save details",
-        description: error.message,
-        variant: "destructive",
-      });
-      setCurrentStep(UploadStep.RESULTS);
+    // Display error in UI
+    alert("Failed to save details: " + error.message);
+        setCurrentStep(UploadStep.RESULTS);
     },
   });
 
@@ -433,30 +420,17 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
       } catch (error) {
         console.error("Error processing image:", error);
         setCurrentStep(UploadStep.INITIAL);
-        toast({
-          title: "Image processing failed",
-          description:
-            "There was an error processing the image. Please try again.",
-          variant: "destructive",
-        });
+        alert("There was an error processing the image. Please try again.");
       }
     } else {
-      toast({
-        title: "No file selected",
-        description: "Please select an image file to upload",
-        variant: "destructive",
-      });
+      alert("Please select an image file to upload");
     }
   };
 
   // Submit metadata
   const handleSubmitMetadata = () => {
     if (!currentMeasurementId) {
-      toast({
-        title: "Error",
-        description: "Missing measurement information. Please try again.",
-        variant: "destructive",
-      });
+      alert("Missing measurement information. Please try again.");
       return;
     }
     
@@ -566,11 +540,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                         // Ensure the date is not in the future
                         const currentDate = new Date();
                         if (newDate > currentDate) {
-                          toast({
-                            title: "Invalid date",
-                            description: "You cannot select a date in the future.",
-                            variant: "destructive",
-                          });
+                          alert("You cannot select a date in the future.");
                           return;
                         }
                         

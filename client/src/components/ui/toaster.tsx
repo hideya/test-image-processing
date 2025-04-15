@@ -29,11 +29,13 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts && toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts && toasts.map(function ({ id, title, description, action, variant, ...props }) {
+        // Add special styling for success toasts
+        const isSuccessToast = variant === 'success';
         return (
-          <Toast key={id} {...props}>
+          <Toast key={id} variant={variant} {...props} className={isSuccessToast ? 'border-2 shadow-xl' : ''}>
             <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
+              {title && <ToastTitle className={isSuccessToast ? 'text-lg' : ''}>{title}</ToastTitle>}
               {description && (
                 <ToastDescription>{description}</ToastDescription>
               )}
