@@ -47,11 +47,8 @@ export interface IStorage {
   deleteMeasurementById(id: number): Promise<void>;
   updateMeasurementMetadata(measurementId: number, metadata: { memo?: string; iconIds?: string }): Promise<AngleMeasurement | undefined>;
   getMeasurementById(id: number): Promise<AngleMeasurement | undefined>;
-  getAngleMeasurementsByUserIdAndDateRange(
-    userId: number, 
-    startDate: Date, 
-    endDate: Date
-  ): Promise<AngleMeasurement[]>;
+  // Removed getAngleMeasurementsByUserIdAndDateRange in favor of
+  // getAngleMeasurementsByDateRange which provides a consistent API response format
   getLatestAngleMeasurementByDay(
     userId: number,
     days?: number
@@ -206,19 +203,8 @@ export class MemStorage implements IStorage {
     return updatedMeasurement;
   }
 
-  async getAngleMeasurementsByUserIdAndDateRange(
-    userId: number, 
-    startDate: Date, 
-    endDate: Date
-  ): Promise<AngleMeasurement[]> {
-    return Array.from(this.angleMeasurements.values())
-      .filter(measurement => 
-        measurement.userId === userId &&
-        measurement.timestamp >= startDate &&
-        measurement.timestamp <= endDate
-      )
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-  }
+  // Method removed in favor of getAngleMeasurementsByDateRange
+  // which provides a consistent API response format
 
   async getLatestAngleMeasurementByDay(
     userId: number,
@@ -431,23 +417,8 @@ export class DatabaseStorage implements IStorage {
     return updatedMeasurement;
   }
 
-  async getAngleMeasurementsByUserIdAndDateRange(
-    userId: number, 
-    startDate: Date, 
-    endDate: Date
-  ): Promise<AngleMeasurement[]> {
-    return await db
-      .select()
-      .from(angleMeasurements)
-      .where(
-        and(
-          eq(angleMeasurements.userId, userId),
-          sql`${angleMeasurements.timestamp} >= ${startDate}`,
-          sql`${angleMeasurements.timestamp} <= ${endDate}`
-        )
-      )
-      .orderBy(angleMeasurements.timestamp);
-  }
+  // Method removed in favor of getAngleMeasurementsByDateRange
+  // which provides a consistent API response format
   
   async getAngleMeasurementsByDateRange(
     userId: number,

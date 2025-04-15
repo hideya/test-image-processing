@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { MeasurementDeletionProvider } from "@/context/measurement-deletion-context";
 import { useAuth } from "../hooks/use-auth";
 import { queryClient, apiRequest, getAuthToken } from "../lib/queryClient";
 import { useSettings } from "@/hooks/use-settings";
@@ -79,8 +80,11 @@ export default function MainPage() {
   } = useQuery<Measurement[]>({
     queryKey: ["/api/angle-data", "today", todayDate],
     queryFn: async () => {
+      console.log('Fetching today data for:', todayDate);
       const res = await apiRequest('GET', `/api/angle-data?start=${todayDate}&end=${todayDate}`);
-      return res.json();
+      const data = await res.json();
+      console.log('Today API response:', data);
+      return data;
     },
     staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
   });
@@ -100,11 +104,14 @@ export default function MainPage() {
       const lastDay = new Date(year, month + 1, 0);
       
       // Convert to ISO strings for the API
-      const startDate = firstDay.toISOString();
-      const endDate = lastDay.toISOString();
+      const startDate = firstDay.toISOString().split('T')[0];
+      const endDate = lastDay.toISOString().split('T')[0];
       
+      console.log(`Fetching month data from ${startDate} to ${endDate}`);
       const res = await apiRequest('GET', `/api/angle-data?start=${startDate}&end=${endDate}`);
-      return res.json();
+      const data = await res.json();
+      console.log('Month API response (first 2 items):', data.slice(0, 2));
+      return data;
     },
   });
   
@@ -117,7 +124,7 @@ export default function MainPage() {
     if (todayData.length > 0 && !dataMap.has(todayDate)) {
       dataMap.set(todayDate, todayData[0]);
     }
-    
+    console.log("******", todayDate, todayData.length, todayData[0]);
     // Convert back to array
     return Array.from(dataMap.values());
   }, [monthData, todayData, todayDate]);
@@ -244,10 +251,59 @@ export default function MainPage() {
     );
   }, [measurements]);
   
+  // State to store the initial today measurement (won't change when navigating months)
+  const [cachedTodayMeasurement, setCachedTodayMeasurement] = useState<Measurement | undefined>(undefined);
+
   // Get today's measurement from the today data query
   const todayMeasurement = useMemo(() => {
-    return todayData.length > 0 ? todayData[0] : undefined;
-  }, [todayData]);
+    // Use the cached data if it exists
+    if (cachedTodayMeasurement) {
+      return cachedTodayMeasurement; 
+    }
+    
+    // Primary source: Check if we have data in todayData
+    if (todayData.length > 0) {
+      return todayData[0];
+    }
+    
+    // Fallback source: Check if there's matching data in monthData
+    const todayInMonthData = monthData.find(item => item.date === todayDate);
+    
+    return todayInMonthData;
+  }, [todayData, monthData, todayDate, cachedTodayMeasurement]);
+
+  // Effect to cache the today measurement when it first loads
+  useEffect(() => {
+    if (todayMeasurement && !cachedTodayMeasurement) {
+      console.log('Caching today measurement:', todayMeasurement);
+      setCachedTodayMeasurement(todayMeasurement);
+    }
+  }, [todayMeasurement, cachedTodayMeasurement]);
+
+  // Update cached today measurement when todayData changes (e.g., after a new upload)
+  useEffect(() => {
+    if (todayData.length > 0 && todayData[0].date === todayDate) {
+      console.log('Updating cached today measurement after data change');
+      setCachedTodayMeasurement(todayData[0]);
+    }
+  }, [todayData, todayDate]);
+
+  // Function to handle when a measurement is deleted
+  const handleMeasurementDeleted = useCallback((measurementId: number, date: string) => {
+    console.log(`Measurement deleted: ID ${measurementId}, date ${date}`);
+    
+    // If today's measurement was deleted, we need to clear the cached value
+    if (date === todayDate && cachedTodayMeasurement?.id === measurementId) {
+      console.log('Today\'s measurement was deleted, clearing cached measurement');
+      setCachedTodayMeasurement(undefined);
+      
+      // Force refresh today's data to ensure it's properly cleared
+      refetchTodayData();
+    }
+    
+    // Always refresh month data
+    refetchMonthData();
+  }, [todayDate, cachedTodayMeasurement, refetchTodayData, refetchMonthData]);
 
   const { chartDateRange, chartData } = useMemo(() => {
     // Get all dates in current month
@@ -319,124 +375,134 @@ export default function MainPage() {
       description: "Your image has been processed and saved.",
       variant: "success",
     });
-    refetchMonthData(); // Refresh the month data after upload
-    refetchTodayData(); // Refresh today's data after upload
+    // Refresh both data sources
+    refetchMonthData(); 
+    refetchTodayData();
+    
+    // Set a small timeout to ensure the latest data is fetched and processed
+    setTimeout(() => {
+      if (todayData.length > 0) {
+        setCachedTodayMeasurement(todayData[0]);
+      }
+    }, 500);
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* Global Loading Screen - only shown on initial page load */}
-      <LoadingScreen show={showSplashScreen} text="Loading your measurements" />
-      
-      {/* Only hide UI elements during initial load */}
-      {!showSplashScreen && (
-        <>
-          {/* Custom buttons for both upload and settings - matching styles */}
-          {/* Fixed Upload Button (Center Bottom) */}
-          <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center">
-            <div className="relative inline-block group">
-              <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Upload</div>
-              <UploadSheet onComplete={handleUploadComplete}>
-                <button
-                  aria-label="Upload new image"
-                  className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
-                  <Plus className="w-6 h-6" />
-                </button>
-              </UploadSheet>
-            </div>
-          </div>
-
-          {/* Fixed Settings Button (Bottom Right) */}
-          <div className="fixed bottom-4 right-8 z-50">
-            <div className="relative inline-block group">
-              <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Settings</div>
-              <SettingsSheet>
-                <button
-                  aria-label="Open settings"
-                  className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
-                  <Settings className="w-6 h-6" />
-                </button>
-              </SettingsSheet>
-            </div>
-          </div>
-
-          <div className="max-w-6xl mx-auto pb-20"> {/* Increased padding bottom for floating buttons */}
-            <div className="grid grid-cols-1 gap-2">
-              <TodaySummary
-                today={today}
-                todayMeasurement={todayMeasurement}
-                isLoading={isTodayLoading}
-                formatTableDayPart={formatTableDayPart}
-              />
-              
-              <div className="bg-white p-0 rounded-xl shadow-md">
-                <MonthNavigation
-                  currentViewMonth={currentViewMonth}
-                  setCurrentViewMonth={setCurrentViewMonth}
-                />
-                {isLoading ? (
-                  <div className="py-10 flex justify-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="h-10 w-10 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
-                      <p className="text-sm text-gray-500">
-                        Loading measurement data for {format(currentViewMonth, 'MMMM yyyy')}...
-                      </p>
-                    </div>
-                  </div>
-                ) : measurements.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">
-                      No measurement data available yet.
-                    </p>
-                    <p className="text-gray-500 text-sm mt-1">
-                      Upload an image to see results.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Section Title */}
-                    <div className="mb-4 px-4">
-                      <h2 className="text-xl font-bold text-gray-800">Measurement History</h2>
-                      <p className="text-gray-500 text-sm">Track your progress over time</p>
-                    </div>
-                    
-                    {/* Chart view */}
-                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                      <h3 className="text-md font-medium text-gray-700 mb-3">Monthly Trend</h3>
-                      <MeasurementChart
-                        chartData={chartData}
-                        chartDateRange={chartDateRange}
-                        selectedDate={selectedDate}
-                        setSelectedDate={setSelectedDate}
-                        pulsingDot={pulsingDot}
-                        setPulsingDot={setPulsingDot}
-                        formatSimpleDate={formatSimpleDate}
-                        isSunday={isSunday}
-                        isSaturday={isSaturday}
-                      />
-                    </div>
-
-                    {/* Data Table */}
-                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                      <h3 className="text-md font-medium text-gray-700 mb-3">Daily Records</h3>
-                      <MeasurementTable 
-                        sortedMeasurements={sortedMeasurements}
-                        selectedDate={selectedDate}
-                        setSelectedDate={setSelectedDate}
-                        setPulsingDot={setPulsingDot}
-                        isSunday={isSunday}
-                        isSaturday={isSaturday}
-                        formatTableDatePart={formatTableDatePart}
-                        formatTableDayPart={formatTableDayPart}
-                      />
-                    </div>
-                  </div>
-                )}
+    <MeasurementDeletionProvider onMeasurementDeleted={handleMeasurementDeleted}>
+      <div className="bg-gray-50 min-h-screen">
+        {/* Global Loading Screen - only shown on initial page load */}
+        <LoadingScreen show={showSplashScreen} text="Loading your measurements" />
+        
+        {/* Only hide UI elements during initial load */}
+        {!showSplashScreen && (
+          <>
+            {/* Custom buttons for both upload and settings - matching styles */}
+            {/* Fixed Upload Button (Center Bottom) */}
+            <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center">
+              <div className="relative inline-block group">
+                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Upload</div>
+                <UploadSheet onComplete={handleUploadComplete}>
+                  <button
+                    aria-label="Upload new image"
+                    className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
+                    <Plus className="w-6 h-6" />
+                  </button>
+                </UploadSheet>
               </div>
             </div>
-          </div>
-        </>
-      )}
-    </div>
+
+            {/* Fixed Settings Button (Bottom Right) */}
+            <div className="fixed bottom-4 right-8 z-50">
+              <div className="relative inline-block group">
+                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">Settings</div>
+                <SettingsSheet>
+                  <button
+                    aria-label="Open settings"
+                    className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition-all duration-200 hover:shadow-2xl transform hover:-translate-y-1">
+                    <Settings className="w-6 h-6" />
+                  </button>
+                </SettingsSheet>
+              </div>
+            </div>
+
+            <div className="max-w-6xl mx-auto pb-20"> {/* Increased padding bottom for floating buttons */}
+              <div className="grid grid-cols-1 gap-2">
+                <TodaySummary
+                  today={today}
+                  todayMeasurement={todayMeasurement}
+                  isLoading={isTodayLoading}
+                  formatTableDayPart={formatTableDayPart}
+                />
+                
+                <div className="bg-white p-0 rounded-xl shadow-md">
+                  <MonthNavigation
+                    currentViewMonth={currentViewMonth}
+                    setCurrentViewMonth={setCurrentViewMonth}
+                  />
+                  {isLoading ? (
+                    <div className="py-10 flex justify-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="h-10 w-10 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+                        <p className="text-sm text-gray-500">
+                          Loading measurement data for {format(currentViewMonth, 'MMMM yyyy')}...
+                        </p>
+                      </div>
+                    </div>
+                  ) : measurements.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">
+                        No measurement data available yet.
+                      </p>
+                      <p className="text-gray-500 text-sm mt-1">
+                        Upload an image to see results.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Section Title */}
+                      <div className="mb-4 px-4">
+                        <h2 className="text-xl font-bold text-gray-800">Measurement History</h2>
+                        <p className="text-gray-500 text-sm">Track your progress over time</p>
+                      </div>
+                      
+                      {/* Chart view */}
+                      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <h3 className="text-md font-medium text-gray-700 mb-3">Monthly Trend</h3>
+                        <MeasurementChart
+                          chartData={chartData}
+                          chartDateRange={chartDateRange}
+                          selectedDate={selectedDate}
+                          setSelectedDate={setSelectedDate}
+                          pulsingDot={pulsingDot}
+                          setPulsingDot={setPulsingDot}
+                          formatSimpleDate={formatSimpleDate}
+                          isSunday={isSunday}
+                          isSaturday={isSaturday}
+                        />
+                      </div>
+
+                      {/* Data Table */}
+                      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <h3 className="text-md font-medium text-gray-700 mb-3">Daily Records</h3>
+                        <MeasurementTable 
+                          sortedMeasurements={sortedMeasurements}
+                          selectedDate={selectedDate}
+                          setSelectedDate={setSelectedDate}
+                          setPulsingDot={setPulsingDot}
+                          isSunday={isSunday}
+                          isSaturday={isSaturday}
+                          formatTableDatePart={formatTableDatePart}
+                          formatTableDayPart={formatTableDayPart}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </MeasurementDeletionProvider>
   );
 }

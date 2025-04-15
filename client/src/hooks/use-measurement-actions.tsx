@@ -1,7 +1,25 @@
-import { useState } from 'react';
+import { useState, createContext, useContext } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest, getAuthToken } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+
+// Create a context for measurement actions to communicate with the main page
+interface MeasurementActionsContextProps {
+  onMeasurementDeleted?: (measurementId: number, date: string) => void;
+}
+
+const MeasurementActionsContext = createContext<MeasurementActionsContextProps>({});
+
+export const MeasurementActionsProvider = ({ children, onMeasurementDeleted }: { 
+  children: React.ReactNode;
+  onMeasurementDeleted?: (measurementId: number, date: string) => void; 
+}) => {
+  return (
+    <MeasurementActionsContext.Provider value={{ onMeasurementDeleted }}>
+      {children}
+    </MeasurementActionsContext.Provider>
+  );
+};
 
 interface Measurement {
   id: number;
@@ -30,6 +48,7 @@ export function useMeasurementActions() {
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { onMeasurementDeleted } = useContext(MeasurementActionsContext);
 
   // Mutation for updating measurement metadata (memo & icons)
   const updateMetadataMutation = useMutation({
@@ -98,7 +117,7 @@ export function useMeasurementActions() {
 
   // Mutation for deleting a measurement
   const deleteMeasurementMutation = useMutation({
-    mutationFn: async (measurementId: number) => {
+    mutationFn: async ({ measurementId, date }: { measurementId: number, date: string }) => {
       setIsDeleting(true);
       
       const token = getAuthToken();
@@ -120,14 +139,24 @@ export function useMeasurementActions() {
         throw new Error(errorData.message || "Failed to delete measurement");
       }
 
-      return await response.json();
+      // Return both the response data and date for onSuccess callback
+      return { 
+        data: await response.json(),
+        measurementId,
+        date
+      };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast({
         title: "Measurement deleted",
         description: "The measurement has been permanently removed.",
         variant: "success",
       });
+
+      // Notify the parent component about the deletion if callback exists
+      if (onMeasurementDeleted) {
+        onMeasurementDeleted(result.measurementId, result.date);
+      }
 
       // Invalidate the relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/angle-data"] });

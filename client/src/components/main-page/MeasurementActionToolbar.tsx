@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useMeasurementActions } from '@/hooks/use-measurement-actions';
+import { useMeasurementDeletion } from '@/context/measurement-deletion-context';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,7 @@ export const MeasurementActionToolbar: React.FC<MeasurementActionToolbarProps> =
   style,
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const { onMeasurementDeleted } = useMeasurementDeletion();
   const { deleteMeasurement, isDeleting } = useMeasurementActions();
 
   const handleEdit = (e: React.MouseEvent) => {
@@ -45,6 +47,7 @@ export const MeasurementActionToolbar: React.FC<MeasurementActionToolbarProps> =
 
   const confirmDelete = () => {
     deleteMeasurement(measurementId);
+    onMeasurementDeleted(measurementId, date);
     setShowDeleteConfirm(false);
     onClose();
   };

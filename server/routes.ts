@@ -257,14 +257,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const endDate = new Date(req.query.end as string);
         
         console.log(`Fetching measurements for date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+        console.log(`Raw date strings from request: start=${req.query.start}, end=${req.query.end}`);
         
-        // Get angle measurements for the specified date range
+        // Get angle measurements for the specified date range with consistent format
         const measurements = await storage.getAngleMeasurementsByDateRange(
           userId,
           startDate,
           endDate
         );
         
+        console.log(`Returning ${measurements.length} measurements with YYYY-MM-DD date format`);
+        if (measurements.length > 0) {
+          console.log('First measurement:', JSON.stringify(measurements[0]));
+        } else {
+          console.log('No measurements found for this date range');
+        }
         res.json(measurements);
       } else {
         // Fallback to days parameter if no date range provided

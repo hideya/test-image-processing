@@ -202,19 +202,8 @@ class DatabaseStorage {
     return updatedMeasurement;
   }
 
-  async getAngleMeasurementsByUserIdAndDateRange(userId, startDate, endDate) {
-    return await db
-      .select()
-      .from(angleMeasurements)
-      .where(
-        and(
-          eq(angleMeasurements.userId, userId),
-          sql`${angleMeasurements.timestamp} >= ${startDate}`,
-          sql`${angleMeasurements.timestamp} <= ${endDate}`
-        )
-      )
-      .orderBy(angleMeasurements.timestamp);
-  }
+  // Method removed in favor of getAngleMeasurementsByDateRange
+  // which provides a consistent API response format
   
   // New function to get angle measurements by date range in the same format as getLatestAngleMeasurementByDay
   async getAngleMeasurementsByDateRange(userId, startDate, endDate) {
