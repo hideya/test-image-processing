@@ -23,7 +23,7 @@ export function Header() {
   const { user, logoutMutation } = useAuth();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between">
       <h1 className="text-xl text-theme-dark font-semibold pl-2">{getPageTitle()}</h1>
       {/* Add any other header elements like user profile, notifications, etc. */}
       <div className="flex items-center gap-4">

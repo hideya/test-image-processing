@@ -74,7 +74,7 @@ export function EditDetailsSheet({ open, onOpenChange, measurement }: EditDetail
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-xl">
         <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
-          <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />
+          <div className="w-12 h-1 rounded-full bg-stone-300 mt-3 mb-1" />
         </div>
         <SheetHeader className="pt-6 pb-4">
           <SheetTitle>Edit Measurement Details</SheetTitle>
@@ -98,11 +98,11 @@ export function EditDetailsSheet({ open, onOpenChange, measurement }: EditDetail
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white p-3 rounded-lg text-center shadow-sm">
-                  <p className="text-sm text-gray-500">Left Angle</p>
+                  <p className="text-sm text-stone-500">Left Angle</p>
                   <p className="text-2xl font-semibold text-blue-700">{measurement.angle !== undefined ? measurement.angle.toFixed(1) : '-'}°</p>
                 </div>
                 <div className="bg-white p-3 rounded-lg text-center shadow-sm">
-                  <p className="text-sm text-gray-500">Right Angle</p>
+                  <p className="text-sm text-stone-500">Right Angle</p>
                   <p className="text-2xl font-semibold text-purple-700">{measurement.angle2 !== undefined ? measurement.angle2.toFixed(1) : '-'}°</p>
                 </div>
               </div>
@@ -117,9 +117,9 @@ export function EditDetailsSheet({ open, onOpenChange, measurement }: EditDetail
                   onChange={(e) => setMemo(e.target.value)}
                   placeholder="Add notes about this measurement..."
                   maxLength={100}
-                  className="bg-gray-50 border-gray-200"
+                  className="bg-stone-50 border-stone-200"
                 />
-                <p className="text-xs text-gray-500 text-right">{memo.length}/100</p>
+                <p className="text-xs text-stone-500 text-right">{memo.length}/100</p>
               </div>
               
               <div className="space-y-2">
@@ -131,7 +131,7 @@ export function EditDetailsSheet({ open, onOpenChange, measurement }: EditDetail
                     </p>
                   )}
                 </div>
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <div className="bg-stone-50 p-3 rounded-lg border border-stone-200">
                   <IconPicker 
                     selectedIcons={selectedIcons}
                     onChange={setSelectedIcons}

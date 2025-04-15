@@ -91,7 +91,7 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-md w-full">
           <div className="text-center">
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            <h2 className="mt-6 text-3xl font-extrabold text-stone-900">
               {isLogin ? "Sign in to your account" : "Create a new account"}
             </h2>
           </div>
@@ -113,7 +113,7 @@ export default function AuthPage() {
                     type="text"
                     autoComplete="username"
                     {...loginForm.register("username")}
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-stone-300 placeholder-stone-500 text-stone-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                     placeholder="Username"
                   />
                   {loginForm.formState.errors.username && (
@@ -131,7 +131,7 @@ export default function AuthPage() {
                     type="password"
                     autoComplete="current-password"
                     {...loginForm.register("password")}
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-stone-300 placeholder-stone-500 text-stone-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                     placeholder="Password"
                   />
                   {loginForm.formState.errors.password && (
@@ -171,7 +171,7 @@ export default function AuthPage() {
                     type="text"
                     autoComplete="username"
                     {...registerForm.register("username")}
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-stone-300 placeholder-stone-500 text-stone-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                     placeholder="Username"
                   />
                   {registerForm.formState.errors.username && (
@@ -189,7 +189,7 @@ export default function AuthPage() {
                     type="email"
                     autoComplete="email"
                     {...registerForm.register("email")}
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-stone-300 placeholder-stone-500 text-stone-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                     placeholder="Email address"
                   />
                   {registerForm.formState.errors.email && (
@@ -207,7 +207,7 @@ export default function AuthPage() {
                     type="password"
                     autoComplete="new-password"
                     {...registerForm.register("password")}
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-stone-300 placeholder-stone-500 text-stone-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                     placeholder="Password"
                   />
                   {registerForm.formState.errors.password && (
@@ -225,7 +225,7 @@ export default function AuthPage() {
                     type="password"
                     autoComplete="new-password"
                     {...registerForm.register("confirmPassword")}
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-stone-300 placeholder-stone-500 text-stone-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                     placeholder="Confirm Password"
                   />
                   {registerForm.formState.errors.confirmPassword && (
@@ -247,7 +247,7 @@ export default function AuthPage() {
             </form>
           )}
           <div className="flex justify-center mt-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-stone-600">
               {isLogin ? "Don't have an account? " : "Already have an account? "}
               <button
                 onClick={() => setIsLogin(!isLogin)}

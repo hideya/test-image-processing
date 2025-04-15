@@ -93,7 +93,7 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
         ) : (
           <button
             type="button"
-            className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 rounded-md py-2 md:flex-row md:gap-2"
+            className="inline-flex flex-col items-center justify-center px-5 hover:bg-stone-50 rounded-md py-2 md:flex-row md:gap-2"
             onClick={() => setOpen(true)}
           >
             <SettingsIcon className="w-6 h-6" />
@@ -109,7 +109,7 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
         <SheetDescription>
         </SheetDescription>
         <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
-          <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />
+          <div className="w-12 h-1 rounded-full bg-stone-300 mt-3 mb-1" />
         </div>
         <div className="pt-6 pb-20 px-6">
           <div className="mx-auto max-w-md">
@@ -126,23 +126,23 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
                 </Button>
               </div>
 
-              <Card className="shadow-md rounded-xl border border-gray-200">
+              <Card className="shadow-md rounded-xl border border-stone-200">
                 <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-base">Account Information</CardTitle>
+                  <CardTitle className="text-base text-stone-600">Account Information</CardTitle>
                   <CardDescription className="text-xs"></CardDescription>
                 </CardHeader>
                 <CardContent className="py-2 px-4">
                   <div className="space-y-2">
                     <div className="flex justify-between py-2 border-b">
-                      <span className="font-medium text-gray-500">Username</span>
+                      <span className="font-medium text-stone-500">Username</span>
                       <span className="font-medium">{user?.username}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
-                      <span className="font-medium text-gray-500">Email</span>
+                      <span className="font-medium text-stone-500">Email</span>
                       <span>{user?.email}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
-                      <span className="font-medium text-gray-500">
+                      <span className="font-medium text-stone-500">
                         Account Created
                       </span>
                       <span>April 2025</span>
@@ -151,7 +151,7 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
                 </CardContent>
               </Card>
 
-              <Card className="shadow-md rounded-xl border border-gray-200">
+              <Card className="shadow-md rounded-xl border border-stone-200">
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-base text-theme-dark">Appearance Settings</CardTitle>
                   <CardDescription className="text-xs"></CardDescription>

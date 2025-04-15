@@ -487,7 +487,7 @@ export default function MainPage() {
                   ) : (
                     <div className="space-y-6">
                       {/* Chart view */}
-                      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                      <div className="bg-white p-4 rounded-xl border border-stone-100 shadow-sm">
                         <MeasurementChart
                           chartData={chartData}
                           chartDateRange={chartDateRange}
@@ -502,7 +502,7 @@ export default function MainPage() {
                       </div>
 
                       {/* Data Table */}
-                      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                      <div className="bg-white p-4 rounded-xl border border-stone-100 shadow-sm">
                         <MeasurementTable 
                           sortedMeasurements={sortedMeasurements}
                           selectedDate={selectedDate}

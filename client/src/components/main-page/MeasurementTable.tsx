@@ -193,7 +193,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                 >
                   {/* Action toolbar moved outside of the tr element */}
                   <td
-                    className={`pl-1 pr-2 whitespace-nowrap text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-gray-900"}`}
+                    className={`pl-1 pr-2 whitespace-nowrap text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-stone-900"}`}
                   >
                     <div 
                       className={`text-right leading-tight flex items-center justify-end ${dateTextColor}`}

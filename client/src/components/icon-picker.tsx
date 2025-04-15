@@ -43,8 +43,8 @@ export function IconPicker({
             size="icon"
             className={`${buttonSize} rounded-full hover:bg-white ${
               selectedIcons.includes(icon.id)
-                ? "bg-white text-gray-600 ring-2 ring-blue-300" // White background with lighter text when selected
-                : "bg-gray-200 text-gray-800" // Gray background when not selected
+                ? "bg-white text-stone-600 ring-2 ring-blue-300" // White background with lighter text when selected
+                : "bg-stone-200 text-stone-800" // Gray background when not selected
             }`}
             onClick={() => handleIconClick(icon.id)}
           >

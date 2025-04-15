@@ -25,7 +25,7 @@ export function LoadingScreen({
   if (!show) return null;
   
   return (
-    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col items-center justify-center transition-opacity duration-300 ease-in-out">
+    <div className="fixed inset-0 bg-white dark:bg-stone-900 z-50 flex flex-col items-center justify-center transition-opacity duration-300 ease-in-out">
       <div className="flex flex-col items-center space-y-8 px-4 text-center">
         {logoUrl ? (
           <div className="mb-4 animate-fade-in">
@@ -44,10 +44,10 @@ export function LoadingScreen({
         <div className="h-14 w-14 rounded-full border-4 border-theme border-t-transparent animate-spin"></div>
         
         <div className="text-center animate-fade-in">
-          <h2 className="text-xl font-medium text-theme-dark dark:text-gray-200">
+          <h2 className="text-xl font-medium text-theme-dark dark:text-stone-200">
             {text}
           </h2>
-          <p className="mt-2 text-sm text-theme-dark dark:text-gray-400">
+          <p className="mt-2 text-sm text-theme-dark dark:text-stone-400">
             Please wait while we prepare everything for you
           </p>
         </div>

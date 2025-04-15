@@ -596,14 +596,14 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow">
                         <button
                           type="button"
-                          className="p-2 hover:bg-gray-100 rounded-full"
+                          className="p-2 hover:bg-stone-100 rounded-full"
                           onClick={() => setPreviewRotation((prev) => (prev - 90) % 360)}
                         >
                           <RotateCcw className="h-5 w-5 text-theme-dark" />
                         </button>
                         <button
                           type="button"
-                          className="p-2 hover:bg-gray-100 rounded-full"
+                          className="p-2 hover:bg-stone-100 rounded-full"
                           onClick={() => setPreviewRotation((prev) => (prev + 90) % 360)}
                         >
                           <RotateCw className="h-5 w-5 text-theme-dark" />
@@ -658,12 +658,12 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div className="bg-gray-50 p-3 rounded-lg text-center">
-                      <p className="text-sm text-gray-500">Left Angle</p>
+                    <div className="bg-stone-50 p-3 rounded-lg text-center">
+                      <p className="text-sm text-stone-500">Left Angle</p>
                       <p className="text-xl font-semibold">{processedAngles.angle.toFixed(2)}°</p>
                     </div>
-                    <div className="bg-gray-50 p-3 rounded-lg text-center">
-                      <p className="text-sm text-gray-500">Right Angle</p>
+                    <div className="bg-stone-50 p-3 rounded-lg text-center">
+                      <p className="text-sm text-stone-500">Right Angle</p>
                       <p className="text-xl font-semibold">{processedAngles.angle2.toFixed(2)}°</p>
                     </div>
                   </div>
@@ -694,20 +694,20 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
             </div>
             
             <div className="text-center">
-              <h3 className="text-xl font-medium text-gray-900 mb-2">Processing Image</h3>
-              <p className="text-gray-500 max-w-xs mx-auto">
+              <h3 className="text-xl font-medium text-stone-900 mb-2">Processing Image</h3>
+              <p className="text-stone-500 max-w-xs mx-auto">
                 We're analyzing your image and calculating the angles. This may take a moment.
               </p>
             </div>
             
             <div className="w-full max-w-md space-y-2">
-              <div className="relative h-3 w-full overflow-hidden rounded-full bg-gray-200">
+              <div className="relative h-3 w-full overflow-hidden rounded-full bg-stone-200">
                 <div 
                   className="h-full bg-theme transition-all" 
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
-              <p className="text-xs text-gray-500 text-right">{uploadProgress}%</p>
+              <p className="text-xs text-stone-500 text-right">{uploadProgress}%</p>
             </div>
           </div>
         );
@@ -716,8 +716,8 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
         return (
           <div className="space-y-5">
             <div className="text-center mb-2">
-              <h3 className="text-xl font-medium text-gray-900">Analysis Results</h3>
-              <p className="text-gray-500">
+              <h3 className="text-xl font-medium text-stone-900">Analysis Results</h3>
+              <p className="text-stone-500">
                 {format(customDate, "yyyy年 M月 d日")} ({formatTableDayPart(customDate.toISOString())}曜日)
               </p>
             </div>
@@ -740,14 +740,14 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-0 shadow-md rounded-xl transform transition-transform hover:scale-105">
                       <CardContent className="pt-6 text-center">
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Left Angle</h4>
+                        <h4 className="text-sm font-medium text-stone-700 mb-1">Left Angle</h4>
                         <p className="text-3xl font-bold text-blue-700">{processedAngles.angle.toFixed(2)}°</p>
                       </CardContent>
                     </Card>
                     
                     <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-0 shadow-md rounded-xl transform transition-transform hover:scale-105">
                       <CardContent className="pt-6 text-center">
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Right Angle</h4>
+                        <h4 className="text-sm font-medium text-stone-700 mb-1">Right Angle</h4>
                         <p className="text-3xl font-bold text-purple-700">{processedAngles.angle2.toFixed(2)}°</p>
                       </CardContent>
                     </Card>
@@ -757,7 +757,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                 {/* Add metadata fields with improved UI */}
                 <div className="space-y-5 mt-8">
                   <div className="space-y-2">
-                    <Label htmlFor="memo" className="text-gray-700">Add Notes (Optional)</Label>
+                    <Label htmlFor="memo" className="text-stone-700">Add Notes (Optional)</Label>
                     <Input
                       type="text"
                       id="memo"
@@ -776,7 +776,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                   
                   <div className="space-y-2">
                     <div className="flex justify-between items-center mb-3">
-                      <Label className="text-gray-700">Select Icons (Optional)</Label>
+                      <Label className="text-stone-700">Select Icons (Optional)</Label>
                       {selectedIcons.length === 3 && (
                         <p className="text-xs text-amber-600">
                           Max 3 selected
@@ -802,7 +802,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                             w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all
                             ${selectedIcons.includes(icon.id)
                               ? "bg-blue-100 border-2 border-blue-500 shadow-md transform scale-110"
-                              : "bg-gray-100 hover:bg-gray-200 hover:shadow"}
+                              : "bg-stone-100 hover:bg-stone-200 hover:shadow"}
                           `}
                         >
                           {icon.emoji}
@@ -828,7 +828,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
         return (
           <div className="flex flex-col items-center justify-center py-16">
             <Loader2 className="h-12 w-12 animate-spin text-theme mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">Saving your details...</h3>
+            <h3 className="text-lg font-medium text-stone-900">Saving your details...</h3>
           </div>
         );
         
@@ -840,8 +840,8 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
             </div>
             
             <div>
-              <h3 className="text-2xl font-medium text-gray-900 mb-2 animate-in fade-in-50 duration-300 delay-150">Measurement Complete!</h3>
-              <p className="text-gray-500 max-w-xs mx-auto animate-in fade-in-50 duration-300 delay-300">
+              <h3 className="text-2xl font-medium text-stone-900 mb-2 animate-in fade-in-50 duration-300 delay-150">Measurement Complete!</h3>
+              <p className="text-stone-500 max-w-xs mx-auto animate-in fade-in-50 duration-300 delay-300">
                 Your image has been processed and all details saved successfully.
               </p>
             </div>
@@ -881,7 +881,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
           ) : (
             <button
               type="button"
-              className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 rounded-md py-2 md:flex-row md:gap-2"
+              className="inline-flex flex-col items-center justify-center px-5 hover:bg-stone-50 rounded-md py-2 md:flex-row md:gap-2"
               onClick={() => setOpen(true)}
             >
               <Upload className="w-6 h-6" />
@@ -902,7 +902,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
           <SheetDescription />
           {/* Removed custom close button - using the built-in one from SheetContent */}
           <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
-            <div className="w-12 h-1 rounded-full bg-gray-300 mt-3 mb-1" />
+            <div className="w-12 h-1 rounded-full bg-stone-300 mt-3 mb-1" />
           </div>
           <div className="pt-6 pb-16 px-6">
             <div className="mx-auto max-w-md">
