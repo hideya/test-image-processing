@@ -41,13 +41,6 @@ export default function MainPage() {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  // Get unified loading state with minimum display time to avoid flicker
-  const { showLoading } = useLoadingState({
-    minimumLoadingTime: 1000, // Show loading for at least 1 second to avoid jarring transitions
-    queryKeys: ["/api/angle-data"], // Only track the main data loading state
-    forceInitialLoading: true, // Always show splash screen on initial load
-  });
-
   // For highlighting a dot in the chart with a pulse animation
   const [pulsingDot, setPulsingDot] = useState<string | null>(null);
 
@@ -62,17 +55,6 @@ export default function MainPage() {
     return today.toISOString().split("T")[0];
   }, [today]);
 
-  // Clear pulsing effect after animation completes
-  useEffect(() => {
-    if (pulsingDot) {
-      const timer = setTimeout(() => {
-        setPulsingDot(null);
-      }, 500); // Match the animation duration (500ms)
-      return () => clearTimeout(timer);
-    }
-  }, [pulsingDot]);
-  
-  // Initialize with current date by default to avoid server/client time inconsistencies
   // Initialize customDate with today's date set to noon to avoid timezone issues
   const [customDate, setCustomDate] = useState<Date>(() => {
     const date = new Date();
@@ -87,49 +69,6 @@ export default function MainPage() {
     date.setHours(12, 0, 0, 0);
     return date;
   });
-
-  // Format for the table view (M/D DDD) - without leading zeros and day of week
-  // Format date part (e.g., "8") for the table view
-  const formatTableDatePart = useMemo(() => {
-    return (dateStr: string) => {
-      const date = new Date(dateStr);
-      return format(date, "d");
-    };
-  }, []);
-
-  // Format day of week part (e.g., "火") for the table view
-  const formatTableDayPart = useMemo(() => {
-    return (dateStr: string) => {
-      const date = new Date(dateStr);
-      const dayOfWeek = date.getDay();
-      const weekDayJP = ["日", "月", "火", "水", "木", "金", "土"];
-      return weekDayJP[dayOfWeek];
-    };
-  }, []);
-
-  // Check if a date is Sunday
-  const isSunday = useMemo(() => {
-    return (dateStr: string) => {
-      const date = new Date(dateStr);
-      return date.getDay() === 0; // 0 is Sunday in JavaScript
-    };
-  }, []);
-
-  // Check if a date is Saturday
-  const isSaturday = useMemo(() => {
-    return (dateStr: string) => {
-      const date = new Date(dateStr);
-      return date.getDay() === 6; // 6 is Saturday in JavaScript
-    };
-  }, []);
-
-  // Create a simplified date formatter for the chart that shows day/month without leading zeros
-  const formatSimpleDate = useMemo(() => {
-    return (dateStr: string) => {
-      const date = new Date(dateStr);
-      return `${format(date, "d")}`;
-    };
-  }, []);
 
   // Fetch angle measurements
   const {
@@ -184,6 +123,80 @@ export default function MainPage() {
       return combinedData;
     },
   });
+
+  // Track if this is the first load of the page
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  
+  // Get unified loading state with minimum display time to avoid flicker
+  // Only use this for initial page load
+  const { showLoading: showInitialLoading } = useLoadingState({
+    minimumLoadingTime: 1000, // Show loading for at least 1 second to avoid jarring transitions
+    queryKeys: ["/api/angle-data"], // Only track the main data loading state
+    forceInitialLoading: true, // Always show splash screen on initial load
+  });
+  
+  // Combine loading states to only show splash on first load
+  const showSplashScreen = showInitialLoading && isFirstLoad;
+  
+  // After data loads for the first time, mark first load as complete
+  useEffect(() => {
+    if (!isLoading && isFirstLoad) {
+      setIsFirstLoad(false);
+    }
+  }, [isLoading, isFirstLoad]);
+  
+  // Clear pulsing effect after animation completes
+  useEffect(() => {
+    if (pulsingDot) {
+      const timer = setTimeout(() => {
+        setPulsingDot(null);
+      }, 500); // Match the animation duration (500ms)
+      return () => clearTimeout(timer);
+    }
+  }, [pulsingDot]);
+
+  // Format for the table view (M/D DDD) - without leading zeros and day of week
+  // Format date part (e.g., "8") for the table view
+  const formatTableDatePart = useMemo(() => {
+    return (dateStr: string) => {
+      const date = new Date(dateStr);
+      return format(date, "d");
+    };
+  }, []);
+
+  // Format day of week part (e.g., "火") for the table view
+  const formatTableDayPart = useMemo(() => {
+    return (dateStr: string) => {
+      const date = new Date(dateStr);
+      const dayOfWeek = date.getDay();
+      const weekDayJP = ["日", "月", "火", "水", "木", "金", "土"];
+      return weekDayJP[dayOfWeek];
+    };
+  }, []);
+
+  // Check if a date is Sunday
+  const isSunday = useMemo(() => {
+    return (dateStr: string) => {
+      const date = new Date(dateStr);
+      return date.getDay() === 0; // 0 is Sunday in JavaScript
+    };
+  }, []);
+
+  // Check if a date is Saturday
+  const isSaturday = useMemo(() => {
+    return (dateStr: string) => {
+      const date = new Date(dateStr);
+      return date.getDay() === 6; // 6 is Saturday in JavaScript
+    };
+  }, []);
+
+  // Create a simplified date formatter for the chart that shows day/month without leading zeros
+  const formatSimpleDate = useMemo(() => {
+    return (dateStr: string) => {
+      const date = new Date(dateStr);
+      return `${format(date, "d")}`;
+    };
+  }, []);
 
   // Function to get all dates in specified month
   const getAllDatesInMonth = () => {
@@ -318,11 +331,11 @@ export default function MainPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* Global Loading Screen */}
-      <LoadingScreen show={showLoading} text="Loading your measurements" />
+      {/* Global Loading Screen - only shown on initial page load */}
+      <LoadingScreen show={showSplashScreen} text="Loading your measurements" />
       
-      {/* Only show UI elements when not in loading state */}
-      {!showLoading && (
+      {/* Only hide UI elements during initial load */}
+      {!showSplashScreen && (
         <>
           {/* Custom buttons for both upload and settings - matching styles */}
           {/* Fixed Upload Button (Center Bottom) */}
@@ -369,10 +382,10 @@ export default function MainPage() {
                 />
                 {isLoading ? (
                   <div className="py-10 flex justify-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-10 w-10 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
                       <p className="text-sm text-gray-500">
-                        Loading measurement data...
+                        Loading measurement data for {format(currentViewMonth, 'MMMM yyyy')}...
                       </p>
                     </div>
                   </div>
