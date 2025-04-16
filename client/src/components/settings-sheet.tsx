@@ -105,7 +105,7 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
         side="bottom"
         className="h-[85vh] rounded-t-xl overflow-y-auto"
       >
-        <SheetTitle className="">Settings</SheetTitle>
+        <SheetTitle className="text-theme-dark">Settings</SheetTitle>
         <SheetDescription>
         </SheetDescription>
         <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
@@ -118,7 +118,7 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
              <div className="mt-4 space-y-2">
                 <Button
                   variant="destructive"
-                  className="w-full py-3 rounded-xl shadow-md hover:shadow-lg text-sm"
+                  className="w-full py-3 rounded-full shadow-md hover:shadow-lg text-sm"
                   onClick={handleLogout}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -128,7 +128,7 @@ export function SettingsSheet({ onComplete, onCancel, children }: SettingsSheetP
 
               <Card className="shadow-md rounded-xl border border-stone-200">
                 <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-base text-stone-600">Account Information</CardTitle>
+                  <CardTitle className="text-base text-stone-500">Account Information</CardTitle>
                   <CardDescription className="text-xs"></CardDescription>
                 </CardHeader>
                 <CardContent className="py-2 px-4">

@@ -44,8 +44,8 @@ function ColorOption({ color, isSelected, onClick, name }: ColorOptionProps): JS
       className={`
         relative w-14 h-14 rounded-lg transition-all duration-200
         hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2
-        focus:ring-blue-500 transform hover:scale-105
-        ${isSelected ? 'ring-2 ring-offset-2 ring-blue-500 scale-105' : 'ring-0'}
+        focus:ring-theme-dark transform hover:scale-105
+        ${isSelected ? 'ring-2 ring-offset-2 ring-theme scale-105' : 'ring-0'}
       `}
       style={{ backgroundColor: color }}
     >

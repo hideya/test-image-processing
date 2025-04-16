@@ -54,6 +54,14 @@
   .ring-theme {
     --tw-ring-color: var(--theme-color);
   }
+
+  .ring-theme-light {
+    --tw-ring-color: var(--theme-color-light);
+  }
+
+  .ring-theme-dark {
+    --tw-ring-color: var(--theme-color-dark);
+  }
   
   /* Button pulse animation */
   @keyframes pulse {
