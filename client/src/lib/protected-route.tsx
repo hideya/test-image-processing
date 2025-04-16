@@ -20,7 +20,7 @@ export function ProtectedRoute({
         <div className="flex items-center justify-center h-screen w-full">
           <div className="flex flex-col items-center gap-2">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-theme border-t-transparent"></div>
-            <p className="text-stone-600 font-medium">Loading...</p>
+            <p className="text-theme-dark font-medium">Loading...</p>
           </div>
         </div>
       </Route>

@@ -169,13 +169,11 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
             const isToday = measurement.date === todayDate;
             const isSun = isSunday(measurement.date);
             const isSat = isSaturday(measurement.date);
-            let dateTextColor = isToday ? "text-white" : "text-stone-500"; // Default gray
+            const dateTextColor =
+              (isToday && !isSelected)
+                ? isSun ? "text-red-300" : isSat ? "text-blue-300" : "text-white"
+                : isSun ? "text-red-500" : isSat ? "text-blue-500" : "text-stone-500";
 
-            if (isSun) {
-              dateTextColor = isToday ? "text-red" : "text-red-500"; // Red for Sunday
-            } else if (isSat) {
-              dateTextColor = isToday ? "text-blue" : "text-blue-500"; // Blue for Saturday
-            }
             return (
               <React.Fragment key={index}>
                 <tr

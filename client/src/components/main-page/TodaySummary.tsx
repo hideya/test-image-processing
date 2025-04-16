@@ -41,9 +41,9 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
           </div>
           <div className="flex gap-6 items-center">
             {isLoading ? (
-              <div className="flex flex-col items-center bg-blue-50 p-4 rounded-xl border border-blue-200">
-                <div className="text-blue-700 font-medium mb-1">Loading today's data...</div>
-                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="flex flex-col items-center bg-theme-light p-4 rounded-xl border border-blue-200">
+                <div className="text-theme-dark font-medium mb-1">Loading today's data...</div>
+                <div className="w-6 h-6 border-2 border-theme border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : todayMeasurement ? (
               <>

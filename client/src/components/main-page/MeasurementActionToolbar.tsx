@@ -67,7 +67,7 @@ export const MeasurementActionToolbar: React.FC<MeasurementActionToolbarProps> =
     <>
       <div 
         className={cn(
-          "bg-white shadow-xl rounded-lg py-2 px-3 flex items-center space-x-3 border border-stone-200 animate-in fade-in-50 zoom-in-95 duration-200",
+          "bg-white shadow-xl rounded-full py-2 px-3 flex items-center space-x-3 border border-stone-200 animate-in fade-in-50 zoom-in-95 duration-200",
           className
         )}
         style={style}
