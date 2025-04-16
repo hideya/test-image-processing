@@ -489,6 +489,7 @@ export default function MainPage() {
                           isSaturday={isSaturday}
                           formatTableDatePart={formatTableDatePart}
                           formatTableDayPart={formatTableDayPart}
+                          todayDate={todayDate}
                         />
                       </div>
                     </div>

@@ -165,25 +165,25 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
         </thead>
         <tbody className="bg-white divide-y divide-stone-200">
           {sortedMeasurements.map((measurement, index) => {
-            const isSun = isSunday(measurement.date);
-            const isSat = isSaturday(measurement.date);
-            let dateTextColor = "text-stone-500"; // Default gray
-
-            if (isSun) {
-              dateTextColor = "text-red-500"; // Red for Sunday
-            } else if (isSat) {
-              dateTextColor = "text-blue-500"; // Blue for Saturday
-            }
             const isSelected = selectedDate === measurement.date;
             const isToday = measurement.date === todayDate;
+            const isSun = isSunday(measurement.date);
+            const isSat = isSaturday(measurement.date);
+            let dateTextColor = isToday ? "text-white" : "text-stone-500"; // Default gray
+
+            if (isSun) {
+              dateTextColor = isToday ? "text-red" : "text-red-500"; // Red for Sunday
+            } else if (isSat) {
+              dateTextColor = isToday ? "text-blue" : "text-blue-500"; // Blue for Saturday
+            }
             return (
               <React.Fragment key={index}>
                 <tr
                   className={`cursor-pointer transition-colors duration-150 relative
                     ${isSelected
-                      ? "bg-blue-50 hover:bg-blue-100"
+                      ? "bg-yellow-50 hover:bg-yellow-100"
                       : isToday
-                        ? "bg-yellow-50 hover:bg-yellow-100" 
+                        ? "bg-theme-light hover:opacity-75"
                         : index % 2 === 1
                           ? "bg-gradient-to-b from-white to-[var(--theme-color-light)] hover:opacity-75"
                           : "bg-stone-0 hover:opacity-75"
@@ -193,13 +193,13 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                 >
                   {/* Action toolbar moved outside of the tr element */}
                   <td
-                    className={`pl-1 pr-2 whitespace-nowrap text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-stone-900"}`}
+                    className={`pl-1 pr-2 whitespace-nowrap text-sm`}
                   >
                     <div 
                       className={`text-right leading-tight flex items-center justify-end ${dateTextColor}`}
                     >
                       <span
-                        className={`${isToday ? "bg-amber-200 rounded font-medium" : ""}`}
+                        className={`${isSelected ? "bg-amber-200 rounded font-medium" : isToday ? "bg-theme rounded font-medium" : ""}`}
                       >
                         {formatTableDatePart(measurement.date)}
                         &nbsp;
@@ -224,7 +224,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                       : ""}
                   </td>
                   <td
-                    className={`pl-2 pr-0 text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium text-amber-800" : "text-stone-600"}`}
+                    className={`pl-2 pr-0 text-sm ${isSelected ? "font-medium text-stone-600" : isToday ?"font-medium text-theme-dark" : "text-stone-600"}`}
                   >
                     <span
                       className={`transition-all duration-200`}
@@ -233,7 +233,7 @@ export const MeasurementTable: React.FC<MeasurementTableProps> = ({
                     </span>
                   </td>
                   <td
-                    className={`pl-1 pr-0 text-center text-sm ${isSelected ? "font-medium text-blue-900" : isToday ? "font-medium opacity-100" : "opacity-75"}`}
+                    className={`pl-1 pr-0 text-center text-sm ${isSelected ? "font-medium" : isToday ? "opacity-100" : "opacity-60"}`}
                   >
                     {measurement.iconIds ? (
                       <span className="whitespace-nowrap">

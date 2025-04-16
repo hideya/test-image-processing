@@ -2,6 +2,27 @@
 
 This document provides detailed technical specifications for the Photo Analyzer WebApp, including database schema, API endpoints, authentication mechanisms, and image processing workflow.
 
+## Date Handling Standards
+
+The application uses standardized date handling across all components:
+
+1. **API Communication**:
+   - All API endpoints exclusively use YYYY-MM-DD format for dates
+   - Date validation enforces this format with regex pattern checks
+   - No exceptions or fallbacks to other date formats are provided
+
+2. **Database Storage**:
+   - Dates are stored as PostgreSQL timestamp with time set to noon (12:00:00)
+   - Setting to noon prevents timezone-related date shifts
+   - Queries compare only date parts when filtering by date
+
+3. **Date Utilities**:
+   - The client uses a shared date utility module for consistent handling
+   - Helper functions enforce the YYYY-MM-DD format standard
+   - Date comparisons normalize to midnight to avoid time component issues
+
+See the [Date Standardization](DATE_STANDARDIZATION.md) document for details on implementation and best practices for date handling.
+
 ## Database Schema
 
 The application uses PostgreSQL with Drizzle ORM and includes the following tables:
@@ -126,7 +147,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 
 | Endpoint | Method | Description | Authentication Required | Request Body | Response |
 |----------|--------|-------------|-------------------------|--------------|----------|
-| `/api/images/upload` | POST | Upload and process an image | Yes | FormData with `image`, `customDate`, `rotation` | Processed image data (base64), angle measurements, and measurement ID |
+| `/api/images/upload` | POST | Upload and process an image | Yes | FormData with `image`, `customDate` (YYYY-MM-DD format), `rotation` | Processed image data (base64), angle measurements, and measurement ID |
 | `/api/measurements/:id/metadata` | PATCH | Update metadata for a measurement | Yes | JSON with `memo`, `iconIds` | Updated measurement object |
 | `/api/images/:hashKey` | GET | Get image by hash key | Yes | None | Redirects with message about direct image access |
 
@@ -134,7 +155,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 
 | Endpoint | Method | Description | Authentication Required | Query Parameters | Response |
 |----------|--------|-------------|-------------------------|------------------|----------|
-| `/api/angle-data` | GET | Get angle measurements | Yes | `start`, `end` (ISO date strings) | Array of measurements with dates |
+| `/api/angle-data` | GET | Get angle measurements | Yes | `start`, `end` (YYYY-MM-DD format) | Array of measurements with dates |
 | `/api/latest-angle` | GET | Get the latest angle measurement | Yes | None | Latest measurement object |
 
 ## Client-Side Two-Step Upload Flow

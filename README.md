@@ -72,6 +72,7 @@ Detailed documentation can be found in the `docs/` directory (after following th
 
 - [API Specifications](docs/SPECIFICATIONS.md): Database schema, API endpoints, and workflows
 - [Two-Step Workflow](docs/TWO_STEP_WORKFLOW.md): Details on the two-step upload and metadata workflow
+- [Date Standardization](docs/DATE_STANDARDIZATION.md): Standards for date handling across the application
 - [JWT Authentication](docs/JWT_USAGE.md): Guide for using JWT authentication
 - [JWT Migration](docs/JWT_MIGRATION.md): Migration from session-based to JWT auth
 - [Netlify Implementation](docs/NETLIFY_IMPLEMENTATION.md): Serverless architecture implementation

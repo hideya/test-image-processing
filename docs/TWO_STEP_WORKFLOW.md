@@ -44,7 +44,7 @@ The two-step workflow uses two separate API endpoints:
      ```
      FormData: {
        image: (binary file),
-       customDate: (ISO date string),
+       customDate: (YYYY-MM-DD format),
        clientRotation: (rotation angle in degrees)
      }
      ```
@@ -56,7 +56,7 @@ The two-step workflow uses two separate API endpoints:
          "id": 123,
          "angle": 32.45,
          "angle2": 15.87,
-         "date": "2023-06-15T12:00:00.000Z"
+         "date": "2023-06-15"
        },
        "image": {
          "id": 456,
@@ -88,7 +88,7 @@ The two-step workflow uses two separate API endpoints:
          "id": 123,
          "angle": 32.45,
          "angle2": 15.87,
-         "timestamp": "2023-06-15T12:00:00.000Z",
+         "timestamp": "2023-06-15",
          "memo": "This is a note about the measurement",
          "iconIds": "1,2,3"
        }
