@@ -49,5 +49,5 @@ export function getColorVariants(color: string) {
   }
 
   // Fallback to the default blue theme if the color isn't in our list
-  return THEME_COLORS.BLUE;
+  return THEME_COLORS.RED;
 }

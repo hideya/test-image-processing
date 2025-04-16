@@ -6,6 +6,7 @@ import { useSettings } from "@/hooks/use-settings";
 import { useLoadingState } from "@/hooks/use-loading-state";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { formatDateToYYYYMMDD, parseYYYYMMDD, createTodayNoon, getAllDatesInMonth, getMonthDateRange } from "@/lib/dateUtils";
 import { Loader2, Settings, Upload, Plus, CheckCircle } from "lucide-react";
 import {
   TodaySummary,
@@ -41,23 +42,13 @@ export default function MainPage() {
   // For highlighting a dot in the chart with a pulse animation
   const [pulsingDot, setPulsingDot] = useState<string | null>(null);
 
-  // Get today's date in the same format as measurements' date - MOVED UP TO FIX THE REFERENCE ERROR
-  const today = useMemo(() => {
-    const day = new Date();
-    day.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
-    return day;
-  }, []);
+  // Get today's date using the date utility functions
+  const today = useMemo(() => createTodayNoon(), []);
   
-  const todayDate = useMemo(() => {
-    return today.toISOString().split("T")[0];
-  }, [today]);
+  const todayDate = useMemo(() => formatDateToYYYYMMDD(today), [today]);
 
-  // Initialize customDate with today's date set to noon to avoid timezone issues
-  const [customDate, setCustomDate] = useState<Date>(() => {
-    const date = new Date();
-    date.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
-    return date;
-  });
+  // Initialize customDate with today's date using the utility function
+  const [customDate, setCustomDate] = useState<Date>(() => createTodayNoon());
 
   // Current month to show in chart/table
   const [currentViewMonth, setCurrentViewMonth] = useState<Date>(() => {
@@ -79,6 +70,7 @@ export default function MainPage() {
     queryKey: ["/api/angle-data", "today", todayDate],
     queryFn: async () => {
       console.log('Fetching today data for:', todayDate);
+      // Use YYYY-MM-DD format for API requests
       const res = await apiRequest('GET', `/api/angle-data?start=${todayDate}&end=${todayDate}`);
       const data = await res.json();
       console.log('Today API response:', data);
@@ -95,15 +87,12 @@ export default function MainPage() {
   } = useQuery<BaseMeasurement[]>({
     queryKey: ["/api/angle-data", "month", currentViewMonth.toISOString()],
     queryFn: async () => {
-      // Get first and last day of the month
+      // Get first and last day of the month using utility function
       const year = currentViewMonth.getFullYear();
       const month = currentViewMonth.getMonth();
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
       
-      // Convert to ISO strings for the API
-      const startDate = firstDay.toISOString().split('T')[0];
-      const endDate = lastDay.toISOString().split('T')[0];
+      // Use utility function to get month range in YYYY-MM-DD format
+      const { startDate, endDate } = getMonthDateRange(year, month);
       
       console.log(`Fetching month data from ${startDate} to ${endDate}`);
       const res = await apiRequest('GET', `/api/angle-data?start=${startDate}&end=${endDate}`);
@@ -253,29 +242,17 @@ export default function MainPage() {
     };
   }, []);
 
-  // Function to get all dates in specified month
-  const getAllDatesInMonth = () => {
+  // Function to get all dates in specified month using utility function
+  const getAllDatesInMonthForCurrentView = () => {
     const year = currentViewMonth.getFullYear();
     const month = currentViewMonth.getMonth();
-    const firstDay = new Date(year, month, 1);
-    firstDay.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
-    const lastDay = new Date(year, month + 1, 0);
-    lastDay.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
-
-    const dates = [];
-    const currentDate = new Date(firstDay);
-
-    while (currentDate <= lastDay) {
-      dates.push(currentDate.toISOString().split("T")[0]);
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    return dates;
+    return getAllDatesInMonth(year, month);
   };
 
   // Sort measurements by date (newest first) to find the latest measurement
   const sortedMeasurements = useMemo(() => {
     // Get all dates in current month
-    const allDates = getAllDatesInMonth();
+    const allDates = getAllDatesInMonthForCurrentView();
     const measurementsByDate = new Map(measurements.map((m) => [m.date, m]));
 
     // Create array with all dates, using measurement data when available
@@ -329,12 +306,12 @@ export default function MainPage() {
 
   const { chartDateRange, chartData } = useMemo(() => {
     // Get all dates in current month
-    const allDates = getAllDatesInMonth();
+    const allDates = getAllDatesInMonthForCurrentView();
     if (!allDates.length) return { chartDateRange: [], chartData: [] };
 
     // Create start and end dates from the month range
-    const startDate = new Date(allDates[0]);
-    const endDate = new Date(allDates[allDates.length - 1]);
+    const startDate = parseYYYYMMDD(allDates[0]);
+    const endDate = parseYYYYMMDD(allDates[allDates.length - 1]);
 
     // Create a map of measurements by date for quick lookup
     const measurementsByDate = new Map();

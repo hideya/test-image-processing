@@ -117,9 +117,16 @@ class DatabaseStorage {
   async createAngleMeasurement(insertMeasurement) {
     const { customTimestamp, ...measurementData } = insertMeasurement;
 
+    // Ensure noon time for timestamps
+    let timestamp = new Date();
+    if (customTimestamp) {
+      timestamp = new Date(customTimestamp);
+      timestamp.setHours(12, 0, 0, 0);
+    }
+
     const dataToInsert = {
       ...measurementData,
-      timestamp: customTimestamp || new Date(),
+      timestamp: timestamp,
       memo: measurementData.memo || null,
       iconIds: Array.isArray(measurementData.iconIds) 
         ? measurementData.iconIds.join(',') 
@@ -140,11 +147,15 @@ class DatabaseStorage {
   }
 
   async findMeasurementsByUserIdAndDate(userId, date) {
+    // Ensure date is set to noon
+    const dateForQuery = new Date(date);
+    dateForQuery.setHours(12, 0, 0, 0);
+    
     // Create start and end dates for the given date (entire day)
-    const startOfDay = new Date(date);
+    const startOfDay = new Date(dateForQuery);
     startOfDay.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date(date);
+    const endOfDay = new Date(dateForQuery);
     endOfDay.setHours(23, 59, 59, 999);
 
     return await db

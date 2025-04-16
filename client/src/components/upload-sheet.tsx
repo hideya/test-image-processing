@@ -4,6 +4,7 @@ import { Sheet, SheetContent } from "@/components/ui/themed-sheet";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient, getAuthToken } from "../lib/queryClient";
+import { formatDateToYYYYMMDD, createTodayNoon, ensureDateNotInFuture } from "@/lib/dateUtils";
 import { 
   Loader2, 
   RotateCw, 
@@ -97,19 +98,8 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
   const [selectedIcons, setSelectedIcons] = useState<number[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [customDate, setCustomDate] = useState<Date>(() => {
-    // Create a date for today but ensure it's not in the future
-    const today = new Date();
-    // Set time to noon to avoid timezone issues
-    today.setHours(12, 0, 0, 0);
-    
-    // Ensure the date is not in the future by comparing to current date
-    const currentDate = new Date();
-    if (today > currentDate) {
-      // If somehow today is in the future (unlikely unless there are timezone issues)
-      // use yesterday instead
-      today.setDate(today.getDate() - 1);
-    }
-    return today;
+    // Create a noon date for today and ensure it's not in the future
+    return ensureDateNotInFuture(createTodayNoon());
   });
   
   // State for processed image and results
@@ -153,16 +143,11 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
       formData.append("image", file);
 
       // Ensure the date is not in the future
-      const dateForServer = new Date(customDate);
+      const dateForServer = ensureDateNotInFuture(new Date(customDate));
       dateForServer.setHours(12, 0, 0, 0);
       
-      // Safety check to ensure date is not in the future
-      const currentDate = new Date();
-      if (dateForServer > currentDate) {
-        dateForServer.setDate(dateForServer.getDate() - 1);
-      }
-      
-      formData.append("customDate", dateForServer.toISOString());
+      // Send date in YYYY-MM-DD format
+      formData.append("customDate", formatDateToYYYYMMDD(dateForServer));
       formData.append("clientRotation", previewRotation.toString());
 
       const token = getAuthToken();
@@ -366,7 +351,7 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
 
   // Check if a date already has a measurement
   const checkDateConflict = async (dateToCheck: Date): Promise<boolean> => {
-    const formattedDate = dateToCheck.toISOString().split("T")[0];
+    const formattedDate = formatDateToYYYYMMDD(dateToCheck);
     try {
       const token = getAuthToken();
       const headers: Record<string, string> = {};
@@ -494,10 +479,8 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
       // Reset all form state
       resetForm();
       
-      // Re-initialize the date when the sheet opens
-      const today = new Date();
-      today.setHours(12, 0, 0, 0);
-      setCustomDate(today);
+      // Re-initialize the date when the sheet opens using utility function
+      setCustomDate(createTodayNoon());
     }
   }, [open]);
 
@@ -537,14 +520,20 @@ export function UploadSheet({ onComplete, onCancel, children }: UploadSheetProps
                         const newDate = new Date(date);
                         newDate.setHours(12, 0, 0, 0);
                         
-                        // Ensure the date is not in the future
+                        // Ensure the date is not in the future by comparing only the date parts
                         const currentDate = new Date();
-                        if (newDate > currentDate) {
+                        currentDate.setHours(0, 0, 0, 0); // Remove time component
+                        
+                        const dateForComparison = new Date(newDate);
+                        dateForComparison.setHours(0, 0, 0, 0); // Remove time component
+                        
+                        if (dateForComparison > currentDate) {
                           alert("You cannot select a date in the future.");
                           return;
                         }
                         
-                        setCustomDate(newDate);
+                        // Use utility function to ensure consistent noon time
+                        setCustomDate(ensureDateNotInFuture(newDate));
                         setPopoverOpen(false);
                       }
                     }}

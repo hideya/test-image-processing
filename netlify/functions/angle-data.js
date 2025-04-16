@@ -2,6 +2,12 @@
 const { formatResponse, getUserFromToken, handleOptions } = require("./auth-utils");
 const { storage } = require("./storage");
 
+// Validate that date strings are in YYYY-MM-DD format
+function isValidDateFormat(dateStr) {
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  return regex.test(dateStr);
+}
+
 exports.handler = async (event, context) => {
   // Handle preflight OPTIONS request
   if (event.httpMethod === "OPTIONS") {
@@ -29,8 +35,16 @@ exports.handler = async (event, context) => {
     
     // Check if start and end dates are provided
     if (queryParams.start && queryParams.end) {
+      // Validate date formats
+      if (!isValidDateFormat(queryParams.start) || !isValidDateFormat(queryParams.end)) {
+        return formatResponse(400, { message: "Invalid date format. Please use YYYY-MM-DD format." });
+      }
+      
       const startDate = new Date(queryParams.start);
+      startDate.setHours(0, 0, 0, 0); // Start of day
+      
       const endDate = new Date(queryParams.end);
+      endDate.setHours(23, 59, 59, 999); // End of day
       
       console.log(`*** Fetching measurements for date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
       

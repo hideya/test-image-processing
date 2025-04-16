@@ -152,21 +152,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
+        // Validate date format (YYYY-MM-DD)
+        const dateFormatRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateFormatRegex.test(formData.fields.customDate)) {
+          return res.status(400).json({
+            message: "Invalid date format. Please use YYYY-MM-DD format.",
+          });
+        }
+
         let customDate: Date;
         try {
-          // Parse the provided date string
+          // Parse the provided date string (assuming YYYY-MM-DD)
           customDate = new Date(formData.fields.customDate);
+          customDate.setHours(12, 0, 0, 0); // Set to noon
 
           // Validate the date - it shouldn't be in the future
+          // Create a comparison date set to the start of the current day
           const currentDate = new Date();
-          if (customDate > currentDate) {
+          currentDate.setHours(0, 0, 0, 0); // Set to start of day
+          
+          // Create a truncated date (without time component) for comparison
+          const submittedDateOnly = new Date(customDate);
+          submittedDateOnly.setHours(0, 0, 0, 0);
+          
+          // Only compare the date parts (ignoring time)
+          if (submittedDateOnly > currentDate) {
             return res.status(400).json({
               message: "Measurement date cannot be in the future",
             });
           }
         } catch (err) {
           return res.status(400).json({
-            message: "Invalid date format. Please use ISO date format.",
+            message: "Invalid date format. Please use YYYY-MM-DD format.",
           });
         }
 
@@ -253,8 +270,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if start and end dates are provided
       if (req.query.start && req.query.end) {
+        // Validate date formats (YYYY-MM-DD)
+        const dateFormatRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateFormatRegex.test(req.query.start as string) || 
+            !dateFormatRegex.test(req.query.end as string)) {
+          return res.status(400).json({ 
+            message: "Invalid date format. Please use YYYY-MM-DD format." 
+          });
+        }
+
         const startDate = new Date(req.query.start as string);
         const endDate = new Date(req.query.end as string);
+        
+        // Set hours appropriately for date range
+        startDate.setHours(0, 0, 0, 0); // Start of day
+        endDate.setHours(23, 59, 59, 999); // End of day
         
         console.log(`Fetching measurements for date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
         console.log(`Raw date strings from request: start=${req.query.start}, end=${req.query.end}`);
